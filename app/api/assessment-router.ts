@@ -17,7 +17,7 @@ export const assessmentRouter = createRouter({
         recommendations: z.string(),
       })
     )
-    .mutation(({ input }) =>
+    .mutation(({ input }: any) =>
       createAssessment({
         userIdentifier: input.userIdentifier,
         answers: input.answers,

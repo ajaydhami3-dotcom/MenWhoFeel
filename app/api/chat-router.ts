@@ -11,11 +11,11 @@ import {
 export const chatRouter = createRouter({
   list: publicQuery
     .input(z.object({ limit: z.number().optional() }).optional())
-    .query(({ input }) => findApprovedMessages(input?.limit || 100)),
+    .query(({ input }: any) => findApprovedMessages(input?.limit || 100)),
 
   recent: publicQuery
     .input(z.object({ limit: z.number().optional() }).optional())
-    .query(({ input }) => findRecentMessages(input?.limit || 50)),
+    .query(({ input }: any) => findRecentMessages(input?.limit || 50)),
 
   create: publicQuery
     .input(
@@ -24,7 +24,7 @@ export const chatRouter = createRouter({
         content: z.string().min(1).max(1000),
       })
     )
-    .mutation(({ input }) =>
+    .mutation(({ input }: any) =>
       createMessage({
         authorName: input.authorName || "Anonymous",
         content: input.content,
@@ -35,5 +35,5 @@ export const chatRouter = createRouter({
   pending: adminQuery.query(() => findPendingMessages()),
   moderate: adminQuery
     .input(z.object({ id: z.number(), status: z.enum(["approved", "rejected"]) }))
-    .mutation(({ input }) => moderateMessage(input.id, input.status)),
+    .mutation(({ input }: any) => moderateMessage(input.id, input.status)),
 });

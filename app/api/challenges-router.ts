@@ -13,15 +13,15 @@ import {
 export const challengesRouter = createRouter({
   list: publicQuery
     .input(z.object({ category: z.string().optional() }).optional())
-    .query(({ input }) => findActiveChallenges(input?.category)),
+    .query(({ input }: any) => findActiveChallenges(input?.category)),
 
   byId: publicQuery
     .input(z.object({ id: z.number() }))
-    .query(({ input }) => findChallengeById(input.id)),
+    .query(({ input }: any) => findChallengeById(input.id)),
 
   progress: publicQuery
     .input(z.object({ userIdentifier: z.string() }))
-    .query(({ input }) => findUserProgress(input.userIdentifier)),
+    .query(({ input }: any) =>findUserProgress(input.userIdentifier)),
 
   complete: publicQuery
     .input(
@@ -31,7 +31,7 @@ export const challengesRouter = createRouter({
         notes: z.string().optional(),
       })
     )
-    .mutation(({ input }) =>
+    .mutation(({ input }: any) =>
       completeChallenge({
         challengeId: input.challengeId,
         userIdentifier: input.userIdentifier,
@@ -41,11 +41,11 @@ export const challengesRouter = createRouter({
 
   todayProgress: publicQuery
     .input(z.object({ userIdentifier: z.string() }))
-    .query(({ input }) => getTodayProgress(input.userIdentifier)),
+    .query(({ input }: any) => getTodayProgress(input.userIdentifier)),
 
   weeklyProgress: publicQuery
     .input(z.object({ userIdentifier: z.string() }))
-    .query(({ input }) => getWeeklyProgress(input.userIdentifier)),
+    .query(({ input }: any) =>getWeeklyProgress(input.userIdentifier)),
 
   stats: publicQuery.query(() => getChallengeStats()),
 });

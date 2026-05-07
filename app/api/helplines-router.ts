@@ -10,5 +10,5 @@ export const helplinesRouter = createRouter({
 
   byCountry: publicQuery
     .input(z.object({ countryCode: z.string() }))
-    .query(({ input }) => findHelplinesByCountry(input.countryCode)),
+    .query(({ input }: any) => findHelplinesByCountry(input.countryCode)),
 });

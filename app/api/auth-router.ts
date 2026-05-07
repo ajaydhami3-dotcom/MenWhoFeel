@@ -6,7 +6,7 @@ export const authRouter = createRouter({
   // LOGIN
   login: publicQuery
     .input(z.object({ email: z.string().email(), password: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input }: any) => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: input.email,
         password: input.password,
@@ -19,7 +19,7 @@ export const authRouter = createRouter({
   // REGISTER
   register: publicQuery
     .input(z.object({ email: z.string().email(), password: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input }: any) => {
       const { data, error } = await supabase.auth.signUp({
         email: input.email,
         password: input.password,

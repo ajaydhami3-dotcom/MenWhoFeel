@@ -20,11 +20,11 @@ export const storiesRouter = createRouter({
 
   byId: publicQuery
     .input(z.object({ id: z.number() }))
-    .query(({ input }) => findStoryById(input.id)),
+    .query(({ input }: any) => findStoryById(input.id)),
 
   comments: publicQuery
     .input(z.object({ storyId: z.number() }))
-    .query(({ input }) => findStoryComments(input.storyId)),
+    .query(({ input }: any) => findStoryComments(input.storyId)),
 
   create: publicQuery
     .input(
@@ -35,7 +35,7 @@ export const storiesRouter = createRouter({
         excerpt: z.string().max(500).optional(),
       })
     )
-    .mutation(({ input }) =>
+    .mutation(({ input }: any) =>
       createStory({
         title: input.title,
         content: input.content,
@@ -52,7 +52,7 @@ export const storiesRouter = createRouter({
         content: z.string().min(1),
       })
     )
-    .mutation(({ input }) =>
+    .mutation(({ input }: any) =>
       createStoryComment({
         storyId: input.storyId,
         authorName: input.authorName || "Anonymous",
@@ -65,8 +65,8 @@ export const storiesRouter = createRouter({
   pendingComments: adminQuery.query(() => findPendingComments()),
   moderateStory: adminQuery
     .input(z.object({ id: z.number(), status: z.enum(["approved", "rejected"]) }))
-    .mutation(({ input }) => moderateStory(input.id, input.status)),
+    .mutation(({ input }: any) =>moderateStory(input.id, input.status)),
   moderateComment: adminQuery
     .input(z.object({ id: z.number(), status: z.enum(["approved", "rejected"]) }))
-    .mutation(({ input }) => moderateComment(input.id, input.status)),
+    .mutation(({ input }: any) =>moderateComment(input.id, input.status)),
 });

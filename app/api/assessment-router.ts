@@ -29,9 +29,9 @@ export const assessmentRouter = createRouter({
 
   list: publicQuery
     .input(z.object({ userIdentifier: z.string() }))
-    .query(({ input }) => findUserAssessments(input.userIdentifier)),
+    .query(({ input }: any) => findUserAssessments(input.userIdentifier)),
 
   byId: publicQuery
     .input(z.object({ id: z.number() }))
-    .query(({ input }) => findAssessmentById(input.id)),
+    .query(({ input }: any) => findAssessmentById(input.id)),
 });

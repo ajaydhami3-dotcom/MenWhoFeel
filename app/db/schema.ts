@@ -9,6 +9,7 @@ import {
   integer,
   boolean,
   index,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -247,8 +248,10 @@ export const challengesRelations = relations(challenges, ({ many }) => ({
 export const userChallengesRelations = relations(userChallenges, ({ one }) => ({
   challenge: one(challenges, { fields: [userChallenges.challengeId], references: [challenges.id] }),
 }));
-import { pgTable, uuid, integer, text, timestamp } from "drizzle-orm/pg-core";
 
+// ==========================================
+// User Progress (The Forge)
+// ==========================================
 export const userProgress = pgTable("user_progress", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id").notNull().unique(), // Tied to your Auth user

@@ -1,39 +1,50 @@
-import { Link } from "react-router";
-import { Instagram, Youtube, MessageCircle, Twitter, Mail, Heart, Shield, FileText, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Camera, Play, MessageSquare, Send, Mail, Heart, Shield, FileText, AlertTriangle, Phone } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="w-full border-t border-border/40 bg-slate-950/50 backdrop-blur-sm mt-auto">
+    <footer className="w-full border-t border-border/40 bg-[#060810]/80 backdrop-blur-sm mt-auto">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="MenWhoFeel" className="h-8 w-auto" />
+              <img src="/logo.png" alt="Men Who Feel" className="h-8 w-auto" />
               <span className="text-lg font-bold text-gradient">MenWhoFeel</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              A safe space for men to feel, heal, and grow together. Breaking the stigma around men's mental health.
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              A space where men don't have to explain themselves. Feel it, say it, move through it.
             </p>
+            {/* Crisis line surfaced in footer too */}
+            <Link
+              href="/crisis-helpline"
+              className="inline-flex items-center gap-2 text-xs text-amber-400 hover:text-amber-300 transition-colors"
+            >
+              <Phone className="h-3 w-3" />
+              Crisis helpline — text HOME to 741741
+            </Link>
           </div>
 
-          {/* Column 1 */}
+          {/* Navigate */}
           <div>
             <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Navigate</h4>
             <ul className="space-y-2">
-              <li><Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><Heart className="h-3 w-3" /> About</Link></li>
-              <li><Link to="/rules" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><Shield className="h-3 w-3" /> Rules</Link></li>
-              <li><Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><Mail className="h-3 w-3" /> Contact</Link></li>
+              <li><Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><Heart className="h-3 w-3" /> About</Link></li>
+              <li><Link href="/stories" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><FileText className="h-3 w-3" /> Stories</Link></li>
+              <li><Link href="/community" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><MessageSquare className="h-3 w-3" /> Community</Link></li>
+              <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><Mail className="h-3 w-3" /> Contact</Link></li>
             </ul>
           </div>
 
-          {/* Column 2 */}
+          {/* Legal — disclaimer now lives here */}
           <div>
             <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Legal</h4>
             <ul className="space-y-2">
-              <li><Link to="/policy" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><FileText className="h-3 w-3" /> Policy</Link></li>
-              <li><Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><Shield className="h-3 w-3" /> Privacy Policy</Link></li>
-              <li><Link to="/disclaimer" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><AlertTriangle className="h-3 w-3" /> Disclaimer</Link></li>
+              <li><Link href="/policy" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><FileText className="h-3 w-3" /> Policy</Link></li>
+              <li><Link href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><Shield className="h-3 w-3" /> Privacy Policy</Link></li>
+              <li><Link href="/disclaimer" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><AlertTriangle className="h-3 w-3" /> Disclaimer</Link></li>
+              <li><Link href="/rules" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"><Shield className="h-3 w-3" /> Rules</Link></li>
             </ul>
           </div>
 
@@ -41,28 +52,27 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Connect</h4>
             <div className="flex flex-wrap gap-3">
-              <a href="https://instagram.com/menwhofeel.club" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors">
-                <Instagram className="h-4 w-4 text-muted-foreground hover:text-primary" />
+              <a href="https://instagram.com/menwhofeel.club" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" aria-label="Instagram">
+                <Camera className="h-4 w-4 text-muted-foreground hover:text-primary" />
               </a>
-              <a href="https://youtube.com/@menwhofeel.club" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors">
-                <Youtube className="h-4 w-4 text-muted-foreground hover:text-primary" />
+              <a href="https://youtube.com/@menwhofeel.club" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" aria-label="YouTube">
+                <Play className="h-4 w-4 text-muted-foreground hover:text-primary" />
               </a>
-              <a href="#" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" title="X (Twitter) - Coming Soon">
-                <Twitter className="h-4 w-4 text-muted-foreground hover:text-primary" />
+              <a href="#" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" title="X — coming soon" aria-label="X / Twitter">
+                <Send className="h-4 w-4 text-muted-foreground hover:text-primary" />
               </a>
-              <a href="#" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" title="Discord - Coming Soon">
-                <MessageCircle className="h-4 w-4 text-muted-foreground hover:text-primary" />
+              <a href="#" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" title="Discord — coming soon" aria-label="Discord">
+                <MessageSquare className="h-4 w-4 text-muted-foreground hover:text-primary" />
               </a>
             </div>
-            <div className="mt-4 text-xs text-muted-foreground">
-              <p>Insta: @menwhofeel.club</p>
-              <p>YouTube: @menwhofeel.club</p>
+            <div className="mt-4 text-xs text-muted-foreground space-y-1">
+              <p>@menwhofeel.club</p>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-border/20 text-center text-sm text-muted-foreground">
-          <p>MenWhoFeel Club. All rights reserved. Not a substitute for professional mental health care.</p>
+        <div className="mt-8 pt-8 border-t border-border/20 text-center text-xs text-muted-foreground">
+          <p>© MenWhoFeel. Not a substitute for professional mental health care.</p>
         </div>
       </div>
     </footer>

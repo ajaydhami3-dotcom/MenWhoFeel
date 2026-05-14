@@ -14,7 +14,7 @@ import {
 import { relations } from "drizzle-orm";
 
 // ==========================================
-// PostgreSQL Enums (Must be declared first)
+// PostgreSQL Enums
 // ==========================================
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 export const statusEnum = pgEnum("status", ["pending", "approved", "rejected"]);
@@ -23,6 +23,7 @@ export const challengeTypeEnum = pgEnum("challenge_type", ["exercise", "habit", 
 export const assessmentCategoryEnum = pgEnum("assessment_category", ["thriving", "stable", "mild_distress", "moderate_distress", "severe_distress"]);
 export const guideCategoryEnum = pgEnum("guide_category", ["overcoming_crisis", "daily_improvement", "skill_building", "emotional_regulation", "relationships", "productivity", "physical_health"]);
 export const difficultyEnum = pgEnum("difficulty", ["beginner", "intermediate", "advanced"]);
+export const resourceTypeEnum = pgEnum("resource_type", ["video", "pdf", "book", "link"]);
 
 // ==========================================
 // Users (auth system)
@@ -42,11 +43,8 @@ export const users = pgTable("users", {
   lastSignInAt: timestamp("lastSignInAt").defaultNow().notNull(),
 });
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
-
 // ==========================================
-// Stories (blog posts with moderation)
+// Stories
 // ==========================================
 export const stories = pgTable(
   "stories",
@@ -67,11 +65,8 @@ export const stories = pgTable(
   })
 );
 
-export type Story = typeof stories.$inferSelect;
-export type InsertStory = typeof stories.$inferInsert;
-
 // ==========================================
-// Story Comments (with moderation)
+// Story Comments
 // ==========================================
 export const storyComments = pgTable(
   "story_comments",
@@ -88,11 +83,8 @@ export const storyComments = pgTable(
   })
 );
 
-export type StoryComment = typeof storyComments.$inferSelect;
-export type InsertStoryComment = typeof storyComments.$inferInsert;
-
 // ==========================================
-// Challenges (daily/weekly/monthly)
+// Challenges
 // ==========================================
 export const challenges = pgTable(
   "challenges",
@@ -103,7 +95,7 @@ export const challenges = pgTable(
     category: challengeCategoryEnum("category").notNull(),
     type: challengeTypeEnum("type").notNull(),
     instructions: text("instructions"),
-    dayOfWeek: integer("dayOfWeek"), // 0-6 for weekly, null for others
+    dayOfWeek: integer("dayOfWeek"), 
     active: boolean("active").default(true).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
@@ -114,9 +106,6 @@ export const challenges = pgTable(
   })
 );
 
-export type Challenge = typeof challenges.$inferSelect;
-export type InsertChallenge = typeof challenges.$inferInsert;
-
 // ==========================================
 // User Challenge Progress
 // ==========================================
@@ -125,7 +114,7 @@ export const userChallenges = pgTable(
   {
     id: serial("id").primaryKey(),
     challengeId: bigint("challengeId", { mode: "number" }).notNull(),
-    userIdentifier: varchar("userIdentifier", { length: 255 }).notNull(), // anonymous or userId
+    userIdentifier: varchar("userIdentifier", { length: 255 }).notNull(),
     completed: boolean("completed").default(false).notNull(),
     notes: text("notes"),
     completedAt: timestamp("completedAt"),
@@ -136,11 +125,8 @@ export const userChallenges = pgTable(
   })
 );
 
-export type UserChallenge = typeof userChallenges.$inferSelect;
-export type InsertUserChallenge = typeof userChallenges.$inferInsert;
-
 // ==========================================
-// Chat Messages (community live chat)
+// Chat Messages
 // ==========================================
 export const chatMessages = pgTable(
   "chat_messages",
@@ -157,9 +143,6 @@ export const chatMessages = pgTable(
   })
 );
 
-export type ChatMessage = typeof chatMessages.$inferSelect;
-export type InsertChatMessage = typeof chatMessages.$inferInsert;
-
 // ==========================================
 // Mental Health Assessments
 // ==========================================
@@ -168,10 +151,10 @@ export const assessments = pgTable(
   {
     id: serial("id").primaryKey(),
     userIdentifier: varchar("userIdentifier", { length: 255 }).notNull(),
-    answers: text("answers").notNull(), // JSON string of answers
+    answers: text("answers").notNull(),
     score: integer("score").notNull(),
     category: assessmentCategoryEnum("category").notNull(),
-    recommendations: text("recommendations").notNull(), // JSON string
+    recommendations: text("recommendations").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
   (table) => ({
@@ -179,11 +162,8 @@ export const assessments = pgTable(
   })
 );
 
-export type Assessment = typeof assessments.$inferSelect;
-export type InsertAssessment = typeof assessments.$inferInsert;
-
 // ==========================================
-// Self Help Guides (study materials)
+// Self Help Guides
 // ==========================================
 export const selfHelpGuides = pgTable(
   "self_help_guides",
@@ -202,9 +182,6 @@ export const selfHelpGuides = pgTable(
     categoryIdx: index("guide_category_idx").on(table.category),
   })
 );
-
-export type SelfHelpGuide = typeof selfHelpGuides.$inferSelect;
-export type InsertSelfHelpGuide = typeof selfHelpGuides.$inferInsert;
 
 // ==========================================
 // Crisis Helplines
@@ -227,8 +204,38 @@ export const helplines = pgTable(
   })
 );
 
-export type Helpline = typeof helplines.$inferSelect;
-export type InsertHelpline = typeof helplines.$inferInsert;
+// ==========================================
+// Resource Hub (Videos, PDFs, Books)
+// ==========================================
+export const resources = pgTable(
+  "resources",
+  {
+    id: serial("id").primaryKey(),
+    category: varchar("category", { length: 255 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    type: resourceTypeEnum("type").notNull(),
+    url: varchar("url", { length: 1000 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    categoryIdx: index("resource_category_idx").on(table.category),
+  })
+);
+
+// ==========================================
+// User Progress (The Forge)
+// ==========================================
+export const userProgress = pgTable("user_progress", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().unique(),
+  level: integer("level").default(1).notNull(),
+  xp: integer("xp").default(0).notNull(),
+  nextLevelXp: integer("next_level_xp").default(100).notNull(),
+  rank: text("rank").default("Initiate").notNull(),
+  currentDailyId: integer("current_daily_id").default(1).notNull(),
+  completedWeeklies: integer("completed_weeklies").array().default([]).notNull(),
+  lastCompletedAt: timestamp("last_daily_completed_at", { withTimezone: true }),
+});
 
 // ==========================================
 // Relations
@@ -248,18 +255,63 @@ export const challengesRelations = relations(challenges, ({ many }) => ({
 export const userChallengesRelations = relations(userChallenges, ({ one }) => ({
   challenge: one(challenges, { fields: [userChallenges.challengeId], references: [challenges.id] }),
 }));
+// --- ASSESSMENT TABLES ---
+export const assessmentQuestions = pgTable("assessment_questions", {
+  id: serial("id").primaryKey(),
+  questionText: text("question_text").notNull(),
+  imageUrl: text("image_url"),
+  opt1Text: text("opt1_text").notNull(),
+  opt1Category: varchar("opt1_category", { length: 50 }).notNull(),
+  opt2Text: text("opt2_text").notNull(),
+  opt2Category: varchar("opt2_category", { length: 50 }).notNull(),
+  opt3Text: text("opt3_text").notNull(),
+  opt3Category: varchar("opt3_category", { length: 50 }).notNull(),
+  opt4Text: text("opt4_text").notNull(),
+  opt4Category: varchar("opt4_category", { length: 50 }).notNull(),
+  active: boolean("active").default(true),
+});
 
-// ==========================================
-// User Progress (The Forge)
-// ==========================================
-export const userProgress = pgTable("user_progress", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull().unique(), // Tied to your Auth user
-  level: integer("level").default(1).notNull(),
-  xp: integer("xp").default(0).notNull(),
-  nextLevelXp: integer("next_level_xp").default(100).notNull(),
-  rank: text("rank").default("Initiate").notNull(),
-  currentDailyId: integer("current_daily_id").default(1).notNull(),
-  completedWeeklies: integer("completed_weeklies").array().default([]).notNull(),
-  lastCompletedAt: timestamp("last_daily_completed_at", { withTimezone: true }),
+export const assessmentResults = pgTable("assessment_results", {
+  id: serial("id").primaryKey(),
+  userIdentifier: varchar("userIdentifier", { length: 255 }).notNull(),
+  resultCategory: varchar("result_category", { length: 50 }).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+});
+// --- ASSESSMENT ACTION PLANS ---
+export const assessmentActionPlans = pgTable("assessment_action_plans", {
+  id: serial("id").primaryKey(),
+  category: varchar("category", { length: 50 }).unique().notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  step1: text("step_1").notNull(),
+  step2: text("step_2").notNull(),
+  step3: text("step_3").notNull(),
+});
+// --- SEO ARTICLES (INTEL) ---
+export const articles = pgTable("articles", {
+  id: serial("id").primaryKey(),
+  slug: varchar("slug", { length: 255 }).unique().notNull(),
+  title: text("title").notNull(),
+  excerpt: text("excerpt").notNull(),
+  content: text("content").notNull(),
+  status: varchar("status", { length: 50 }).default("published"),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+});
+
+// --- ANNOUNCEMENTS (BROADCASTS) ---
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).default("update"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+});
+// --- ARTICLE COMMENTS ---
+export const articleComments = pgTable("article_comments", {
+  id: serial("id").primaryKey(),
+  articleSlug: varchar("articleSlug", { length: 255 }).notNull(),
+  authorName: varchar("authorName", { length: 255 }).default("Anonymous"),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
 });

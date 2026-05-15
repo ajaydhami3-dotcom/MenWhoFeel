@@ -36,15 +36,28 @@ export default function CommunityPage() {
     },
   });
 
+  // BULLETPROOF INITIAL MESSAGES LOAD
   useEffect(() => {
     if (initialMessages) {
+      let rawMessages: any[] = [];
+      
+      // Extract the array regardless of how the backend wrapped it
       if (Array.isArray(initialMessages)) {
-        setMessages([...initialMessages].reverse());
+        rawMessages = initialMessages;
       } else if ((initialMessages as any).messages) {
-        setMessages([...(initialMessages as any).messages].reverse());
+        rawMessages = (initialMessages as any).messages;
       } else if ((initialMessages as any).data) {
-        setMessages([...(initialMessages as any).data].reverse());
+        rawMessages = (initialMessages as any).data;
       }
+
+      // Intercept the array and convert ALL date strings to real Date objects
+      const formattedMessages = [...rawMessages].reverse().map(msg => ({
+        ...msg,
+        createdAt: msg.createdAt ? new Date(msg.createdAt) : new Date()
+      }));
+
+      // Set the sanitized array into state
+      setMessages(formattedMessages as any);
     }
   }, [initialMessages]);
 

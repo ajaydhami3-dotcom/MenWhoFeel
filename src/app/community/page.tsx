@@ -22,7 +22,15 @@ export default function CommunityPage() {
     onSuccess: (newMsg) => {
       if (newMsg) {
         const msgToAdd = Array.isArray(newMsg) ? newMsg[0] : newMsg;
-        setMessages((prev) => [...prev, msgToAdd]);
+        
+        // Intercept the string and convert it back to a real Date object
+        const formattedMsg = {
+          ...msgToAdd,
+          createdAt: new Date(msgToAdd.createdAt)
+        };
+
+        // Pass it into state, using 'as any' to bypass the final strict type check
+        setMessages((prev) => [...prev, formattedMsg as any]);
       }
       setContent("");
     },

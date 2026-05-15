@@ -34,7 +34,7 @@ export async function findStoryComments(storyId: number) {
 }
 
 export async function createStory(data: { title: string; content: string; authorName: string; excerpt?: string }) {
-  // FIX 1: Changed .$returningId() to .returning()
+  // FIX 1: Changed .returning() to .returning()
   const [{ id }] = await getDb().insert(stories).values({
     title: data.title,
     content: data.content,
@@ -47,7 +47,7 @@ export async function createStory(data: { title: string; content: string; author
 }
 
 export async function createStoryComment(data: { storyId: number; authorName: string; content: string }) {
-  // FIX 2: Changed .$returningId() to .returning()
+  // FIX 2: Changed .returning() to .returning()
   const [{ id }] = await getDb().insert(storyComments).values({
     storyId: data.storyId,
     authorName: data.authorName || "Anonymous",

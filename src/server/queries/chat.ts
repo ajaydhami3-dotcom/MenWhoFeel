@@ -23,7 +23,7 @@ export async function findRecentMessages(limit = 50) {
 }
 
 export async function createMessage(data: { authorName: string; content: string }) {
-  // THE FIX: Changed .$returningId() to .returning()
+  // THE FIX: Changed .returning() to .returning()
   const [{ id }] = await getDb().insert(chatMessages).values({
     authorName: data.authorName || "Anonymous",
     content: data.content,

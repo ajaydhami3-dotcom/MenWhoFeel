@@ -23,7 +23,7 @@ export async function createHelpline(data: {
   availableHours?: string;
   website?: string;
 }) {
-  const [{ id }] = await getDb().insert(helplines).values(data).$returningId();
+  const [{ id }] = await getDb().insert(helplines).values(data).returning();
   return getDb().query.helplines.findFirst({
     where: eq(helplines.id, id),
   });

@@ -37,7 +37,7 @@ export async function completeChallenge(data: { challengeId: number; userIdentif
     completed: true,
     notes: data.notes,
     completedAt: new Date(),
-  }).$returningId();
+  }).returning();
   return getDb().query.userChallenges.findFirst({
     where: eq(userChallenges.id, id),
     with: { challenge: true },

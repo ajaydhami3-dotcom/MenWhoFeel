@@ -2,7 +2,6 @@ import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema";
 type InsertUser = typeof schema.users.$inferInsert;
 import { getDb } from "./connection";
-import { env } from "@/lib/env"; // Fixed to use the standard Next.js alias
 
 export async function findUserByUnionId(unionId: string) {
   const rows = await getDb()
@@ -20,14 +19,8 @@ export async function upsertUser(data: InsertUser) {
     ...data,
   };
 
-  if (
-    values.role === undefined &&
-    values.unionId &&
-    values.unionId === env.ownerUnionId
-  ) {
-    values.role = "admin";
-    updateSet.role = "admin";
-  }
+  // Note: Auto-admin promotion logic was removed here. 
+  // All new signups will default to whatever your database schema defines (likely "user").
 
   await getDb()
     .insert(schema.users)

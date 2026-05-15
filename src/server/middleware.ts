@@ -1,8 +1,12 @@
 import { initTRPC, TRPCError } from "@trpc/server";
+import superjson from "superjson"; // <-- 1. SuperJSON imported
 import { ErrorMessages } from "@/contracts/constants";
-import type { TrpcContext } from "./context"; // <-- Fixed to relative path
+import type { TrpcContext } from "./context"; 
 
-const t = initTRPC.context<TrpcContext>().create();
+// 2. Cleaned up the initTRPC call and added the transformer!
+const t = initTRPC.context<TrpcContext>().create({
+  transformer: superjson,
+});
 
 export const createRouter = t.router;
 export const publicQuery = t.procedure;
@@ -21,7 +25,7 @@ const requireAuth = t.middleware(async ({ ctx, next }) => {
 });
 
 // Middleware: Enforce a specific database role
-function requireRole(role: "user" | "admin") { // <-- Strictly typed to match your Schema enum!
+function requireRole(role: "user" | "admin") { 
   return t.middleware(async ({ ctx, next }) => {
     if (!ctx.user || ctx.user.role !== role) {
       throw new TRPCError({

@@ -61,7 +61,7 @@ function HeroSection() {
 }
 
 function StoriesPreview() {
-  const { data: stories, isLoading } = trpc.stories.featured.useQuery();
+ const { data: stories, isLoading } = trpc.stories.getApprovedStories.useQuery();
 
   return (
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-transparent">

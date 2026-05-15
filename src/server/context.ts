@@ -1,8 +1,11 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
-import { supabase } from "@/lib/supabase"; // Note: removed 'src/' to match standard Next.js aliases, adjust if needed!
+import { supabase } from "@/lib/supabase"; 
 import { db } from "../db"; 
-import { users, type User } from "../db/schema";
+import { users } from "../db/schema"; // <-- Removed the broken 'type User' import
 import { eq } from "drizzle-orm";
+
+// Generate the User type directly from the Drizzle table definition
+export type User = typeof users.$inferSelect;
 
 export type TrpcContext = {
   req: Request;

@@ -112,7 +112,7 @@ function StoriesPreview() {
 }
 
 function IntelPreview() {
-  const { data: intelLogs, isLoading } = trpc.intel.getAll.useQuery();
+ const { data: intelLogs, isLoading } = trpc.intel.getLibrary.useQuery();
 
   return (
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[#060810]/60 border-y border-border/10 relative z-10">

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema";
 type InsertUser = typeof schema.users.$inferInsert;
 import { getDb } from "./connection";
-import { env } from "../lib/env";
+import { env } from "@/lib/env"; // Fixed to use the standard Next.js alias
 
 export async function findUserByUnionId(unionId: string) {
   const rows = await getDb()

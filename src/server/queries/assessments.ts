@@ -15,7 +15,8 @@ export async function createAssessment(data: {
     score: data.score,
     category: data.category as any,
     recommendations: data.recommendations,
-  }).$returningId();
+  }).returning({ id: assessments.id });
+  
   return getDb().query.assessments.findFirst({
     where: eq(assessments.id, id),
   });

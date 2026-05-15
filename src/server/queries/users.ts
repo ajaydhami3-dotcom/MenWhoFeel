@@ -19,11 +19,11 @@ export async function upsertUser(data: InsertUser) {
     ...data,
   };
 
-  // Note: Auto-admin promotion logic was removed here. 
-  // All new signups will default to whatever your database schema defines (likely "user").
-
   await getDb()
     .insert(schema.users)
     .values(values)
-    .onDuplicateKeyUpdate({ set: updateSet });
+    .onConflictDoUpdate({
+      target: schema.users.unionId, // Targets the unique column to check for conflicts
+      set: updateSet,
+    });
 }

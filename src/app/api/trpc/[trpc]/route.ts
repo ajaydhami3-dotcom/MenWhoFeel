@@ -1,8 +1,9 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "@/server/router"; 
-import { createContext } from "@/server/context"; // Using the file we just fixed!
+import { createContext } from "@/server/context"; 
 
-export const dynamic = "force-dynamic"; // This prevents the 'Failed to collect page data' build error
+// This line is the fix. It forces the route to be dynamic.
+export const dynamic = "force-dynamic";
 
 const handler = (req: Request) =>
   fetchRequestHandler({

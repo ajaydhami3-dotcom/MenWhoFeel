@@ -1,13 +1,12 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { appRouter } from "@/server/routers/_app"; // Check this import matches your actual path!
+import { appRouter } from "@/server/router"; 
 
 const handler = (req: Request) =>
   fetchRequestHandler({
     endpoint: "/api/trpc",
     req,
     router: appRouter,
-    // FIX: We cast to 'any' to tell TypeScript to stand down 
-    // until we wire up the actual Supabase database context later.
+    // Bypassing strict typecheck for initial deployment
     createContext: () => ({} as any), 
   });
 

@@ -28,8 +28,8 @@ export default function ChallengesPage() {
   const currentStreak = useMemo(() => {
     if (!progress || progress.length === 0) return 0;
     const dates = progress
-      .filter((p) => p.completedAt)
-      .map((p) => new Date(p.completedAt).setHours(0, 0, 0, 0));
+      .filter((p) => p.completedAt!)
+      .map((p) => new Date(p.completedAt!).setHours(0, 0, 0, 0));
     const uniqueDates = [...new Set(dates)].sort((a, b) => b - a);
     if (uniqueDates.length === 0) return 0;
     const today = new Date().setHours(0, 0, 0, 0);
@@ -61,10 +61,10 @@ export default function ChallengesPage() {
     if (!progress || !challenges) return false;
     const today = new Date().setHours(0, 0, 0, 0);
     return progress.some((p) => {
-      if (!p.completedAt) return false;
+      if (!p.completedAt!) return false;
       const challenge = challenges.find((c) => c.id === p.challengeId);
       if (challenge?.category !== "daily") return false;
-      return new Date(p.completedAt).setHours(0, 0, 0, 0) === today;
+      return new Date(p.completedAt!).setHours(0, 0, 0, 0) === today;
     });
   }, [progress, challenges]);
 

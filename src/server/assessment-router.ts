@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
-import { db } from "../db"; 
+import { getDb } from "./queries/connection"; // <-- Swapped to getDb
 import { assessmentQuestions, assessmentResults, assessmentActionPlans } from "../db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 
@@ -11,11 +11,12 @@ export const assessmentRouter = createRouter({
   
   // 1. Fetch random active questions for the MCQ
   getQuestions: publicQuery.query(async () => {
-    return await db.select()
+    // <-- Added getDb() here
+    return await getDb().select()
       .from(assessmentQuestions)
       .where(eq(assessmentQuestions.active, true))
-      .orderBy(sql`RANDOM()`) // Randomizes the questions so the quiz stays fresh
-      .limit(5); // Change this number if you want more/less questions per quiz
+      .orderBy(sql`RANDOM()`) 
+      .limit(5); 
   }),
 
   // 2. Save the user's final generalized archetype
@@ -25,7 +26,8 @@ export const assessmentRouter = createRouter({
       resultCategory: z.string(),
     }))
     .mutation(async ({ input }) => {
-      return await db.insert(assessmentResults).values({
+      // <-- Added getDb() here
+      return await getDb().insert(assessmentResults).values({
         userIdentifier: input.userIdentifier,
         resultCategory: input.resultCategory,
       });
@@ -39,7 +41,8 @@ export const assessmentRouter = createRouter({
   getLatestResult: publicQuery
     .input(z.object({ userIdentifier: z.string() }))
     .query(async ({ input }) => {
-      const result = await db.select()
+      // <-- Added getDb() here
+      const result = await getDb().select()
         .from(assessmentResults)
         .where(eq(assessmentResults.userIdentifier, input.userIdentifier))
         .orderBy(desc(assessmentResults.createdAt))
@@ -52,7 +55,8 @@ export const assessmentRouter = createRouter({
   getActionPlan: publicQuery
     .input(z.object({ category: z.string() }))
     .query(async ({ input }) => {
-      const result = await db.select()
+      // <-- Added getDb() here
+      const result = await getDb().select()
         .from(assessmentActionPlans)
         .where(eq(assessmentActionPlans.category, input.category))
         .limit(1);

@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
-import { db } from "../db"; 
+import { getDb } from "./queries/connection"; // <-- Swapped to getDb
 import { stories } from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export const storiesRouter = createRouter({
   // 1. READ: Fetch only 'approved' stories to show on the board
   getApprovedStories: publicQuery.query(async () => {
-    return await db
+    // <-- Added getDb() here
+    return await getDb()
       .select()
       .from(stories)
       .where(eq(stories.status, "approved"))
@@ -22,7 +23,8 @@ export const storiesRouter = createRouter({
       authorName: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      return await db.insert(stories).values({
+      // <-- Added getDb() here
+      return await getDb().insert(stories).values({
         title: input.title,
         content: input.content,
         authorName: input.authorName || "Anonymous",

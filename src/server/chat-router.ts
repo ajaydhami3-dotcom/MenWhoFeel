@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createRouter, publicQuery, adminQuery } from "./middleware";
-import { db } from "../db"; 
+import { getDb } from "./queries/connection"; // <-- Swapped to getDb
 import { chatMessages } from "../db/schema";
 import { eq, desc, gt, and } from "drizzle-orm";
 
@@ -12,7 +12,8 @@ export const chatRouter = createRouter({
       // The 24-Hour Burn Timer
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-      return await db.select()
+      // <-- Added getDb() here
+      return await getDb().select()
         .from(chatMessages)
         .where(
           and(
@@ -30,7 +31,8 @@ export const chatRouter = createRouter({
     .query(async ({ input }) => {
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-      return await db.select()
+      // <-- Added getDb() here
+      return await getDb().select()
         .from(chatMessages)
         .where(gt(chatMessages.createdAt, twentyFourHoursAgo)) // Burn logic applied here too
         .orderBy(desc(chatMessages.createdAt))
@@ -46,7 +48,8 @@ export const chatRouter = createRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return await db.insert(chatMessages).values({
+      // <-- Added getDb() here
+      return await getDb().insert(chatMessages).values({
         authorName: input.authorName || "Anonymous",
         content: input.content,
         // Note: Your schema automatically sets status to "approved" by default!
@@ -55,7 +58,8 @@ export const chatRouter = createRouter({
 
   // 4. Admin: View all messages waiting for moderation
   pending: adminQuery.query(async () => {
-    return await db.select()
+    // <-- Added getDb() here
+    return await getDb().select()
       .from(chatMessages)
       .where(eq(chatMessages.status, "pending"))
       .orderBy(desc(chatMessages.createdAt));
@@ -65,7 +69,8 @@ export const chatRouter = createRouter({
   moderate: adminQuery
     .input(z.object({ id: z.number(), status: z.enum(["approved", "rejected"]) }))
     .mutation(async ({ input }) => {
-      return await db.update(chatMessages)
+      // <-- Added getDb() here
+      return await getDb().update(chatMessages)
         .set({ status: input.status })
         .where(eq(chatMessages.id, input.id))
         .returning();

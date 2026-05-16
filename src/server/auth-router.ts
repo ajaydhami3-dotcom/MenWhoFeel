@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware"; 
-import { supabase } from "@/lib/supabase"; // Keep this!
-import { db } from "../db"; // Add Drizzle
-import { users } from "../db/schema"; // Add your users table
+import { supabase } from "@/lib/supabase"; 
+import { getDb } from "./queries/connection"; // <-- Swapped to getDb
+import { users } from "../db/schema"; 
 
 export const authRouter = createRouter({
   // LOGIN - Handled purely by Supabase Auth
@@ -36,7 +36,8 @@ export const authRouter = createRouter({
       
       // 2. THE UPGRADE: Instantly create their profile in your Drizzle database
       if (data.user) {
-        await db.insert(users).values({
+        // <-- Added getDb() here
+        await getDb().insert(users).values({
           unionId: data.user.id, // This links your DB to Supabase Auth
           email: input.email,
           name: input.name || "Anonymous User",

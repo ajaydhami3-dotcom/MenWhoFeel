@@ -1,20 +1,22 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
-import { db } from "../db"; 
+import { getDb } from "./queries/connection"; // <-- Swapped to getDb
 import { challenges, userChallenges } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 export const challengesRouter = createRouter({
   // 1. Read: Get all active challenges
   getChallenges: publicQuery.query(async () => {
-    return await db.select().from(challenges).where(eq(challenges.active, true));
+    // <-- Added getDb() here
+    return await getDb().select().from(challenges).where(eq(challenges.active, true));
   }),
 
   // 2. Read: Get only the challenges THIS specific user has completed
   getUserProgress: publicQuery
     .input(z.object({ userIdentifier: z.string() }))
     .query(async ({ input }) => {
-      return await db
+      // <-- Added getDb() here
+      return await getDb()
         .select()
         .from(userChallenges)
         .where(eq(userChallenges.userIdentifier, input.userIdentifier));
@@ -24,7 +26,8 @@ export const challengesRouter = createRouter({
   completeChallenge: publicQuery
     .input(z.object({ challengeId: z.number(), userIdentifier: z.string() }))
     .mutation(async ({ input }) => {
-      return await db.insert(userChallenges).values({
+      // <-- Added getDb() here
+      return await getDb().insert(userChallenges).values({
         challengeId: input.challengeId,
         userIdentifier: input.userIdentifier,
         completed: true,

@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
-import { db } from "../db"; 
+import { getDb } from "./queries/connection"; // <-- Swapped to getDb
 import { articles, articleComments } from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export const intelRouter = createRouter({
   // 1. Fetch the main library
   getLibrary: publicQuery.query(async () => {
-    return await db.select()
+    // <-- Added getDb() here
+    return await getDb().select()
       .from(articles)
       .where(eq(articles.status, 'published'))
       .orderBy(desc(articles.createdAt));
@@ -17,7 +18,8 @@ export const intelRouter = createRouter({
   getArticle: publicQuery
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
-      const result = await db.select()
+      // <-- Added getDb() here
+      const result = await getDb().select()
         .from(articles)
         .where(eq(articles.slug, input.slug))
         .limit(1);
@@ -28,7 +30,8 @@ export const intelRouter = createRouter({
   getComments: publicQuery
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
-      return await db.select()
+      // <-- Added getDb() here
+      return await getDb().select()
         .from(articleComments)
         .where(eq(articleComments.articleSlug, input.slug))
         .orderBy(desc(articleComments.createdAt)); // Newest first
@@ -42,7 +45,8 @@ export const intelRouter = createRouter({
       content: z.string().min(1, "Comment cannot be empty"),
     }))
     .mutation(async ({ input }) => {
-      return await db.insert(articleComments).values({
+      // <-- Added getDb() here
+      return await getDb().insert(articleComments).values({
         articleSlug: input.slug,
         authorName: input.authorName || "Anonymous",
         content: input.content,

@@ -1,27 +1,24 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from '../../db/schema'; 
+import * as schema from '../../db/schema'; // Keep your original path here
 
-// Standard Next.js pattern to prevent exhausting DB connections during hot-reloads
+// We explicitly type the global cache using your schema so TypeScript knows all your tables
 const globalForDb = globalThis as unknown as {
-  db: ReturnType<typeof drizzle> | undefined;
+  db: PostgresJsDatabase<typeof schema> | undefined;
 };
 
 export function getDb() {
-  // If we already have a connection, reuse it
   if (globalForDb.db) {
     return globalForDb.db;
   }
 
   const connectionString = process.env.DATABASE_URL;
 
-  // We only throw this error if a function actually tries to query the database,
-  // preventing it from crashing the build worker.
   if (!connectionString) {
     throw new Error("DATABASE_URL is missing!");
   }
 
-  // 🚨 ADDED SSL: 'REQUIRE' HERE 🚨
+  // 🚨 SSL: 'REQUIRE' 🚨
   const client = postgres(connectionString, { 
     prepare: false, 
     ssl: 'require' 

@@ -1,6 +1,6 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { supabase } from "@/lib/supabase"; 
-import { getDb } from "./db/connection"; // <-- Updated to correctly import getDb
+import { getDb } from "../db/connection";// <-- Updated to correctly import getDb
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 

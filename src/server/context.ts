@@ -1,8 +1,8 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { supabase } from "@/lib/supabase"; 
-import { getDb } from "../db/connection";// <-- Updated to correctly import getDb
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getDb } from "./queries/connection";
 
 export type User = typeof users.$inferSelect;
 
@@ -25,7 +25,8 @@ export async function createContext(
       const { data, error } = await supabase.auth.getUser(token);
 
       if (data.user && !error) {
-        // <-- Updated to call getDb() instead of just db
+        
+        // 🚨 YOUR CURSOR GOES HERE 🚨
         const dbUser = await getDb().select()
           .from(users)
           .where(eq(users.unionId, data.user.id))

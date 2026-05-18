@@ -10,7 +10,6 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  // Disclaimer moved to footer — nav only shows what helps a man right now
   const navLinks = [
     { href: "/about", label: "About", icon: Heart },
     { href: "/crisis-helpline", label: "Crisis Helpline", icon: Phone },
@@ -22,10 +21,10 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-[#060810]/90 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
-        {/* Logo */}
+        {/* Logo — always top-left */}
         <Link href="/" className="flex items-center gap-3 group">
-          <img src="/logo.png" alt="Men Who Feel" className="h-10 w-auto" />
-          <span className="hidden sm:inline text-lg font-bold text-gradient">
+          <img src="/logo.png" alt="Men Who Feel" className="h-8 w-auto" />
+          <span className="hidden sm:inline text-base font-bold text-gradient">
             MenWhoFeel
           </span>
         </Link>
@@ -54,7 +53,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           <Link href="/assessment">
             <Button className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold shadow-md shadow-blue-500/20">
-              See where you stand
+              Check In
             </Button>
           </Link>
         </div>
@@ -91,7 +90,7 @@ export default function Navbar() {
           ))}
           <Link href="/assessment" onClick={() => setMobileOpen(false)}>
             <Button className="w-full mt-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold">
-              See where you stand
+              Check In
             </Button>
           </Link>
         </div>

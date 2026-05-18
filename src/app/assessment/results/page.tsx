@@ -4,148 +4,193 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Activity, Target, Users, BookOpen, 
-  ArrowRight, Shield, Flame, Zap 
+import {
+  Activity, Users, BookOpen,
+  ArrowRight, Wrench, MessageSquare
 } from "lucide-react";
 import { Suspense } from "react";
 
-// --- THE DYNAMIC CURE DATABASE ---
-const ARCHETYPES: Record<string, any> = {
-  tactician: { 
-    title: "The Tactician", 
-    desc: "You rely on discipline, systems, and cold logic. When crisis hits, you stabilize the environment and execute the plan without emotion.", 
-    icon: Target, 
-    color: "text-blue-400", 
+const RESULTS: Record<string, any> = {
+  overloaded: {
+    title: "Mentally Overloaded",
+    tagline: "You're carrying more than you should have to.",
+    desc: "Things are piling up faster than you can process them. You're still functioning, but something has to give. That's not weakness — it's information.",
+    color: "text-blue-400",
     bg: "bg-blue-500/10",
-    border: "border-blue-500/30",
-    protocol: [
-      { step: "1. Optimize the Machine", desc: "Your physical routine is your anchor. Start a daily physical challenge to lock in your baseline.", action: "Start Daily Challenge", link: "/challenges", icon: Activity, stepBorder: "border-blue-500/30" },
-      { step: "2. Analyze Field Reports", desc: "Read how other Tacticians navigated burnout and system failure.", action: "Read Field Reports", link: "/stories", icon: BookOpen, stepBorder: "border-blue-500/30" },
-      { step: "3. Share the Framework", desc: "Jump into Comms. Other men need your logical approach to stabilize their own situations.", action: "Open Live Comms", link: "/community", icon: Users, stepBorder: "border-blue-500/30" }
-    ]
+    border: "border-blue-500/20",
+    microcopy: "Some days holding yourself together takes everything.",
+    nextSteps: [
+      { label: "Read stories from men in the same place", action: "Read Stories", href: "/stories", icon: BookOpen },
+      { label: "Find tools for managing mental load", action: "Explore Toolkit", href: "/guides", icon: Wrench },
+      { label: "Talk to other men anonymously", action: "Join Community", href: "/community", icon: Users },
+    ],
   },
-  operator: { 
-    title: "The Operator", 
-    desc: "You are heavily action-biased. You move fast, adapt instantly, and grind through obstacles through sheer force of will.", 
-    icon: Flame, 
-    color: "text-orange-500",
-    bg: "bg-orange-500/10",
-    border: "border-orange-500/30",
-    protocol: [
-      { step: "1. Channel the Output", desc: "You need a target. Lock in a weekly challenge to direct your energy efficiently.", action: "View Challenges", link: "/challenges", icon: Target, stepBorder: "border-orange-500/30" },
-      { step: "2. Ground Truth", desc: "Operators burn out because they don't pause. Read stories of men who pushed too hard.", action: "Read Field Reports", link: "/stories", icon: BookOpen, stepBorder: "border-orange-500/30" },
-      { step: "3. Squad Sync", desc: "Link up with the community. Fast movers need a solid team to check their blind spots.", action: "Open Live Comms", link: "/community", icon: Users, stepBorder: "border-orange-500/30" }
-    ]
+  disconnected: {
+    title: "Emotionally Disconnected",
+    tagline: "You're present, but not quite here.",
+    desc: "You may be going through the motions without feeling much. That flatness is its own kind of heaviness. It's worth paying attention to.",
+    color: "text-teal-400",
+    bg: "bg-teal-500/10",
+    border: "border-teal-500/20",
+    microcopy: "Feeling numb isn't the same as being okay.",
+    nextSteps: [
+      { label: "Stories from men who felt the same way", action: "Read Stories", href: "/stories", icon: BookOpen },
+      { label: "Community check-in — just listen if you like", action: "Join Community", href: "/community", icon: MessageSquare },
+      { label: "Mental health guides and resources", action: "Explore Toolkit", href: "/guides", icon: Wrench },
+    ],
   },
-  vanguard: { 
-    title: "The Vanguard", 
-    desc: "Your strength is your network. You pull others up with you, seek counsel from mentors, and lead from the front lines.", 
-    icon: Shield, 
+  pressure: {
+    title: "Running on Pressure",
+    tagline: "You're keeping it together — but at a cost.",
+    desc: "You're functional. You show up. But internally, you're running hot. The pressure isn't going away on its own, and ignoring it has a shelf life.",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    microcopy: "Small improvements matter. You don't have to overhaul everything.",
+    nextSteps: [
+      { label: "Read from men who've been here", action: "Read Stories", href: "/stories", icon: BookOpen },
+      { label: "Practical resources to reduce pressure", action: "Explore Toolkit", href: "/guides", icon: Wrench },
+      { label: "Talk anonymously with other men", action: "Join Community", href: "/community", icon: Users },
+    ],
+  },
+  burnout: {
+    title: "Burned Out",
+    tagline: "You've been running on empty for a while.",
+    desc: "Rest isn't restoring you. That's a signal. Burnout isn't laziness — it's the result of giving everything without ever refilling. Something needs to change.",
+    color: "text-rose-400",
+    bg: "bg-rose-500/10",
+    border: "border-rose-500/20",
+    microcopy: "You can't pour from an empty cup. That's not a cliché — it's just true.",
+    nextSteps: [
+      { label: "Stories from men who burned out and found their way", action: "Read Stories", href: "/stories", icon: BookOpen },
+      { label: "Recovery resources in the toolkit", action: "Explore Toolkit", href: "/guides", icon: Wrench },
+      { label: "Community — you don't have to talk, just read", action: "Join Community", href: "/community", icon: MessageSquare },
+    ],
+  },
+  directionless: {
+    title: "Directionless",
+    tagline: "You're not sure where you're going right now.",
+    desc: "That uncertainty is unsettling. When you don't know what you're working toward, everything feels heavier. You're not lost — you're just between things.",
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
+    border: "border-indigo-500/20",
+    microcopy: "Not knowing where you're going isn't the same as being stuck.",
+    nextSteps: [
+      { label: "Stories from men finding their footing", action: "Read Stories", href: "/stories", icon: BookOpen },
+      { label: "Guides that help with direction and purpose", action: "Explore Toolkit", href: "/guides", icon: Wrench },
+      { label: "Talk to other men in the same place", action: "Join Community", href: "/community", icon: Users },
+    ],
+  },
+  isolated: {
+    title: "Isolated but Functional",
+    tagline: "You're doing fine on the outside. Less so on the inside.",
+    desc: "You haven't broken down. You're still showing up. But something is going unsaid, and the silence is building. Connection doesn't have to mean vulnerability — it just means honesty.",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
-    protocol: [
-      { step: "1. Lead by Example", desc: "Take on a daily discipline challenge. The pack follows the leader's baseline.", action: "Start Daily Challenge", link: "/challenges", icon: Activity, stepBorder: "border-emerald-500/30" },
-      { step: "2. Gather Intel", desc: "Read the stories of other men leading their families and squads through hardship.", action: "Read Field Reports", link: "/stories", icon: BookOpen, stepBorder: "border-emerald-500/30" },
-      { step: "3. Hold the Line", desc: "Get into the Live Comms. There are men there right now who need your guidance.", action: "Open Live Comms", link: "/community", icon: Users, stepBorder: "border-emerald-500/30" }
-    ]
+    border: "border-emerald-500/20",
+    microcopy: "You don't have to carry everything silently.",
+    nextSteps: [
+      { label: "Read stories from men who've been isolated", action: "Read Stories", href: "/stories", icon: BookOpen },
+      { label: "Community — anonymous and low-pressure", action: "Join Community", href: "/community", icon: MessageSquare },
+      { label: "Resources for connection and mental health", action: "Explore Toolkit", href: "/guides", icon: Wrench },
+    ],
   },
-  civilian: { 
-    title: "The Civilian", 
-    desc: "You are surviving, but reactive. You are letting circumstances dictate your actions. It is time to enter the forge and take control.", 
-    icon: Activity, 
-    color: "text-zinc-400",
-    bg: "bg-zinc-500/10",
-    border: "border-zinc-500/30",
-    protocol: [
-      { step: "1. Stop the Bleeding", desc: "Before we fix the mind, we fix the machine. Lock in a basic daily physical habit.", action: "Start Daily Challenge", link: "/challenges", icon: Target, stepBorder: "border-zinc-500/30" },
-      { step: "2. Gain Perspective", desc: "You are trapped in your own head. Read the survival logs of men who have been exactly where you are.", action: "Read Field Reports", link: "/stories", icon: BookOpen, stepBorder: "border-zinc-500/30" },
-      { step: "3. Break the Isolation", desc: "Isolation multiplies anxiety. Jump into live comms. You don't have to speak—just listen.", action: "Open Live Comms", link: "/community", icon: Users, stepBorder: "border-zinc-500/30" }
-    ]
-  }
+  // Legacy categories from old DB
+  functional: {
+    title: "Isolated but Functional",
+    tagline: "You're doing fine on the outside. Less so on the inside.",
+    desc: "You're holding it together. But something is going unsaid, and the silence is building.",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    microcopy: "You don't have to carry everything silently.",
+    nextSteps: [
+      { label: "Read stories from men who've been there", action: "Read Stories", href: "/stories", icon: BookOpen },
+      { label: "Community — anonymous, low-pressure", action: "Join Community", href: "/community", icon: MessageSquare },
+      { label: "Resources and toolkit", action: "Explore Toolkit", href: "/guides", icon: Wrench },
+    ],
+  },
+};
+
+// Catch-all for legacy DB categories
+const legacyMap: Record<string, string> = {
+  tactician: "pressure",
+  operator: "burnout",
+  vanguard: "isolated",
+  civilian: "overloaded",
 };
 
 function ResultsContent() {
   const searchParams = useSearchParams();
-  const type = searchParams.get("type") || "civilian"; // Fallback if URL is empty
-  
-  // Get the matching archetype data
-  const result = ARCHETYPES[type] || ARCHETYPES["civilian"];
-  const ResultIcon = result.icon;
+  const rawType = searchParams.get("type") || "overloaded";
+  const type = RESULTS[rawType] ? rawType : (legacyMap[rawType] || "overloaded");
+  const result = RESULTS[type];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12 pb-24">
-      {/* --- SECTION 1: THE DIAGNOSIS --- */}
-      <section className="text-center space-y-6">
-        <div className={`inline-flex items-center justify-center p-4 ${result.bg} rounded-full mb-2`}>
-          <ResultIcon className={`w-10 h-10 ${result.color}`} />
+    <div className="max-w-3xl mx-auto space-y-10 pb-24">
+
+      {/* Result header */}
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Your reflection result</p>
+          <h1 className={`text-3xl md:text-4xl font-bold ${result.color} mb-1`}>
+            {result.title}
+          </h1>
+          <p className="text-base text-muted-foreground font-medium">{result.tagline}</p>
         </div>
-        <h1 className={`text-4xl md:text-5xl font-black uppercase tracking-tight ${result.color}`}>
-          {result.title}
-        </h1>
-        
-        <Card className={`bg-card/80 backdrop-blur-sm border ${result.border} max-w-2xl mx-auto relative overflow-hidden card-glow`}>
-          <div className={`absolute top-0 left-0 w-1 h-full bg-current ${result.color}`} />
-          <CardContent className="p-8">
-            <h2 className="text-xl font-bold text-foreground mb-4 uppercase tracking-wider">Baseline Established</h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">
-              {result.desc}
-            </p>
+
+        <Card className={`bg-card/80 backdrop-blur-sm border ${result.border} card-glow`}>
+          <CardContent className="p-6 md:p-7">
+            <p className="text-foreground leading-relaxed mb-4">{result.desc}</p>
+            <p className={`text-sm font-medium ${result.color} italic`}>"{result.microcopy}"</p>
           </CardContent>
         </Card>
       </section>
 
-      {/* --- SECTION 2: THE CURE (TACTICAL PROTOCOL) --- */}
-      <section className="space-y-6 pt-8 border-t border-border/40">
-        <div className="flex items-center gap-3 mb-8">
-          <Zap className={`w-6 h-6 ${result.color}`} />
-          <h2 className="text-3xl font-bold text-foreground">Your Tactical Protocol</h2>
+      {/* Next steps */}
+      <section className="space-y-4 pt-4 border-t border-border/30">
+        <div className="mb-5">
+          <h2 className="text-xl font-bold text-foreground">Where to go from here</h2>
+          <p className="text-sm text-muted-foreground mt-1">A few places that might help right now.</p>
         </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {result.protocol.map((item: any, index: number) => {
-            const Icon = item.icon;
-            // Make the 3rd item span both columns
-            const spanClass = index === 2 ? "md:col-span-2" : "";
-            
+        <div className="space-y-3">
+          {result.nextSteps.map((step: any, i: number) => {
+            const Icon = step.icon;
             return (
-              <Card key={index} className={`bg-card/80 border ${item.stepBorder} hover:bg-secondary/20 transition-colors group ${spanClass}`}>
-                <CardContent className={`p-6 ${index === 2 ? 'sm:p-8 flex flex-col sm:flex-row items-center gap-6' : ''}`}>
-                  <div className={`flex items-center gap-4 mb-4 ${index === 2 ? 'mb-0' : ''}`}>
-                    <div className={`p-3 ${result.bg} rounded-lg shrink-0`}>
-                      <Icon className={`w-6 h-6 ${result.color}`} />
-                    </div>
-                    {index !== 2 && <h3 className="text-xl font-bold text-foreground">{item.step}</h3>}
+              <div key={i} className={`flex items-center justify-between p-4 md:p-5 rounded-xl bg-card/60 border ${result.border} hover:bg-card/80 transition-colors group`}>
+                <div className="flex items-start gap-4">
+                  <div className={`p-2 ${result.bg} rounded-lg shrink-0 mt-0.5`}>
+                    <Icon className={`w-4 h-4 ${result.color}`} />
                   </div>
-                  
-                  <div className={index === 2 ? "flex-1 text-center sm:text-left" : ""}>
-                    {index === 2 && <h3 className="text-xl font-bold text-foreground mb-2">{item.step}</h3>}
-                    <p className={`text-muted-foreground text-sm ${index === 2 ? 'max-w-lg mb-0' : 'mb-6'}`}>
-                      {item.desc}
-                    </p>
-                  </div>
-
-                  <Link href={item.link} className={index === 2 ? "w-full sm:w-auto" : ""}>
-                    <Button className={`w-full ${index === 2 ? 'sm:w-auto px-8' : ''} bg-secondary hover:bg-secondary/80 text-foreground font-semibold border border-border/50`}>
-                      {item.action} {index !== 2 && <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.label}</p>
+                </div>
+                <Link href={step.href} className="shrink-0 ml-4">
+                  <Button size="sm" variant="outline" className={`border-border/50 text-foreground hover:bg-secondary/40 text-xs whitespace-nowrap`}>
+                    {step.action} <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
+                  </Button>
+                </Link>
+              </div>
+            );
           })}
         </div>
       </section>
+
+      {/* Redo */}
+      <div className="pt-4 text-center">
+        <Link href="/assessment">
+          <Button variant="ghost" className="text-muted-foreground hover:text-foreground text-sm">
+            Take the reflection again
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }
 
-// Next.js requires useSearchParams to be wrapped in a Suspense boundary
 export default function AssessmentResultsPage() {
   return (
-    <div className="min-h-screen pt-24 px-4 sm:px-6 lg:px-8 bg-transparent">
-      <Suspense fallback={<div className="text-center pt-20 animate-pulse text-muted-foreground">Decoding Protocol...</div>}>
+    <div className="min-h-screen pt-16 px-4 sm:px-6 lg:px-8 bg-transparent">
+      <Suspense fallback={<div className="text-center pt-20 animate-pulse text-muted-foreground text-sm">Working out your results...</div>}>
         <ResultsContent />
       </Suspense>
     </div>

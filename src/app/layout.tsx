@@ -10,8 +10,14 @@ import Footer from "@/components/Footer";
 const manrope = Manrope({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Men Who Feel",
-  description: "A space for men to drop the weight, share what's real, and move through it.",
+  title: "Men Who Feel — The one place you don't have to explain yourself",
+  description: "A space for men to drop the weight, share what's real, and find their footing alongside men going through the same thing. Anonymous. No account. Free.",
+  openGraph: {
+    title: "Men Who Feel — The one place you don't have to explain yourself",
+    description: "A space for men to drop the weight, share what's real, and find their footing. Anonymous. No account. Free.",
+    siteName: "Men Who Feel",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

@@ -204,3 +204,5 @@ export default function StoriesPage() {
     </div>
   );
 }
+// Note: metadata exported from a separate server layout or via next-seo
+// Individual page titles set via document.title in useEffect if needed

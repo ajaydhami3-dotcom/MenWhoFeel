@@ -14,24 +14,22 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileOpen(false);
   }, [pathname]);
 
   const mainLinks = [
     { href: "/", label: "Home", icon: LayoutDashboard },
-    { href: "/assessment", label: "Check yourself in", icon: Flame },
-    { href: "/challenges", label: "Challenges", icon: Target },
-    { href: "/stories", label: "Stories", icon: BookOpen },
+    { href: "/assessment", label: "Check In", icon: Flame },
     { href: "/community", label: "Community", icon: Heart },
+    { href: "/stories", label: "Stories", icon: BookOpen },
+    { href: "/challenges", label: "Challenges", icon: Target },
     { href: "/guides", label: "The Toolkit", icon: Wrench },
   ];
 
-  const journeyLinks = [
-    { href: "/assessment/history", label: "Check-in history", icon: ScrollText },
-    { href: "/challenges/progress", label: "My progress", icon: Target },
-  ];
+  // Journey links only shown if user has done a check-in (localStorage check)
+  // For now, hidden entirely to avoid confusion with the "no account" promise
+  // const journeyLinks = [...];
 
   const isActive = (path: string) => {
     if (path === "/" && pathname !== "/") return false;
@@ -41,10 +39,10 @@ export default function Sidebar() {
   return (
     <>
       {/* --- MOBILE HAMBURGER TRIGGER --- */}
-      {/* This button appears on the top left of mobile screens */}
       <button
         onClick={() => setIsMobileOpen(true)}
         className="lg:hidden fixed top-3 left-4 z-40 p-2 bg-[#060810] border border-slate-800 rounded-md text-slate-300 hover:text-white shadow-lg"
+        aria-label="Open navigation"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -66,7 +64,7 @@ export default function Sidebar() {
       >
         {/* Mobile Header with Close Button */}
         <div className="lg:hidden flex items-center justify-between p-4 border-b border-border/20 shrink-0">
-          <span className="font-bold text-white uppercase tracking-widest text-sm">Menu</span>
+          <span className="font-bold text-white uppercase tracking-widest text-sm">Explore</span>
           <button onClick={() => setIsMobileOpen(false)} className="text-slate-400 hover:text-white">
             <X className="h-5 w-5" />
           </button>
@@ -104,31 +102,7 @@ export default function Sidebar() {
             </nav>
           </div>
 
-          <div className="border-t border-border/20 mx-4 mb-6" />
-
-          {/* My Journey */}
-          <div className="px-3 mb-6">
-            {(!isCollapsed || isMobileOpen) && (
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 px-2 transition-opacity duration-300">
-                My Journey
-              </h3>
-            )}
-            <nav className="space-y-1">
-              {journeyLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  title={isCollapsed ? link.label : undefined}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors whitespace-nowrap overflow-hidden"
-                >
-                  <link.icon className="h-5 w-5 shrink-0" />
-                  {(!isCollapsed || isMobileOpen) && <span>{link.label}</span>}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          {/* Privacy Promise - Auto hides when desktop sidebar is collapsed */}
+          {/* Privacy Promise */}
           {(!isCollapsed || isMobileOpen) && (
             <div className="mx-4 mt-2 p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/15 transition-opacity duration-300">
               <div className="flex items-center gap-2 mb-1.5">

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Camera, Play, MessageSquare, Send, Mail, Heart, Shield, FileText, AlertTriangle, Phone } from "lucide-react";
+import { Camera, Play, MessageSquare, Mail, Heart, Shield, FileText, AlertTriangle, Phone } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -14,15 +14,15 @@ export default function Footer() {
               <span className="text-lg font-bold text-gradient">MenWhoFeel</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              A space where men don't have to explain themselves. Feel it, say it, move through it.
+              A space where men don&apos;t have to explain themselves. Feel it, say it, move through it.
             </p>
-            {/* Crisis line surfaced in footer too */}
+            {/* Crisis link — global, not US-specific */}
             <Link
               href="/crisis-helpline"
               className="inline-flex items-center gap-2 text-xs text-amber-400 hover:text-amber-300 transition-colors"
             >
               <Phone className="h-3 w-3" />
-              Crisis helpline — text HOME to 741741
+              Crisis helplines worldwide →
             </Link>
           </div>
 
@@ -37,7 +37,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Legal — disclaimer now lives here */}
+          {/* Legal */}
           <div>
             <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Legal</h4>
             <ul className="space-y-2">
@@ -48,7 +48,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Social */}
+          {/* Social — only live links shown */}
           <div>
             <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Connect</h4>
             <div className="flex flex-wrap gap-3">
@@ -58,12 +58,7 @@ export default function Footer() {
               <a href="https://youtube.com/@menwhofeel.club" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" aria-label="YouTube">
                 <Play className="h-4 w-4 text-muted-foreground hover:text-primary" />
               </a>
-              <a href="#" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" title="X — coming soon" aria-label="X / Twitter">
-                <Send className="h-4 w-4 text-muted-foreground hover:text-primary" />
-              </a>
-              <a href="#" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" title="Discord — coming soon" aria-label="Discord">
-                <MessageSquare className="h-4 w-4 text-muted-foreground hover:text-primary" />
-              </a>
+              {/* X and Discord removed until accounts are live */}
             </div>
             <div className="mt-4 text-xs text-muted-foreground space-y-1">
               <p>@menwhofeel.club</p>

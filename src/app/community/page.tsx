@@ -1,4 +1,5 @@
 "use client";
+// metadata must be in a server component; SEO handled via layout default
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Send, MessageSquare, ShieldAlert, User, Activity } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+
+// Seeded messages shown when the community is empty
+const SEED_MESSAGES = [
+  { id: -1, authorName: "anon", content: "First time posting here. I've been carrying a lot of work stress and I don't know who to tell. Work's fine on paper. Inside it's not.", createdAt: new Date(Date.now() - 1000 * 60 * 45) },
+  { id: -2, authorName: "m_uk", content: "Lost my temper with my kid last night over nothing. Felt awful afterwards. Anyone else struggle with that gap between who you want to be and who you actually are in the moment?", createdAt: new Date(Date.now() - 1000 * 60 * 110) },
+  { id: -3, authorName: "anon", content: "Three months since a close friend died. People stopped checking in after the first month. Grief doesn't just stop.", createdAt: new Date(Date.now() - 1000 * 60 * 180) },
+  { id: -4, authorName: "dk_anon", content: "Took a mental health day today. First one in 3 years. Strange how guilty it made me feel.", createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5) },
+  { id: -5, authorName: "anon", content: "Relationship ended last week. I'm more sad about losing the friendship than anything else. Didn't expect that.", createdAt: new Date(Date.now() - 1000 * 60 * 60 * 9) },
+  { id: -6, authorName: "anon", content: "You don't have to be in crisis to come here. I'm just tired and wanted somewhere to say it.", createdAt: new Date(Date.now() - 1000 * 60 * 60 * 14) },
+];
+
+function formatRelativeTime(date: Date): string {
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins} min ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  if (diffDays === 1) return "yesterday";
+  return `${diffDays} days ago`;
+}
 
 export default function CommunityPage() {
   const [messages, setMessages] = useState<
@@ -22,26 +47,19 @@ export default function CommunityPage() {
     onSuccess: (newMsg) => {
       if (newMsg) {
         const msgToAdd = Array.isArray(newMsg) ? newMsg[0] : newMsg;
-        
-        // Intercept the string and convert it back to a real Date object
         const formattedMsg = {
           ...msgToAdd,
           createdAt: new Date(msgToAdd.createdAt)
         };
-
-        // Pass it into state, using 'as any' to bypass the final strict type check
         setMessages((prev) => [...prev, formattedMsg as any]);
       }
       setContent("");
     },
   });
 
-  // BULLETPROOF INITIAL MESSAGES LOAD
   useEffect(() => {
     if (initialMessages) {
       let rawMessages: any[] = [];
-      
-      // Extract the array regardless of how the backend wrapped it
       if (Array.isArray(initialMessages)) {
         rawMessages = initialMessages;
       } else if ((initialMessages as any).messages) {
@@ -50,14 +68,13 @@ export default function CommunityPage() {
         rawMessages = (initialMessages as any).data;
       }
 
-      // Intercept the array and convert ALL date strings to real Date objects
       const formattedMessages = [...rawMessages].reverse().map(msg => ({
         ...msg,
         createdAt: msg.createdAt ? new Date(msg.createdAt) : new Date()
       }));
 
-      // Set the sanitized array into state
-      setMessages(formattedMessages as any);
+      // If no real messages, show seeds
+      setMessages(formattedMessages.length > 0 ? formattedMessages as any : SEED_MESSAGES as any);
     }
   }, [initialMessages]);
 
@@ -65,7 +82,6 @@ export default function CommunityPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Poll for new messages every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       utils.chat.recent.invalidate();
@@ -94,7 +110,7 @@ export default function CommunityPage() {
             </div>
             <h1 className="text-5xl font-black italic uppercase tracking-tighter">Community</h1>
             <p className="text-zinc-500 font-medium mt-3 max-w-xl">
-              Say what's on your mind. Listen to what's on someone else's. Messages disappear after 24 hours.
+              Say what&apos;s on your mind. Listen to what&apos;s on someone else&apos;s. Messages disappear after 24 hours.
             </p>
           </div>
         </div>
@@ -105,11 +121,11 @@ export default function CommunityPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-3 font-bold uppercase tracking-widest text-zinc-300">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Global channel
+                Open space
               </CardTitle>
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500">
                 <ShieldAlert className="h-4 w-4 text-blue-500" />
-                Moderated
+                Community guidelines enforced
               </div>
             </div>
           </CardHeader>
@@ -117,15 +133,6 @@ export default function CommunityPage() {
           <CardContent className="p-0">
             {/* Messages */}
             <div className="h-[500px] overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
-              {messages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-zinc-600">
-                  <MessageSquare className="h-12 w-12 mb-4 opacity-20" />
-                  <p className="font-medium uppercase tracking-widest text-sm">
-                    Nothing here yet. Be the first to say something.
-                  </p>
-                </div>
-              )}
-
               {messages.map((msg, index) => (
                 <div key={msg.id || index} className="flex gap-4 group">
                   <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center group-hover:border-blue-500/50 transition-colors">
@@ -135,7 +142,7 @@ export default function CommunityPage() {
                     <div className="flex items-baseline gap-3 mb-1">
                       <span className="text-sm font-bold text-zinc-200">{msg.authorName}</span>
                       <span className="text-[10px] font-black tracking-widest uppercase text-zinc-600">
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {formatRelativeTime(new Date(msg.createdAt))}
                       </span>
                     </div>
                     <p className="text-zinc-400 text-sm leading-relaxed break-words bg-black/20 p-3 rounded-xl rounded-tl-none border border-white/5 inline-block">
@@ -149,6 +156,9 @@ export default function CommunityPage() {
 
             {/* Input */}
             <div className="border-t border-white/5 p-4 bg-black/40">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-3 text-center">
+                No name, no account — just type and post
+              </p>
               <div className="flex gap-3 mb-3">
                 <Input
                   placeholder="Name or handle (optional)"

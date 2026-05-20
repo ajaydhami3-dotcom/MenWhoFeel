@@ -10,6 +10,30 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+// Fallback seed resources shown when the DB has no content yet
+const SEED_RESOURCES: Record<string, Array<{ id: string; name: string; url: string; type: string; category: string }>> = {
+  "Mental Fortitude": [
+    { id: "s1", name: "How to process difficult emotions — a practical guide", url: "https://www.headspace.com/mindfulness/emotional-wellness", type: "link", category: "Mental Fortitude" },
+    { id: "s2", name: "Man Therapy — humour-forward mental health resource for men", url: "https://mantherapy.org", type: "link", category: "Mental Fortitude" },
+    { id: "s3", name: "Lost Connections by Johann Hari — why we get depressed and how to reconnect", url: "https://www.goodreads.com/book/show/34921573", type: "book", category: "Mental Fortitude" },
+  ],
+  "Financial Survival & Skills": [
+    { id: "s4", name: "Budgeting for people who hate budgeting — simple framework", url: "https://www.moneysavingexpert.com/banking/budget-planning", type: "link", category: "Financial Survival & Skills" },
+    { id: "s5", name: "The Total Money Makeover by Dave Ramsey — debt-free plan", url: "https://www.goodreads.com/book/show/78427", type: "book", category: "Financial Survival & Skills" },
+    { id: "s6", name: "Free Introduction to Personal Finance — Khan Academy", url: "https://www.khanacademy.org/college-careers-more/personal-finance", type: "video", category: "Financial Survival & Skills" },
+  ],
+  "Stress & Relationships": [
+    { id: "s7", name: "4-7-8 breathing explained — simple panic reset", url: "https://www.healthline.com/health/4-7-8-breathing", type: "link", category: "Stress & Relationships" },
+    { id: "s8", name: "How to stop a fight before it starts — communication basics", url: "https://www.gottman.com/blog/manage-conflict-in-relationships", type: "link", category: "Stress & Relationships" },
+    { id: "s9", name: "Why Men Don't Ask for Help — Andrew Fuller (TEDx)", url: "https://www.youtube.com/watch?v=example", type: "video", category: "Stress & Relationships" },
+  ],
+  "Physical Fundamentals": [
+    { id: "s10", name: "Sleep hygiene — what actually works and what doesn't", url: "https://www.sleepfoundation.org/sleep-hygiene", type: "link", category: "Physical Fundamentals" },
+    { id: "s11", name: "5-minute morning movement — no gym required", url: "https://www.youtube.com/results?search_query=5+minute+morning+stretch+men", type: "video", category: "Physical Fundamentals" },
+    { id: "s12", name: "Why exercise is the closest thing to a mental health cure", url: "https://www.apa.org/topics/exercise-fitness/stress", type: "link", category: "Physical Fundamentals" },
+  ],
+};
+
 const CATEGORY_CONFIG = {
   "Mental Fortitude": {
     icon: Brain,
@@ -138,19 +162,21 @@ export default function ResourcesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const { data: resources, isLoading } = trpc.guides.getAllResources.useQuery();
 
+  const cats = [
+    "Mental Fortitude",
+    "Financial Survival & Skills",
+    "Stress & Relationships",
+    "Physical Fundamentals",
+  ];
+
   const filteredData = useMemo(() => {
-    if (!resources) return [];
     const term = searchTerm.toLowerCase();
-    const cats = [
-      "Mental Fortitude",
-      "Financial Survival & Skills",
-      "Stress & Relationships",
-      "Physical Fundamentals",
-    ];
+    // Use DB resources if available, otherwise seeds
+    const source = resources && resources.length > 0 ? resources : Object.values(SEED_RESOURCES).flat();
     return cats
       .map((cat) => ({
         title: cat,
-        items: resources.filter(
+        items: source.filter(
           (r) =>
             r.category === cat &&
             (r.name.toLowerCase().includes(term) || r.category.toLowerCase().includes(term))
@@ -158,8 +184,6 @@ export default function ResourcesPage() {
       }))
       .filter((c) => c.items.length > 0 || searchTerm === "");
   }, [resources, searchTerm]);
-
-  if (isLoading) return null;
 
   return (
     <div className="min-h-screen py-12 px-4">
@@ -191,11 +215,19 @@ export default function ResourcesPage() {
               Free
             </span>
           </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {filteredData.map((cat) => (
-              <ResourceCard key={cat.title} title={cat.title} items={cat.items} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid md:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-64 rounded-xl bg-card/40 border border-border/40 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              {filteredData.map((cat) => (
+                <ResourceCard key={cat.title} title={cat.title} items={cat.items} />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Coming soon */}

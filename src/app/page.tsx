@@ -32,16 +32,16 @@ function HeroSection() {
               </span>
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground mb-5 leading-relaxed max-w-lg">
-              A space built for men to drop the weight, share what&apos;s real, and find their footing alongside men going through the same thing.
+              Share what&apos;s real. Find your footing. You&apos;re not alone.
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium mb-8">
               <Lock className="h-3 w-3" />
-              Anonymous. No account. Nothing stored.
+              Anonymous. No account. Nothing tied to you.
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link href="/assessment">
                 <Button size="lg" className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold px-7 py-5 shadow-lg shadow-blue-500/20 transition-all">
-                  Start Check-In
+                  Check In
                 </Button>
               </Link>
               <Link href="/stories">
@@ -70,12 +70,12 @@ function HeroSection() {
 }
 
 const COMMUNITY_SNIPPETS = [
-  { quote: "Some days holding yourself together takes everything. I finally said it out loud and it helped.", handle: "m_uk", age: 34, time: "2h ago" },
-  { quote: "Lost my job three months ago. Still haven't told my dad. Not sure why I'm ashamed.", handle: "anon", age: 29, time: "5h ago" },
+  { quote: "Some days holding yourself together takes everything. I finally said it out loud and it helped.", handle: "m_uk", age: 34, time: "2 hours ago" },
+  { quote: "Lost my job three months ago. Still haven't told my dad. Not sure why I'm ashamed.", handle: "anon", age: 29, time: "5 hours ago" },
   { quote: "Therapy felt too clinical. This felt like talking to someone who actually gets it.", handle: "anon", age: 38, time: "yesterday" },
-  { quote: "Small improvements matter. I just started sleeping 7 hours and it changed something.", handle: "dk_anon", age: 25, time: "1d ago" },
-  { quote: "You don't have to carry everything silently. I learned that here.", handle: "anon", age: 44, time: "2d ago" },
-  { quote: "I don't know what I'm doing but at least I know I'm not the only one who doesn't.", handle: "anon", age: 31, time: "3d ago" },
+  { quote: "Small improvements matter. I just started sleeping 7 hours and it changed something.", handle: "dk_anon", age: 25, time: "1 day ago" },
+  { quote: "You don't have to carry everything silently. I learned that here.", handle: "anon", age: 44, time: "2 days ago" },
+  { quote: "I don't know what I'm doing but at least I know I'm not the only one who doesn't.", handle: "anon", age: 31, time: "3 days ago" },
 ];
 
 function StoriesSection() {
@@ -196,6 +196,10 @@ function ToolkitSection() {
 
 function ArticlesSection() {
   const { data: intelLogs, isLoading } = trpc.intel.getLibrary.useQuery();
+
+  // Don't render the section at all if loading or empty — avoids the dead section
+  if (isLoading || !intelLogs || intelLogs.length === 0) return null;
+
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 bg-[#060810]/60 border-y border-border/10">
       <div className="mx-auto max-w-7xl">
@@ -206,37 +210,24 @@ function ArticlesSection() {
           </div>
           <Link href="/intel">
             <Button variant="outline" size="sm" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
-              All articles <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+              All reads <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
             </Button>
           </Link>
         </div>
         <div className="grid md:grid-cols-3 gap-5">
-          {isLoading ? (
-            [1, 2, 3].map((i) => (
-              <Card key={i} className="h-full bg-card/80 border-border/40 min-h-[150px] animate-pulse">
-                <CardHeader><div className="h-4 w-3/4 bg-secondary/50 rounded" /></CardHeader>
-                <CardContent><div className="h-10 bg-secondary/50 rounded" /></CardContent>
+          {intelLogs?.slice(0, 3).map((intel: any) => (
+            <Link key={intel.id} href={`/intel/${intel.id}`}>
+              <Card className="h-full bg-card/80 backdrop-blur-sm border-border/40 hover:border-blue-500/30 transition-all duration-300 hover:scale-[1.01] card-glow flex flex-col">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold line-clamp-2 text-foreground">{intel.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col justify-between">
+                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">{intel.excerpt}</p>
+                  <p className="text-xs text-blue-400 font-medium">Read article</p>
+                </CardContent>
               </Card>
-            ))
-          ) : intelLogs?.length === 0 ? (
-            <div className="md:col-span-3 p-10 border border-dashed border-border/40 rounded-xl text-center bg-card/50">
-              <p className="text-muted-foreground text-sm">More resources are being added.</p>
-            </div>
-          ) : (
-            intelLogs?.slice(0, 3).map((intel: any) => (
-              <Link key={intel.id} href={`/intel/${intel.id}`}>
-                <Card className="h-full bg-card/80 backdrop-blur-sm border-border/40 hover:border-blue-500/30 transition-all duration-300 hover:scale-[1.01] card-glow flex flex-col">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold line-clamp-2 text-foreground">{intel.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col justify-between">
-                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">{intel.excerpt}</p>
-                    <p className="text-xs text-blue-400 font-medium">Read article</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))
-          )}
+            </Link>
+          ))}
         </div>
       </div>
     </section>
@@ -249,14 +240,16 @@ function CheckInSection() {
       <div className="mx-auto max-w-7xl">
         <div className="max-w-2xl">
           <h2 className="text-2xl font-bold text-foreground mb-2">Daily Reflection</h2>
-          <p className="text-muted-foreground mb-5 text-sm leading-relaxed">
+          <p className="text-muted-foreground mb-1 text-sm leading-relaxed">
             A short check-in — no diagnosis, no score. Just honest questions to help you understand where you&apos;re at.
           </p>
+          <p className="text-muted-foreground mb-5 text-xs">Takes 2 minutes. No diagnosis.</p>
           <div className="space-y-2 mb-6">
             {[
               "Have you been keeping things to yourself lately?",
               "Do small things feel heavier than usual?",
               "Do you feel connected to yourself lately?",
+              "When did you last feel genuinely okay?",
             ].map((q) => (
               <div key={q} className="flex items-start gap-3 p-3 rounded-lg bg-card/40 border border-border/20">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0" />

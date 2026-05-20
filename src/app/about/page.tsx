@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, Users, Shield, Flame, Target, BookOpen } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "About | Men Who Feel",
+  description: "Built because too many men are carrying things alone. Learn what MenWhoFeel is and why it exists.",
+};
 
 export default function AboutPage() {
   return (
@@ -8,16 +14,19 @@ export default function AboutPage() {
         <div className="text-center mb-10">
           <img src="/logo.png" alt="MenWhoFeel" className="h-20 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-gradient">About MenWhoFeel</h1>
-          <p className="text-muted-foreground mt-2">Breaking the stigma around men's mental health</p>
+          <p className="text-muted-foreground mt-2">Built because too many men are carrying things alone.</p>
         </div>
 
         <Card className="bg-card/80 backdrop-blur-sm border-border/40 card-glow mb-8">
           <CardContent className="p-6 space-y-4">
             <p className="text-muted-foreground leading-relaxed">
-              MenWhoFeel was created because we believe that strength includes vulnerability. In a world that often tells men to "man up" and suppress their emotions, we've built a space where feeling is not just allowed—it's encouraged.
+              MenWhoFeel started with a simple observation: most spaces online weren&apos;t built for men to actually open up. There were plenty of places to perform — to look strong, look busy, look fine. Not many where you could say the real thing without somebody turning it into a lesson or a debate.
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              Our mission is simple: provide men with the tools, community, and support they need to understand their mental state, develop healthy habits, and connect with others who understand their journey.
+              So this was built. A space where you don&apos;t have to explain yourself, justify your feelings, or have it together before you say something. Just men, talking honestly, to other men who get it.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              No accounts. No records. No judgment. Just the conversation that should have been happening a long time ago.
             </p>
           </CardContent>
         </Card>
@@ -27,47 +36,47 @@ export default function AboutPage() {
             <CardContent className="p-5">
               <Flame className="h-6 w-6 text-primary mb-3" />
               <h3 className="font-semibold mb-1">Anonymous & Safe</h3>
-              <p className="text-sm text-muted-foreground">No judgment. No identification required. Share freely.</p>
+              <p className="text-sm text-muted-foreground">No name, no account, nothing tied to you. Say what you actually mean.</p>
             </CardContent>
           </Card>
           <Card className="bg-card/80 border-border/40">
             <CardContent className="p-5">
               <Users className="h-6 w-6 text-primary mb-3" />
               <h3 className="font-semibold mb-1">Community First</h3>
-              <p className="text-sm text-muted-foreground">Real connections with men who understand what you're going through.</p>
+              <p className="text-sm text-muted-foreground">Real men in real situations. Not a forum. Not a helpline. A conversation.</p>
             </CardContent>
           </Card>
           <Card className="bg-card/80 border-border/40">
             <CardContent className="p-5">
               <Target className="h-6 w-6 text-primary mb-3" />
               <h3 className="font-semibold mb-1">Actionable Growth</h3>
-              <p className="text-sm text-muted-foreground">Challenges, guides, and assessments to track real progress.</p>
+              <p className="text-sm text-muted-foreground">Check-ins, challenges, and guides to help things actually move — not just feel acknowledged.</p>
             </CardContent>
           </Card>
           <Card className="bg-card/80 border-border/40">
             <CardContent className="p-5">
               <Shield className="h-6 w-6 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Moderated Content</h3>
-              <p className="text-sm text-muted-foreground">All content is reviewed to maintain a safe, supportive environment.</p>
+              <h3 className="font-semibold mb-1">Community Guidelines</h3>
+              <p className="text-sm text-muted-foreground">Content is held to community standards. No hate, no spam, no weaponising vulnerability.</p>
             </CardContent>
           </Card>
         </div>
 
         <Card className="bg-card/80 border-border/40">
           <CardContent className="p-6">
-            <h2 className="text-xl font-bold mb-4">Our Values</h2>
+            <h2 className="text-xl font-bold mb-4">What we actually believe</h2>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <Heart className="h-4 w-4 text-primary mt-1" />
-                <span className="text-sm text-muted-foreground"><strong className="text-foreground">Vulnerability is strength</strong> — Opening up takes courage, and courage is the mark of a true man.</span>
+                <span className="text-sm text-muted-foreground"><strong className="text-foreground">Opening up isn&apos;t weakness</strong> — it&apos;s the hardest thing most men never do. The ones who do it are the ones who actually change.</span>
               </li>
               <li className="flex items-start gap-3">
                 <BookOpen className="h-4 w-4 text-primary mt-1" />
-                <span className="text-sm text-muted-foreground"><strong className="text-foreground">Growth is continuous</strong> — There's no finish line for mental health. Every day is a new opportunity.</span>
+                <span className="text-sm text-muted-foreground"><strong className="text-foreground">There&apos;s no finish line</strong> — you don&apos;t fix your mental health like you fix a car. But you can make it better. Every day you try is the whole point.</span>
               </li>
               <li className="flex items-start gap-3">
                 <Users className="h-4 w-4 text-primary mt-1" />
-                <span className="text-sm text-muted-foreground"><strong className="text-foreground">No man is an island</strong> — We need each other. Connection is healing.</span>
+                <span className="text-sm text-muted-foreground"><strong className="text-foreground">Men need each other</strong> — not in a motivational-poster way. In a real, nobody-else-understands-this way. That&apos;s what this is for.</span>
               </li>
             </ul>
           </CardContent>

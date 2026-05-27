@@ -1,9 +1,8 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Clock, User, BookOpen } from "lucide-react";
+import { ArrowLeft, Clock, User, BookOpen, MessageSquare } from "lucide-react";
 import { db } from "@/db"; 
-// 1. Updated import to target your 'articles' table schema
 import { articles } from "@/db/schema"; 
 import { eq } from "drizzle-orm";
 
@@ -12,7 +11,7 @@ type Props = {
 };
 
 // ============================================================================
-// SAFE DB FETCH HELPER 
+// SAFE DB FETCH HELPER (Queries by SLUG and includes Comments relation)
 // ============================================================================
 async function getArticleData(params: Props["params"]) {
   const resolvedParams = await params;
@@ -20,15 +19,13 @@ async function getArticleData(params: Props["params"]) {
 
   if (!rawSlug) return null;
 
-  // Smart Parsing: Handles both integer IDs (like /intel/1) or text slugs (like /intel/core-discipline)
-  const parsedId = parseInt(rawSlug);
-  const lookupValue = isNaN(parsedId) ? rawSlug : parsedId;
-
-  // 2. Updated relational query to use 'articles' instead of 'article'
+  // Querying directly via the 'slug' string column to fix the Postgres type crash.
+  // We use Drizzle's 'with' keyword to cleanly pull your comments relation out of the box.
   return await db.query.articles.findFirst({
-    // NOTE: If your database uses a string column like 'slug' instead of numerical 'id', 
-    // change `articles.id` to `articles.slug` right below:
-    where: eq(articles.id, lookupValue as any), 
+    where: eq(articles.slug, rawSlug),
+    with: {
+      comments: true, // Restores your comments data stream
+    },
   });
 }
 
@@ -63,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 // ============================================================================
-// SERVER-RENDERED ARTICLE PAGE
+// SERVER-RENDERED ARTICLE PAGE WITH COMMENTS
 // ============================================================================
 export default async function SingleIntelPage({ params }: Props) {
   const data = await getArticleData(params);
@@ -71,6 +68,9 @@ export default async function SingleIntelPage({ params }: Props) {
   if (!data) {
     notFound();
   }
+
+  // Typecast or fallback to an array safely if no comments exist yet
+  const articleComments = (data as any).comments || [];
 
   return (
     <div className="min-h-screen bg-[#060810] py-12 px-4 sm:px-6 lg:px-8">
@@ -84,9 +84,8 @@ export default async function SingleIntelPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" /> Back to Intel
         </Link>
 
-        {/* Core Content */}
+        {/* Core Article Content */}
         <article className="w-full">
-          
           <header className="mb-10 pb-10 border-b border-zinc-800">
             <div className="flex items-center gap-2 text-blue-500 mb-6">
               <BookOpen className="w-4 h-4" />
@@ -112,7 +111,7 @@ export default async function SingleIntelPage({ params }: Props) {
             </div>
           </header>
 
-          <div className="w-full">
+          <div className="w-full mb-16">
             <p 
               className="text-zinc-300 text-lg leading-[1.9] break-words whitespace-pre-line"
               style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
@@ -120,8 +119,43 @@ export default async function SingleIntelPage({ params }: Props) {
               {data.content}
             </p>
           </div>
-          
         </article>
+
+        {/* ============================================================================
+            COMMENTS SECTION
+           ============================================================================ */}
+        <section className="mt-16 pt-10 border-t border-zinc-800 w-full">
+          <div className="flex items-center gap-2 text-white mb-8">
+            <MessageSquare className="w-5 h-5 text-blue-500" />
+            <h2 className="text-xl font-black uppercase tracking-tight">
+              Discussion ({articleComments.length})
+            </h2>
+          </div>
+
+          {/* Comments Render List */}
+          <div className="space-y-4 mb-8">
+            {articleComments.length === 0 ? (
+              <p className="text-zinc-500 text-sm italic p-6 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/10">
+                No thoughts shared yet. Drop your input below.
+              </p>
+            ) : (
+              articleComments.map((comment: any) => (
+                <div key={comment.id} className="p-5 border border-zinc-800 bg-zinc-900/30 rounded-xl">
+                  <div className="flex items-center justify-between mb-3 text-xs text-zinc-500 font-bold uppercase tracking-wide">
+                    <span className="text-zinc-400">{comment.userName || "Anonymous Brother"}</span>
+                    <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">{comment.content}</p>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Info notice or placeholder for comment mutation */}
+          <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 text-xs text-zinc-400">
+            Comments are loaded dynamically from the repository database. Use your frontend comment input fields to commit additions.
+          </div>
+        </section>
 
       </div>
     </div>

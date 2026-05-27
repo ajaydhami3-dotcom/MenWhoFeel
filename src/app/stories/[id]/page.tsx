@@ -1,34 +1,31 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Clock, User, BookOpen } from "lucide-react";
+import { ArrowLeft, User, Clock } from "lucide-react";
 import { db } from "@/db"; 
-// 1. Updated import to target your 'articles' table schema
-import { articles } from "@/db/schema"; 
+import { stories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 type Props = {
-  params: Promise<{ slug: string }> | { slug: string };
+  params: Promise<{ id: string }> | { id: string };
 };
 
 // ============================================================================
-// SAFE DB FETCH HELPER 
+// SAFE DB FETCH HELPER (Handles both Async Params and String/Integer IDs)
 // ============================================================================
-async function getArticleData(params: Props["params"]) {
+async function getStoryData(params: Props["params"]) {
+  // 1. Await params safely to protect against Next.js async rendering rules
   const resolvedParams = await params;
-  const rawSlug = resolvedParams.slug;
+  const rawId = resolvedParams.id;
 
-  if (!rawSlug) return null;
+  if (!rawId) return null;
 
-  // Smart Parsing: Handles both integer IDs (like /intel/1) or text slugs (like /intel/core-discipline)
-  const parsedId = parseInt(rawSlug);
-  const lookupValue = isNaN(parsedId) ? rawSlug : parsedId;
+  // 2. Smart Parsing: If it's a standard number, parse it. If it's a UUID/String, keep it raw.
+  const parsedId = parseInt(rawId);
+  const lookupId = isNaN(parsedId) ? rawId : parsedId;
 
-  // 2. Updated relational query to use 'articles' instead of 'article'
-  return await db.query.articles.findFirst({
-    // NOTE: If your database uses a string column like 'slug' instead of numerical 'id', 
-    // change `articles.id` to `articles.slug` right below:
-    where: eq(articles.id, lookupValue as any), 
+  return await db.query.stories.findFirst({
+    where: eq(stories.id, lookupId as any),
   });
 }
 
@@ -36,39 +33,40 @@ async function getArticleData(params: Props["params"]) {
 // DYNAMIC SEO METADATA 
 // ============================================================================
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const data = await getArticleData(params);
+  const story = await getStoryData(params);
 
-  if (!data) {
-    return { title: "Article Not Found | Brotherhood" };
+  if (!story) {
+    return { title: "Story Not Found | Brotherhood" };
   }
 
-  const description = data.excerpt || data.content.substring(0, 160) + "...";
+  const description = story.excerpt || story.content.substring(0, 160) + "...";
 
   return {
-    title: `${data.title} | Intel`,
+    title: `${story.title} | The Archives`,
     description: description,
     openGraph: {
-      title: data.title,
+      title: story.title,
       description: description,
       type: "article",
-      authors: [data.authorName || "MenWhoFeel Core"],
-      publishedTime: data.createdAt.toISOString(),
+      authors: [story.authorName || "Anonymous"],
+      publishedTime: story.createdAt.toISOString(),
     },
     twitter: {
-      card: "summary_large_image",
-      title: data.title,
+      card: "summary",
+      title: story.title,
       description: description,
     },
   };
 }
 
 // ============================================================================
-// SERVER-RENDERED ARTICLE PAGE
+// SERVER-RENDERED SINGLE STORY PAGE
 // ============================================================================
-export default async function SingleIntelPage({ params }: Props) {
-  const data = await getArticleData(params);
+export default async function SingleStoryPage({ params }: Props) {
+  const story = await getStoryData(params);
 
-  if (!data) {
+  // If the lookupId evaluates to NaN or doesn't match an entry, trigger a clean 404
+  if (!story) {
     notFound();
   }
 
@@ -78,35 +76,34 @@ export default async function SingleIntelPage({ params }: Props) {
         
         {/* Navigation */}
         <Link 
-          href="/intel" 
+          href="/stories" 
           className="inline-flex items-center gap-2 text-zinc-500 hover:text-white text-xs font-black uppercase tracking-widest transition-colors mb-12"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Intel
+          <ArrowLeft className="w-4 h-4" /> Back to the Archives
         </Link>
 
         {/* Core Content */}
         <article className="w-full">
           
           <header className="mb-10 pb-10 border-b border-zinc-800">
-            <div className="flex items-center gap-2 text-blue-500 mb-6">
-              <BookOpen className="w-4 h-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">
-                Useful Reads
+            {story.featured && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest rounded mb-4">
+                Featured
               </span>
-            </div>
+            )}
             
             <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white leading-tight mb-6">
-              {data.title}
+              {story.title}
             </h1>
             
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
-                <User className="w-4 h-4" /> {data.authorName || "MenWhoFeel Core"}
+                <User className="w-4 h-4" /> {story.authorName || "Anonymous"}
               </div>
               <div className="flex items-center gap-2 text-zinc-600 text-xs font-bold uppercase tracking-widest">
                 <Clock className="w-4 h-4" /> 
-                <time dateTime={data.createdAt.toISOString()}>
-                  {new Date(data.createdAt).toLocaleDateString()}
+                <time dateTime={story.createdAt.toISOString()}>
+                  {new Date(story.createdAt).toLocaleDateString()}
                 </time>
               </div>
             </div>
@@ -117,7 +114,7 @@ export default async function SingleIntelPage({ params }: Props) {
               className="text-zinc-300 text-lg leading-[1.9] break-words whitespace-pre-line"
               style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
             >
-              {data.content}
+              {story.content}
             </p>
           </div>
           

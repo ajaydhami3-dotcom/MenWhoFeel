@@ -28,7 +28,7 @@ export const storiesRouter = createRouter({
         title: input.title,
         content: input.content,
         authorName: input.authorName || "Anonymous",
-        excerpt: input.content.substring(0, 120) + "...", // Auto-generate an excerpt
+        excerpt: input.content.substring(0, 240) + "...", // Auto-generate an excerpt
         status: "pending", // Goes to your admin queue!
       });
     }),

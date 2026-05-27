@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   PlayCircle, FileText, Briefcase, Brain,
-  HeartPulse, ShieldCheck, Stethoscope, Handshake, Lock, BookOpen, Search, LayoutGrid
+  HeartPulse, ShieldCheck, Stethoscope, Handshake, Lock, BookOpen,
+  Search, LayoutGrid, ChevronRight, ArrowLeft, ExternalLink, Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
-// Fallback seed resources shown when the DB has no content yet
+// ─── Fallback seed data shown when DB is empty ────────────────────────────────
 const SEED_RESOURCES: Record<string, Array<{ id: string; name: string; url: string; type: string; category: string }>> = {
   "Mental Fortitude": [
     { id: "s1", name: "How to process difficult emotions — a practical guide", url: "https://www.headspace.com/mindfulness/emotional-wellness", type: "link", category: "Mental Fortitude" },
@@ -34,156 +35,268 @@ const SEED_RESOURCES: Record<string, Array<{ id: string; name: string; url: stri
   ],
 };
 
+// ─── Config ───────────────────────────────────────────────────────────────────
 const CATEGORY_CONFIG = {
   "Mental Fortitude": {
-    icon: Brain,
-    color: "text-blue-400",
-    bg: "bg-blue-400/10",
+    icon: Brain, color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/20",
     description: "Tools to understand your mind and build resilience.",
   },
   "Financial Survival & Skills": {
-    icon: Briefcase,
-    color: "text-emerald-400",
-    bg: "bg-emerald-400/10",
+    icon: Briefcase, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20",
     description: "Take control of your money and build skills that pay.",
   },
   "Stress & Relationships": {
-    icon: HeartPulse,
-    color: "text-rose-400",
-    bg: "bg-rose-400/10",
+    icon: HeartPulse, color: "text-rose-400", bg: "bg-rose-400/10", border: "border-rose-400/20",
     description: "Navigate conflict and manage pressure without burning out.",
   },
   "Physical Fundamentals": {
-    icon: ShieldCheck,
-    color: "text-amber-400",
-    bg: "bg-amber-400/10",
+    icon: ShieldCheck, color: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20",
     description: "Your mind relies on your body. Start with the basics.",
   },
 };
 
-const TYPE_ICONS = {
-  video: PlayCircle,
-  pdf: FileText,
-  book: BookOpen,
-  link: LayoutGrid,
+const TYPE_ICONS = { video: PlayCircle, pdf: FileText, book: BookOpen, link: LayoutGrid };
+const TYPE_COLORS: Record<string, string> = {
+  video: "bg-blue-500 text-white",
+  pdf: "bg-rose-500 text-white",
+  book: "bg-amber-500 text-white",
+  link: "bg-zinc-600 text-white",
 };
+const CATEGORIES = Object.keys(CATEGORY_CONFIG);
+const PAGE_SIZE = 12;
 
-function ResourceCard({ title, items }: { title: string; items: any[] }) {
-  const [activeTab, setActiveTab] = useState<"all" | "video" | "pdf" | "book">("all");
-  const config =
-    CATEGORY_CONFIG[title as keyof typeof CATEGORY_CONFIG] || CATEGORY_CONFIG["Mental Fortitude"];
+// ─── Category drill-down view ─────────────────────────────────────────────────
+function CategoryView({
+  category,
+  onBack,
+  usingSeed,
+  seedItems,
+}: {
+  category: string;
+  onBack: () => void;
+  usingSeed: boolean;
+  seedItems: any[];
+}) {
+  const [activeType, setActiveType] = useState<"all" | "video" | "pdf" | "book" | "link">("all");
+  const [offset, setOffset] = useState(0);
 
-  const visibleItems = activeTab === "all" ? items : items.filter((item) => item.type === activeTab);
-  const videoCount = items.filter((i) => i.type === "video").length;
-  const pdfCount = items.filter((i) => i.type === "pdf").length;
-  const bookCount = items.filter((i) => i.type === "book").length;
+  // Reset offset when type filter changes
+  useEffect(() => { setOffset(0); }, [activeType]);
+
+  const { data, isFetching } = trpc.guides.getResourcesByCategory.useQuery(
+    { category, type: activeType, limit: PAGE_SIZE, offset },
+    { enabled: !usingSeed, keepPreviousData: true }
+  );
+
+  const config = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG];
+  const Icon = config?.icon ?? Brain;
+
+  // Resolve items — DB or seed
+  const items = usingSeed
+    ? seedItems.filter((i) => activeType === "all" || i.type === activeType)
+    : (data?.items ?? []);
+  const total = usingSeed ? items.length : (data?.total ?? 0);
+  const hasMore = usingSeed ? false : (data?.hasMore ?? false);
+
+  // Type counts for tabs (from seed or calculated client-side from DB data)
+  const typeCounts = usingSeed
+    ? { video: seedItems.filter((i) => i.type === "video").length, pdf: seedItems.filter((i) => i.type === "pdf").length, book: seedItems.filter((i) => i.type === "book").length, link: seedItems.filter((i) => i.type === "link").length }
+    : { video: 0, pdf: 0, book: 0, link: 0 }; // counts come from summaries on parent
 
   return (
-    <Card className="bg-card/40 backdrop-blur-sm border-border/40 overflow-hidden flex flex-col h-full">
-      <CardHeader className="pb-4 border-b border-border/20 bg-secondary/10">
-        <div className="flex items-start gap-4">
-          <div className={`p-3 rounded-xl ${config.bg} shrink-0`}>
-            <config.icon className={`h-6 w-6 ${config.color}`} />
-          </div>
-          <div>
-            <CardTitle className="text-xl mb-1">{title}</CardTitle>
-            <p className="text-sm text-muted-foreground">{config.description}</p>
+    <div>
+      {/* Back button + header */}
+      <button
+        onClick={onBack}
+        className="flex items-center gap-2 text-zinc-400 hover:text-white text-xs font-black uppercase tracking-widest transition-colors mb-8"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back to Toolkit
+      </button>
+
+      <div className="flex items-start gap-4 mb-8">
+        <div className={`p-3 rounded-xl ${config?.bg} shrink-0`}>
+          <Icon className={`h-7 w-7 ${config?.color}`} />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold">{category}</h2>
+          <p className="text-sm text-muted-foreground mt-1">{config?.description}</p>
+        </div>
+      </div>
+
+      {/* Type filter tabs */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {(["all", "video", "pdf", "book", "link"] as const).map((t) => {
+          const TabIcon = t === "all" ? LayoutGrid : TYPE_ICONS[t];
+          const count = t === "all" ? total : typeCounts[t];
+          return (
+            <button
+              key={t}
+              onClick={() => setActiveType(t)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                activeType === t
+                  ? (t === "all" ? "bg-primary text-primary-foreground" : TYPE_COLORS[t])
+                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+              }`}
+            >
+              <TabIcon className="h-3.5 w-3.5" />
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+              {!usingSeed && t !== "all" && <span className="opacity-70">({count})</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Items list */}
+      {isFetching && offset === 0 ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : items.length === 0 ? (
+        <div className="p-8 border border-dashed border-border/40 rounded-xl text-center text-muted-foreground italic">
+          Nothing in this category yet.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item: any) => {
+            const ItemIcon = TYPE_ICONS[item.type as keyof typeof TYPE_ICONS] ?? LayoutGrid;
+            return (
+              <Link
+                key={item.id}
+                href={item.url}
+                target="_blank"
+                className="group flex items-center gap-3 p-3 rounded-xl border border-transparent hover:border-border/40 hover:bg-secondary/40 transition-all"
+              >
+                <div className={`p-1.5 rounded-md ${TYPE_COLORS[item.type] ?? "bg-zinc-700 text-white"} shrink-0`}>
+                  <ItemIcon className="h-3.5 w-3.5" />
+                </div>
+                <p className="text-sm font-medium flex-1 group-hover:text-primary transition-colors leading-snug">
+                  {item.name}
+                </p>
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Load more / pagination */}
+      {!usingSeed && (
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/20">
+          <span className="text-xs text-muted-foreground">
+            Showing {Math.min(offset + PAGE_SIZE, total)} of {total}
+          </span>
+          <div className="flex gap-2">
+            {offset > 0 && (
+              <button
+                onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
+                className="px-4 py-2 text-xs font-medium rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+              >
+                Previous
+              </button>
+            )}
+            {hasMore && (
+              <button
+                onClick={() => setOffset((o) => o + PAGE_SIZE)}
+                disabled={isFetching}
+                className="px-4 py-2 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {isFetching ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                Load more
+              </button>
+            )}
           </div>
         </div>
-      </CardHeader>
-
-      <CardContent className="pt-4 p-6 flex-1 flex flex-col">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
-              activeTab === "all" ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" /> All
-          </button>
-          <button
-            onClick={() => setActiveTab("video")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
-              activeTab === "video" ? "bg-blue-500 text-white" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            <PlayCircle className="h-3.5 w-3.5" /> Videos ({videoCount})
-          </button>
-          <button
-            onClick={() => setActiveTab("pdf")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
-              activeTab === "pdf" ? "bg-rose-500 text-white" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            <FileText className="h-3.5 w-3.5" /> PDFs ({pdfCount})
-          </button>
-          <button
-            onClick={() => setActiveTab("book")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
-              activeTab === "book" ? "bg-amber-500 text-white" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            <BookOpen className="h-3.5 w-3.5" /> Books ({bookCount})
-          </button>
-        </div>
-
-        <ul className="space-y-2 flex-1 max-h-[300px] overflow-y-auto pr-2">
-          {visibleItems.length === 0 ? (
-            <li className="text-sm text-muted-foreground py-4 text-center">Nothing in this category yet.</li>
-          ) : (
-            visibleItems.map((item) => {
-              const Icon = TYPE_ICONS[item.type as keyof typeof TYPE_ICONS] || LayoutGrid;
-              return (
-                <li key={item.id}>
-                  <Link
-                    href={item.url}
-                    target="_blank"
-                    className="group flex items-start gap-3 hover:bg-secondary/40 p-2.5 -mx-2.5 rounded-lg transition-all border border-transparent hover:border-border/30"
-                  >
-                    <Icon className="h-4 w-4 text-muted-foreground mt-0.5 group-hover:text-primary transition-colors shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium group-hover:text-primary transition-colors line-clamp-2 leading-tight">
-                        {item.name}
-                      </p>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })
-          )}
-        </ul>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 
+// ─── Search results panel ─────────────────────────────────────────────────────
+function SearchResults({ term }: { term: string }) {
+  const { data: results, isFetching } = trpc.guides.searchResources.useQuery(
+    { term },
+    { enabled: term.length > 1 }
+  );
+
+  if (isFetching) return (
+    <div className="flex items-center gap-2 text-muted-foreground text-sm py-8">
+      <Loader2 className="w-4 h-4 animate-spin" /> Searching...
+    </div>
+  );
+  if (!results?.length) return (
+    <p className="text-muted-foreground italic text-sm py-8">No results for "{term}"</p>
+  );
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground mb-4">{results.length} result{results.length !== 1 ? "s" : ""}</p>
+      {results.map((item: any) => {
+        const ItemIcon = TYPE_ICONS[item.type as keyof typeof TYPE_ICONS] ?? LayoutGrid;
+        return (
+          <Link
+            key={item.id}
+            href={item.url}
+            target="_blank"
+            className="group flex items-center gap-3 p-3 rounded-xl border border-transparent hover:border-border/40 hover:bg-secondary/40 transition-all"
+          >
+            <div className={`p-1.5 rounded-md ${TYPE_COLORS[item.type] ?? "bg-zinc-700 text-white"} shrink-0`}>
+              <ItemIcon className="h-3.5 w-3.5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium group-hover:text-primary transition-colors leading-snug">{item.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{item.category}</p>
+            </div>
+            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function ResourcesPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
+
   const { data: resources, isLoading } = trpc.guides.getAllResources.useQuery();
+  const { data: summaries } = trpc.guides.getCategorySummaries.useQuery();
 
-  const cats = [
-    "Mental Fortitude",
-    "Financial Survival & Skills",
-    "Stress & Relationships",
-    "Physical Fundamentals",
-  ];
+  const usingSeed = !resources || resources.length === 0;
 
-  const filteredData = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    // Use DB resources if available, otherwise seeds
-    const source = resources && resources.length > 0 ? resources : Object.values(SEED_RESOURCES).flat();
-    return cats
-      .map((cat) => ({
-        title: cat,
-        items: source.filter(
-          (r) =>
-            r.category === cat &&
-            (r.name.toLowerCase().includes(term) || r.category.toLowerCase().includes(term))
-        ),
-      }))
-      .filter((c) => c.items.length > 0 || searchTerm === "");
-  }, [resources, searchTerm]);
+  // Build per-category counts — prefer DB summaries, fall back to seed counts
+  const categoryCounts = useMemo(() => {
+    const result: Record<string, { total: number; byType: Record<string, number> }> = {};
+    if (summaries && summaries.length > 0) {
+      for (const s of summaries) result[s.category] = { total: s.total, byType: s.byType };
+    } else {
+      for (const [cat, items] of Object.entries(SEED_RESOURCES)) {
+        const byType: Record<string, number> = {};
+        for (const item of items) byType[item.type] = (byType[item.type] ?? 0) + 1;
+        result[cat] = { total: items.length, byType };
+      }
+    }
+    return result;
+  }, [summaries, usingSeed]);
+
+  const isSearching = searchTerm.length > 1;
+
+  // If a category is open, show the drill-down view
+  if (openCategory) {
+    const seedItems = SEED_RESOURCES[openCategory] ?? [];
+    return (
+      <div className="min-h-screen py-12 px-4">
+        <div className="mx-auto max-w-3xl">
+          <CategoryView
+            category={openCategory}
+            onBack={() => setOpenCategory(null)}
+            usingSeed={usingSeed}
+            seedItems={seedItems}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12 px-4">
@@ -207,43 +320,101 @@ export default function ResourcesPage() {
           </div>
         </div>
 
-        {/* Resources grid */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-2xl font-semibold">Available now</h2>
-            <span className="px-3 py-1 text-xs font-medium bg-primary/20 text-primary rounded-full border border-primary/30">
-              Free
-            </span>
+        {/* Search results */}
+        {isSearching ? (
+          <div className="mb-16">
+            <h2 className="text-lg font-semibold mb-4">Search results</h2>
+            <SearchResults term={searchTerm} />
           </div>
-          {isLoading ? (
-            <div className="grid md:grid-cols-2 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-64 rounded-xl bg-card/40 border border-border/40 animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              {filteredData.map((cat) => (
-                <ResourceCard key={cat.title} title={cat.title} items={cat.items} />
-              ))}
-            </div>
-          )}
-        </div>
+        ) : (
+          <>
+            {/* Category folder grid */}
+            <div className="mb-16">
+              <div className="flex items-center gap-3 mb-6">
+                <h2 className="text-2xl font-semibold">Available now</h2>
+                <span className="px-3 py-1 text-xs font-medium bg-primary/20 text-primary rounded-full border border-primary/30">
+                  Free
+                </span>
+              </div>
 
-        {/* Coming soon */}
-        <h2 className="text-2xl font-semibold mb-6">Coming soon</h2>
-        <div className="grid md:grid-cols-2 gap-6">
-          <ComingSoonCard
-            icon={Stethoscope}
-            title="Professional Counselling"
-            description="Affordable, confidential one-on-one counselling directly through the platform."
-          />
-          <ComingSoonCard
-            icon={Handshake}
-            title="Career & Skills Board"
-            description="Helping men learn marketable skills and find work that pays the bills."
-          />
-        </div>
+              {isLoading ? (
+                <div className="grid md:grid-cols-2 gap-5">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-36 rounded-xl bg-card/40 border border-border/40 animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-5">
+                  {CATEGORIES.map((cat) => {
+                    const config = CATEGORY_CONFIG[cat as keyof typeof CATEGORY_CONFIG];
+                    const Icon = config.icon;
+                    const counts = categoryCounts[cat] ?? { total: 0, byType: {} };
+                    const typeEntries = Object.entries(counts.byType).filter(([, v]) => v > 0);
+
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setOpenCategory(cat)}
+                        className={`group text-left w-full rounded-xl border ${config.border} bg-card/40 hover:bg-card/70 backdrop-blur-sm transition-all duration-200 hover:shadow-sm overflow-hidden`}
+                      >
+                        <div className="p-5">
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex items-start gap-3">
+                              <div className={`p-2.5 rounded-xl ${config.bg} shrink-0 mt-0.5`}>
+                                <Icon className={`h-5 w-5 ${config.color}`} />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-base leading-tight">{cat}</h3>
+                                <p className="text-xs text-muted-foreground mt-1">{config.description}</p>
+                              </div>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                          </div>
+
+                          {/* Type breakdown pills */}
+                          <div className="flex items-center gap-1.5 flex-wrap mt-3 pt-3 border-t border-border/20">
+                            {counts.total === 0 ? (
+                              <span className="text-xs text-muted-foreground italic">No resources yet</span>
+                            ) : (
+                              <>
+                                {typeEntries.map(([type, count]) => {
+                                  const TIcon = TYPE_ICONS[type as keyof typeof TYPE_ICONS] ?? LayoutGrid;
+                                  return (
+                                    <span key={type} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-secondary/60 text-muted-foreground">
+                                      <TIcon className="h-3 w-3" /> {count} {type}{Number(count) !== 1 ? "s" : ""}
+                                    </span>
+                                  );
+                                })}
+                                <span className="ml-auto text-xs text-muted-foreground font-medium">
+                                  {counts.total} total
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Coming soon */}
+            <h2 className="text-2xl font-semibold mb-6">Coming soon</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <ComingSoonCard
+                icon={Stethoscope}
+                title="Professional Counselling"
+                description="Affordable, confidential one-on-one counselling directly through the platform."
+              />
+              <ComingSoonCard
+                icon={Handshake}
+                title="Career & Skills Board"
+                description="Helping men learn marketable skills and find work that pays the bills."
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

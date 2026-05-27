@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,17 +46,15 @@ export default function StoriesPage() {
       <div className="max-w-4xl mx-auto">
 
         {/* Header */}
-        <div className="mb-12 flex justify-between items-end">
-          <div>
-            <div className="flex items-center gap-2 text-blue-500 mb-2">
-              <BookOpen className="w-5 h-5" />
-              <span className="text-xs font-black uppercase tracking-[0.3em]">Brotherhood</span>
-            </div>
-            <h1 className="text-5xl font-black italic uppercase tracking-tighter">Stories</h1>
-            <p className="text-zinc-400 font-medium mt-3 max-w-xl">
-              Real men, real situations. Read how others came through hard times — or share your own so the next man knows he's not alone.
-            </p>
+        <div className="mb-12">
+          <div className="flex items-center gap-2 text-blue-500 mb-2">
+            <BookOpen className="w-5 h-5" />
+            <span className="text-xs font-black uppercase tracking-[0.3em]">Brotherhood</span>
           </div>
+          <h1 className="text-5xl font-black italic uppercase tracking-tighter">Stories</h1>
+          <p className="text-zinc-400 font-medium mt-3 max-w-xl">
+            Real men, real situations. Read how others came through hard times — or share your own so the next man knows he's not alone.
+          </p>
         </div>
 
         {/* Tabs */}
@@ -82,7 +81,7 @@ export default function StoriesPage() {
           </button>
         </div>
 
-        {/* TAB: READ */}
+        {/* TAB: READ — story cards with excerpt + Next.js Link to SEO page */}
         {activeTab === "read" && (
           <div className="space-y-6">
             {approvedStories?.length === 0 ? (
@@ -90,33 +89,52 @@ export default function StoriesPage() {
                 Nothing published yet. Be the first to share something.
               </div>
             ) : (
-              approvedStories?.map((story) => (
-                <Card key={story.id} className="bg-zinc-900/60 border-zinc-800 backdrop-blur-md hover:border-blue-500/30 transition-all duration-300">
-                  <CardHeader className="pb-2 border-b border-white/5">
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        {story.featured && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest rounded mb-3">
-                            Featured
-                          </span>
+              approvedStories?.map((story) => {
+                const preview = story.excerpt || story.content.substring(0, 240);
+                const isLong = story.content.length > 240;
+
+                return (
+                  <Card key={story.id} className="bg-zinc-900/60 border-zinc-800 backdrop-blur-md hover:border-blue-500/30 transition-all duration-300">
+                    <CardHeader className="pb-2 border-b border-white/5">
+                      {story.featured && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest rounded mb-2 w-fit">
+                          Featured
+                        </span>
+                      )}
+                      <CardTitle className="text-2xl font-bold text-white leading-tight">{story.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-5">
+                      <p
+                        className="text-zinc-400 leading-relaxed mb-5 break-words"
+                        style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+                      >
+                        {preview}{isLong && !story.excerpt ? "…" : ""}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-5">
+                          <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
+                            <User className="w-4 h-4" /> {story.authorName}
+                          </div>
+                          <div className="flex items-center gap-2 text-zinc-600 text-xs font-bold uppercase tracking-widest">
+                            <Clock className="w-4 h-4" /> {new Date(story.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+
+                        {/* SEO Link — Google will crawl this and index your individual pages */}
+                        {isLong && (
+                          <Link
+                            href={`/stories/${story.id}`}
+                            className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600 border border-blue-500/30 hover:border-blue-500 text-blue-400 hover:text-white text-xs font-black uppercase tracking-widest rounded-lg transition-all"
+                          >
+                            Read more →
+                          </Link>
                         )}
-                        <CardTitle className="text-2xl font-bold text-white leading-tight">{story.title}</CardTitle>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <p className="text-zinc-300 leading-relaxed mb-6 whitespace-pre-wrap">{story.content}</p>
-                    <div className="flex items-center gap-6 pt-4 border-t border-white/5">
-                      <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
-                        <User className="w-4 h-4" /> {story.authorName}
-                      </div>
-                      <div className="flex items-center gap-2 text-zinc-600 text-xs font-bold uppercase tracking-widest">
-                        <Clock className="w-4 h-4" /> {new Date(story.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
         )}
@@ -143,7 +161,7 @@ export default function StoriesPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                  <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-4 text-sm text-blue-400 mb-4">
+                  <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl text-sm text-blue-400 mb-4">
                     <p>
                       <strong>Keep it honest.</strong> What actually happened, and how did you get through it. All stories are reviewed before publishing. No spam, no selling.
                     </p>
@@ -204,5 +222,3 @@ export default function StoriesPage() {
     </div>
   );
 }
-// Note: metadata exported from a separate server layout or via next-seo
-// Individual page titles set via document.title in useEffect if needed

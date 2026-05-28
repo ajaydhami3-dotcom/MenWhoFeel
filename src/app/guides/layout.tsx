@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "The Toolkit | Men Who Feel",
-  description: "Free videos, books, and guides on mental health, money, stress, and physical basics.",
+  title: "Support & Growth | Men Who Feel",
+  description: "Free resources for mental health, financial stability, relationships, and physical wellbeing. No sign-up required.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

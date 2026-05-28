@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
+
 export const metadata: Metadata = {
-  title: "The Toolkit | Men Who Feel",
-  description: "Free videos, books, and guides on mental health, money, stress, and physical basics. No sign-up. No paywall.",
+  title: "Support & Growth | Men Who Feel",
+  description: "Free resources for mental health, financial stability, relationships, and physical wellbeing. No sign-up required.",
 };

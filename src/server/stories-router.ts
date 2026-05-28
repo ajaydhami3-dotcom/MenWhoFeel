@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
-import { getDb } from "./queries/connection"; // <-- Swapped to getDb
-import { stories } from "../db/schema";
+import { getDb } from "./queries/connection";
+import { stories, storyComments } from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export const storiesRouter = createRouter({
@@ -23,13 +23,39 @@ export const storiesRouter = createRouter({
       authorName: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      // <-- Added getDb() here
       return await getDb().insert(stories).values({
         title: input.title,
         content: input.content,
         authorName: input.authorName || "Anonymous",
-        excerpt: input.content.substring(0, 240) + "...", // Auto-generate an excerpt
-        status: "pending", // Goes to your admin queue!
+        excerpt: input.content.substring(0, 240) + "...",
+        status: "pending",
+      });
+    }),
+
+  // 3. Fetch comments for a story
+  getComments: publicQuery
+    .input(z.object({ storyId: z.number() }))
+    .query(async ({ input }) => {
+      return await getDb()
+        .select()
+        .from(storyComments)
+        .where(eq(storyComments.storyId, input.storyId))
+        .orderBy(desc(storyComments.createdAt));
+    }),
+
+  // 4. Post a comment on a story
+  addComment: publicQuery
+    .input(z.object({
+      storyId: z.number(),
+      authorName: z.string().optional(),
+      content: z.string().min(1, "Comment cannot be empty"),
+    }))
+    .mutation(async ({ input }) => {
+      return await getDb().insert(storyComments).values({
+        storyId: input.storyId,
+        authorName: input.authorName || "Anonymous",
+        content: input.content,
+        status: "pending",
       });
     }),
 });

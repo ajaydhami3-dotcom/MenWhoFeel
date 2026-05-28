@@ -2,56 +2,75 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   PlayCircle, FileText, Briefcase, Brain,
-  HeartPulse, ShieldCheck, Stethoscope, Handshake, Lock, BookOpen,
+  HeartPulse, Dumbbell, Stethoscope, Handshake, Lock, BookOpen,
   Search, LayoutGrid, ChevronRight, ArrowLeft, ExternalLink, Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
-// ─── Fallback seed data shown when DB is empty ────────────────────────────────
+// ─── Seed data with updated category names ───────────────────────────────────
 const SEED_RESOURCES: Record<string, Array<{ id: string; name: string; url: string; type: string; category: string }>> = {
-  "Mental Fortitude": [
-    { id: "s1", name: "How to process difficult emotions — a practical guide", url: "https://www.headspace.com/mindfulness/emotional-wellness", type: "link", category: "Mental Fortitude" },
-    { id: "s2", name: "Man Therapy — humour-forward mental health resource for men", url: "https://mantherapy.org", type: "link", category: "Mental Fortitude" },
-    { id: "s3", name: "Lost Connections by Johann Hari — why we get depressed and how to reconnect", url: "https://www.goodreads.com/book/show/34921573", type: "book", category: "Mental Fortitude" },
+  "Mental & Emotional Health": [
+    { id: "s1", name: "How to process difficult emotions — a practical guide", url: "https://www.headspace.com/mindfulness/emotional-wellness", type: "link", category: "Mental & Emotional Health" },
+    { id: "s2", name: "Man Therapy — humour-forward mental health resource for men", url: "https://mantherapy.org", type: "link", category: "Mental & Emotional Health" },
+    { id: "s3", name: "Lost Connections by Johann Hari — why we get depressed and how to reconnect", url: "https://www.goodreads.com/book/show/34921573", type: "book", category: "Mental & Emotional Health" },
+    { id: "s13", name: "Emotional intelligence in men — what it actually means and why it matters", url: "https://www.psychologytoday.com/us/basics/emotional-intelligence", type: "link", category: "Mental & Emotional Health" },
   ],
-  "Financial Survival & Skills": [
-    { id: "s4", name: "Budgeting for people who hate budgeting — simple framework", url: "https://www.moneysavingexpert.com/banking/budget-planning", type: "link", category: "Financial Survival & Skills" },
-    { id: "s5", name: "The Total Money Makeover by Dave Ramsey — debt-free plan", url: "https://www.goodreads.com/book/show/78427", type: "book", category: "Financial Survival & Skills" },
-    { id: "s6", name: "Free Introduction to Personal Finance — Khan Academy", url: "https://www.khanacademy.org/college-careers-more/personal-finance", type: "video", category: "Financial Survival & Skills" },
+  "Work & Financial Stability": [
+    { id: "s4", name: "Budgeting for people who hate budgeting — simple framework", url: "https://www.moneysavingexpert.com/banking/budget-planning", type: "link", category: "Work & Financial Stability" },
+    { id: "s5", name: "The Total Money Makeover by Dave Ramsey — debt-free plan", url: "https://www.goodreads.com/book/show/78427", type: "book", category: "Work & Financial Stability" },
+    { id: "s6", name: "Free Introduction to Personal Finance — Khan Academy", url: "https://www.khanacademy.org/college-careers-more/personal-finance", type: "video", category: "Work & Financial Stability" },
+    { id: "s14", name: "Workplace stress and burnout — when work stops feeling worth it", url: "https://www.mind.org.uk/information-support/tips-for-everyday-living/work/work-and-mental-health", type: "link", category: "Work & Financial Stability" },
   ],
-  "Stress & Relationships": [
-    { id: "s7", name: "4-7-8 breathing explained — simple panic reset", url: "https://www.healthline.com/health/4-7-8-breathing", type: "link", category: "Stress & Relationships" },
-    { id: "s8", name: "How to stop a fight before it starts — communication basics", url: "https://www.gottman.com/blog/manage-conflict-in-relationships", type: "link", category: "Stress & Relationships" },
-    { id: "s9", name: "Why Men Don't Ask for Help — Andrew Fuller (TEDx)", url: "https://www.youtube.com/watch?v=example", type: "video", category: "Stress & Relationships" },
+  "Relationships & Stress": [
+    { id: "s7", name: "4-7-8 breathing explained — simple panic reset", url: "https://www.healthline.com/health/4-7-8-breathing", type: "link", category: "Relationships & Stress" },
+    { id: "s8", name: "How to stop a fight before it starts — communication basics", url: "https://www.gottman.com/blog/manage-conflict-in-relationships", type: "link", category: "Relationships & Stress" },
+    { id: "s9", name: "Why Men Don't Ask for Help — Andrew Fuller (TEDx)", url: "https://www.youtube.com/results?search_query=why+men+dont+ask+for+help+tedx", type: "video", category: "Relationships & Stress" },
+    { id: "s15", name: "Anger management that actually works — beyond counting to 10", url: "https://www.apa.org/topics/anger/control", type: "link", category: "Relationships & Stress" },
   ],
-  "Physical Fundamentals": [
-    { id: "s10", name: "Sleep hygiene — what actually works and what doesn't", url: "https://www.sleepfoundation.org/sleep-hygiene", type: "link", category: "Physical Fundamentals" },
-    { id: "s11", name: "5-minute morning movement — no gym required", url: "https://www.youtube.com/results?search_query=5+minute+morning+stretch+men", type: "video", category: "Physical Fundamentals" },
-    { id: "s12", name: "Why exercise is the closest thing to a mental health cure", url: "https://www.apa.org/topics/exercise-fitness/stress", type: "link", category: "Physical Fundamentals" },
+  "Physical Wellbeing": [
+    { id: "s10", name: "Sleep hygiene — what actually works and what doesn't", url: "https://www.sleepfoundation.org/sleep-hygiene", type: "link", category: "Physical Wellbeing" },
+    { id: "s11", name: "5-minute morning movement — no gym required", url: "https://www.youtube.com/results?search_query=5+minute+morning+stretch+men", type: "video", category: "Physical Wellbeing" },
+    { id: "s12", name: "Why exercise is the closest thing to a mental health cure", url: "https://www.apa.org/topics/exercise-fitness/stress", type: "link", category: "Physical Wellbeing" },
+    { id: "s16", name: "Testosterone, diet, and lifestyle — what the evidence actually says", url: "https://www.healthline.com/nutrition/8-ways-to-boost-testosterone", type: "link", category: "Physical Wellbeing" },
   ],
 };
 
-// ─── Config ───────────────────────────────────────────────────────────────────
 const CATEGORY_CONFIG = {
-  "Mental Fortitude": {
-    icon: Brain, color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/20",
-    description: "Tools to understand your mind and build resilience.",
+  "Mental & Emotional Health": {
+    icon: Brain,
+    color: "text-blue-400",
+    bg: "bg-blue-400/10",
+    border: "border-blue-400/20",
+    gradient: "from-blue-500/20 to-transparent",
+    description: "Understand your mind, manage your emotions, build real resilience.",
   },
-  "Financial Survival & Skills": {
-    icon: Briefcase, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20",
-    description: "Take control of your money and build skills that pay.",
+  "Work & Financial Stability": {
+    icon: Briefcase,
+    color: "text-emerald-400",
+    bg: "bg-emerald-400/10",
+    border: "border-emerald-400/20",
+    gradient: "from-emerald-500/20 to-transparent",
+    description: "Take control of your money, your career, and your sense of security.",
   },
-  "Stress & Relationships": {
-    icon: HeartPulse, color: "text-rose-400", bg: "bg-rose-400/10", border: "border-rose-400/20",
-    description: "Navigate conflict and manage pressure without burning out.",
+  "Relationships & Stress": {
+    icon: HeartPulse,
+    color: "text-rose-400",
+    bg: "bg-rose-400/10",
+    border: "border-rose-400/20",
+    gradient: "from-rose-500/20 to-transparent",
+    description: "Navigate pressure, conflict, and connection without burning out.",
   },
-  "Physical Fundamentals": {
-    icon: ShieldCheck, color: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20",
-    description: "Your mind relies on your body. Start with the basics.",
+  "Physical Wellbeing": {
+    icon: Dumbbell,
+    color: "text-amber-400",
+    bg: "bg-amber-400/10",
+    border: "border-amber-400/20",
+    gradient: "from-amber-500/20 to-transparent",
+    description: "Sleep, movement, energy — the physical foundation everything else runs on.",
   },
 };
 
@@ -66,12 +85,7 @@ const CATEGORIES = Object.keys(CATEGORY_CONFIG);
 const PAGE_SIZE = 12;
 
 // ─── Category drill-down view ─────────────────────────────────────────────────
-function CategoryView({
-  category,
-  onBack,
-  usingSeed,
-  seedItems,
-}: {
+function CategoryView({ category, onBack, usingSeed, seedItems }: {
   category: string;
   onBack: () => void;
   usingSeed: boolean;
@@ -80,7 +94,6 @@ function CategoryView({
   const [activeType, setActiveType] = useState<"all" | "video" | "pdf" | "book" | "link">("all");
   const [offset, setOffset] = useState(0);
 
-  // Reset offset when type filter changes
   useEffect(() => { setOffset(0); }, [activeType]);
 
   const { data, isFetching } = trpc.guides.getResourcesByCategory.useQuery(
@@ -91,35 +104,39 @@ function CategoryView({
   const config = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG];
   const Icon = config?.icon ?? Brain;
 
-  // Resolve items — DB or seed
   const items = usingSeed
     ? seedItems.filter((i) => activeType === "all" || i.type === activeType)
     : (data?.items ?? []);
   const total = usingSeed ? items.length : (data?.total ?? 0);
   const hasMore = usingSeed ? false : (data?.hasMore ?? false);
 
-  // Type counts for tabs (from seed or calculated client-side from DB data)
   const typeCounts = usingSeed
-    ? { video: seedItems.filter((i) => i.type === "video").length, pdf: seedItems.filter((i) => i.type === "pdf").length, book: seedItems.filter((i) => i.type === "book").length, link: seedItems.filter((i) => i.type === "link").length }
-    : { video: 0, pdf: 0, book: 0, link: 0 }; // counts come from summaries on parent
+    ? {
+        video: seedItems.filter((i) => i.type === "video").length,
+        pdf: seedItems.filter((i) => i.type === "pdf").length,
+        book: seedItems.filter((i) => i.type === "book").length,
+        link: seedItems.filter((i) => i.type === "link").length,
+      }
+    : { video: 0, pdf: 0, book: 0, link: 0 };
 
   return (
     <div>
-      {/* Back button + header */}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-zinc-400 hover:text-white text-xs font-black uppercase tracking-widest transition-colors mb-8"
+        className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-xs font-bold uppercase tracking-widest transition-colors mb-8 group"
       >
-        <ArrowLeft className="w-4 h-4" /> Back to Toolkit
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Support & Growth
       </button>
 
-      <div className="flex items-start gap-4 mb-8">
-        <div className={`p-3 rounded-xl ${config?.bg} shrink-0`}>
-          <Icon className={`h-7 w-7 ${config?.color}`} />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold">{category}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{config?.description}</p>
+      <div className={`rounded-2xl border ${config?.border} ${config?.bg} p-6 mb-8`}>
+        <div className="flex items-start gap-4">
+          <div className={`p-3 rounded-xl bg-card/60 shrink-0`}>
+            <Icon className={`h-7 w-7 ${config?.color}`} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">{category}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{config?.description}</p>
+          </div>
         </div>
       </div>
 
@@ -132,21 +149,20 @@ function CategoryView({
             <button
               key={t}
               onClick={() => setActiveType(t)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
                 activeType === t
                   ? (t === "all" ? "bg-primary text-primary-foreground" : TYPE_COLORS[t])
-                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
               }`}
             >
               <TabIcon className="h-3.5 w-3.5" />
               {t.charAt(0).toUpperCase() + t.slice(1)}
-              {!usingSeed && t !== "all" && <span className="opacity-70">({count})</span>}
+              {!usingSeed && t !== "all" && <span className="opacity-60">({count})</span>}
             </button>
           );
         })}
       </div>
 
-      {/* Items list */}
       {isFetching && offset === 0 ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -164,9 +180,10 @@ function CategoryView({
                 key={item.id}
                 href={item.url}
                 target="_blank"
-                className="group flex items-center gap-3 p-3 rounded-xl border border-transparent hover:border-border/40 hover:bg-secondary/40 transition-all"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 p-3.5 rounded-xl border border-transparent hover:border-border/40 hover:bg-secondary/30 transition-all"
               >
-                <div className={`p-1.5 rounded-md ${TYPE_COLORS[item.type] ?? "bg-zinc-700 text-white"} shrink-0`}>
+                <div className={`p-1.5 rounded-lg ${TYPE_COLORS[item.type] ?? "bg-zinc-700 text-white"} shrink-0`}>
                   <ItemIcon className="h-3.5 w-3.5" />
                 </div>
                 <p className="text-sm font-medium flex-1 group-hover:text-primary transition-colors leading-snug">
@@ -179,7 +196,6 @@ function CategoryView({
         </div>
       )}
 
-      {/* Load more / pagination */}
       {!usingSeed && (
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/20">
           <span className="text-xs text-muted-foreground">
@@ -237,9 +253,10 @@ function SearchResults({ term }: { term: string }) {
             key={item.id}
             href={item.url}
             target="_blank"
-            className="group flex items-center gap-3 p-3 rounded-xl border border-transparent hover:border-border/40 hover:bg-secondary/40 transition-all"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-3 p-3.5 rounded-xl border border-transparent hover:border-border/40 hover:bg-secondary/30 transition-all"
           >
-            <div className={`p-1.5 rounded-md ${TYPE_COLORS[item.type] ?? "bg-zinc-700 text-white"} shrink-0`}>
+            <div className={`p-1.5 rounded-lg ${TYPE_COLORS[item.type] ?? "bg-zinc-700 text-white"} shrink-0`}>
               <ItemIcon className="h-3.5 w-3.5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -264,7 +281,6 @@ export default function ResourcesPage() {
 
   const usingSeed = !resources || resources.length === 0;
 
-  // Build per-category counts — prefer DB summaries, fall back to seed counts
   const categoryCounts = useMemo(() => {
     const result: Record<string, { total: number; byType: Record<string, number> }> = {};
     if (summaries && summaries.length > 0) {
@@ -281,7 +297,6 @@ export default function ResourcesPage() {
 
   const isSearching = searchTerm.length > 1;
 
-  // If a category is open, show the drill-down view
   if (openCategory) {
     const seedItems = SEED_RESOURCES[openCategory] ?? [];
     return (
@@ -304,12 +319,13 @@ export default function ResourcesPage() {
 
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl font-bold tracking-tight mb-4 text-gradient">The Toolkit</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mb-8">
-            Free resources across mental health, money, stress, and physical basics. No sign-up. No paywall. Just useful things.
+          <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-3">Free resources</p>
+          <h1 className="text-4xl font-bold tracking-tight mb-4 text-gradient">Support & Growth</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mb-8">
+            Curated resources across mental health, money, stress, and physical wellbeing. No sign-up. No paywall. Just useful things.
           </p>
           <div className="relative max-w-xl">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search videos, books, topics..."
@@ -320,7 +336,6 @@ export default function ResourcesPage() {
           </div>
         </div>
 
-        {/* Search results */}
         {isSearching ? (
           <div className="mb-16">
             <h2 className="text-lg font-semibold mb-4">Search results</h2>
@@ -328,11 +343,10 @@ export default function ResourcesPage() {
           </div>
         ) : (
           <>
-            {/* Category folder grid */}
             <div className="mb-16">
               <div className="flex items-center gap-3 mb-6">
                 <h2 className="text-2xl font-semibold">Available now</h2>
-                <span className="px-3 py-1 text-xs font-medium bg-primary/20 text-primary rounded-full border border-primary/30">
+                <span className="px-3 py-1 text-xs font-semibold bg-primary/20 text-primary rounded-full border border-primary/30">
                   Free
                 </span>
               </div>
@@ -340,7 +354,7 @@ export default function ResourcesPage() {
               {isLoading ? (
                 <div className="grid md:grid-cols-2 gap-5">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-36 rounded-xl bg-card/40 border border-border/40 animate-pulse" />
+                    <div key={i} className="h-40 rounded-2xl bg-card/40 border border-border/40 animate-pulse" />
                   ))}
                 </div>
               ) : (
@@ -355,24 +369,25 @@ export default function ResourcesPage() {
                       <button
                         key={cat}
                         onClick={() => setOpenCategory(cat)}
-                        className={`group text-left w-full rounded-xl border ${config.border} bg-card/40 hover:bg-card/70 backdrop-blur-sm transition-all duration-200 hover:shadow-sm overflow-hidden`}
+                        className={`group text-left w-full rounded-2xl border ${config.border} bg-card/40 hover:bg-card/70 backdrop-blur-sm transition-all duration-200 hover:shadow-lg overflow-hidden`}
                       >
-                        <div className="p-5">
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="flex items-start gap-3">
-                              <div className={`p-2.5 rounded-xl ${config.bg} shrink-0 mt-0.5`}>
+                        {/* Top gradient accent */}
+                        <div className={`h-1 w-full bg-gradient-to-r ${config.gradient}`} />
+                        <div className="p-6">
+                          <div className="flex items-start justify-between gap-3 mb-4">
+                            <div className="flex items-start gap-3.5">
+                              <div className={`p-2.5 rounded-xl ${config.bg} shrink-0`}>
                                 <Icon className={`h-5 w-5 ${config.color}`} />
                               </div>
                               <div>
-                                <h3 className="font-semibold text-base leading-tight">{cat}</h3>
-                                <p className="text-xs text-muted-foreground mt-1">{config.description}</p>
+                                <h3 className="font-bold text-base leading-tight text-foreground">{cat}</h3>
+                                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{config.description}</p>
                               </div>
                             </div>
                             <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
                           </div>
 
-                          {/* Type breakdown pills */}
-                          <div className="flex items-center gap-1.5 flex-wrap mt-3 pt-3 border-t border-border/20">
+                          <div className="flex items-center gap-1.5 flex-wrap pt-4 border-t border-border/20">
                             {counts.total === 0 ? (
                               <span className="text-xs text-muted-foreground italic">No resources yet</span>
                             ) : (
@@ -385,8 +400,8 @@ export default function ResourcesPage() {
                                     </span>
                                   );
                                 })}
-                                <span className="ml-auto text-xs text-muted-foreground font-medium">
-                                  {counts.total} total
+                                <span className={`ml-auto text-xs font-semibold ${config.color}`}>
+                                  {counts.total} total →
                                 </span>
                               </>
                             )}
@@ -400,18 +415,20 @@ export default function ResourcesPage() {
             </div>
 
             {/* Coming soon */}
-            <h2 className="text-2xl font-semibold mb-6">Coming soon</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <ComingSoonCard
-                icon={Stethoscope}
-                title="Professional Counselling"
-                description="Affordable, confidential one-on-one counselling directly through the platform."
-              />
-              <ComingSoonCard
-                icon={Handshake}
-                title="Career & Skills Board"
-                description="Helping men learn marketable skills and find work that pays the bills."
-              />
+            <div className="border-t border-border/20 pt-12">
+              <h2 className="text-xl font-semibold mb-6 text-muted-foreground">Coming soon</h2>
+              <div className="grid md:grid-cols-2 gap-5">
+                <ComingSoonCard
+                  icon={Stethoscope}
+                  title="Professional Counselling"
+                  description="Affordable, confidential one-on-one counselling directly through the platform."
+                />
+                <ComingSoonCard
+                  icon={Handshake}
+                  title="Career & Skills Board"
+                  description="Helping men learn marketable skills and find work that pays the bills."
+                />
+              </div>
             </div>
           </>
         )}
@@ -422,18 +439,18 @@ export default function ResourcesPage() {
 
 function ComingSoonCard({ icon: Icon, title, description }: any) {
   return (
-    <Card className="bg-card/20 backdrop-blur-sm border-border/20 relative overflow-hidden opacity-75">
+    <Card className="bg-card/20 backdrop-blur-sm border-border/20 relative overflow-hidden opacity-60">
       <div className="absolute top-4 right-4">
         <span className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-secondary text-muted-foreground rounded-full border border-border/50">
           <Lock className="h-3 w-3" /> Coming soon
         </span>
       </div>
-      <CardContent className="p-8">
-        <div className="p-4 rounded-full bg-secondary/30 inline-block mb-6">
-          <Icon className="h-8 w-8 text-muted-foreground" />
+      <CardContent className="p-7">
+        <div className="p-3.5 rounded-xl bg-secondary/30 inline-block mb-5">
+          <Icon className="h-6 w-6 text-muted-foreground" />
         </div>
-        <h3 className="text-2xl font-bold mb-3">{title}</h3>
-        <p className="text-muted-foreground">{description}</p>
+        <h3 className="text-xl font-bold mb-2 text-foreground">{title}</h3>
+        <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
       </CardContent>
     </Card>
   );

@@ -121,15 +121,13 @@ export default function StoriesPage() {
                           </div>
                         </div>
 
-                        {/* SEO Link — Google will crawl this and index your individual pages */}
-                        {isLong && (
-                          <Link
+                        {/* SEO Link — always shown so every story is accessible */}
+                        <Link
                             href={`/stories/${story.id}`}
                             className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600 border border-blue-500/30 hover:border-blue-500 text-blue-400 hover:text-white text-xs font-black uppercase tracking-widest rounded-lg transition-all"
                           >
-                            Read more →
+                            Read story →
                           </Link>
-                        )}
                       </div>
                     </CardContent>
                   </Card>

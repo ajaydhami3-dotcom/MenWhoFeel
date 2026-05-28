@@ -165,13 +165,13 @@ function ToolkitSection() {
       <div className="mx-auto max-w-7xl">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-3">The Toolkit</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-3">Support & Growth</h2>
             <p className="text-muted-foreground mb-5 leading-relaxed text-sm">
               Videos, books, and guides across mental health, finances, stress, and physical basics. More resources are being added. No sign-up, no paywall.
             </p>
             <Link href="/guides">
               <Button className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold shadow-md shadow-blue-500/20">
-                Explore Toolkit
+                Support & Growth
               </Button>
             </Link>
           </div>

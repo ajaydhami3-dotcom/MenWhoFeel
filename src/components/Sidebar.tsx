@@ -24,7 +24,7 @@ export default function Sidebar() {
     { href: "/community", label: "Community", icon: Heart },
     { href: "/stories", label: "Stories", icon: BookOpen },
     { href: "/challenges", label: "Challenges", icon: Target },
-    { href: "/guides", label: "The Toolkit", icon: Wrench },
+    { href: "/guides", label: "Support & Growth", icon: Wrench },
   ];
 
   // Journey links only shown if user has done a check-in (localStorage check)

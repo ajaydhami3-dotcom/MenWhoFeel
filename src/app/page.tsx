@@ -221,7 +221,6 @@ function ArticlesSection() {
         </div>
         <div className="grid md:grid-cols-3 gap-5">
           {intelLogs?.slice(0, 3).map((intel: any) => (
-            {/* THIS IS THE FIX: Changed intel.id to intel.slug in the href */}
             <Link key={intel.id} href={`/intel/${intel.slug}`}>
               <Card className="h-full bg-card/80 backdrop-blur-sm border-border/40 hover:border-blue-500/30 transition-all duration-300 hover:scale-[1.01] card-glow flex flex-col">
                 <CardHeader className="pb-2">

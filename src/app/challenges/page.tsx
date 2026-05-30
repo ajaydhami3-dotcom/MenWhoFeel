@@ -7,6 +7,23 @@ import { Lock, CheckCircle2, Flame, Trophy, Timer, Calendar, Target, Edit3, Load
 
 const TEST_USER_ID = "guest_warrior_1";
 
+const SEED_CHALLENGES = {
+  daily: [
+    { id: -1, title: "Write it down", description: "Spend 5 minutes writing whatever's in your head. No structure, no goal — just get it out of your head and onto paper.", category: "daily" },
+    { id: -2, title: "One honest conversation", description: "Tell someone — anyone — one true thing about how you're actually doing. Doesn't have to be deep. Just honest.", category: "daily" },
+    { id: -3, title: "Move for 10 minutes", description: "Walk, stretch, do push-ups — doesn't matter what. 10 minutes of physical movement. Your mind follows your body.", category: "daily" },
+    { id: -4, title: "No phone for one hour", description: "Pick an hour today and put the phone in another room. Notice what fills the space.", category: "daily" },
+    { id: -5, title: "Name three things", description: "Before you sleep tonight, name three specific things that happened today — not things to be grateful for, just three things that were real.", category: "daily" },
+    { id: -6, title: "Reach out first", description: "Message or call someone you haven't spoken to in a while. Don't wait for them to check on you.", category: "daily" },
+    { id: -7, title: "One thing you've been avoiding", description: "Pick one task or conversation you've been putting off and take one small step toward it today.", category: "daily" },
+  ],
+  weekly: [
+    { id: -101, title: "Write a letter you won't send", description: "Write an uncensored letter to someone — a person, a version of yourself, a situation. Say the thing you'd never actually say. Then decide what to do with it.", category: "weekly" },
+    { id: -102, title: "Sleep audit", description: "For 7 days, track when you go to sleep and wake up. No changes required — just observe the pattern honestly.", category: "weekly" },
+  ],
+};
+
+
 export default function ChallengesPage() {
   const utils = trpc.useUtils();
 
@@ -79,8 +96,10 @@ export default function ChallengesPage() {
   }
 
   const completedIds = progress?.map((p) => p.challengeId) || [];
-  const dailyChallenges = challenges?.filter((c) => c.category === "daily") || [];
-  const weeklyChallenges = challenges?.filter((c) => c.category === "weekly") || [];
+  // Use live challenges from DB, fall back to seeds if empty
+  const allChallenges = (challenges && challenges.length > 0) ? challenges : [...SEED_CHALLENGES.daily, ...SEED_CHALLENGES.weekly] as any[];
+  const dailyChallenges = allChallenges.filter((c: any) => c.category === "daily");
+  const weeklyChallenges = allChallenges.filter((c: any) => c.category === "weekly");
 
   return (
     <div className="min-h-screen bg-[#060810] text-white p-8">

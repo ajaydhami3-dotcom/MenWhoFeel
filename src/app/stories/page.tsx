@@ -7,6 +7,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { BookOpen, PenTool, User, Clock, CheckCircle, Send } from "lucide-react";
 
+const SEED_STORIES = [
+  {
+    id: -1,
+    title: "The day I finally admitted I wasn't okay",
+    excerpt: "I'd been telling everyone I was fine for about two years. My job was stable, my relationship was fine, nothing was visibly wrong. But every morning I'd wake up and have to actively talk myself into getting out of bed. I didn't know what that was. I just knew something was off.",
+    content: "I'd been telling everyone I was fine for about two years. My job was stable, my relationship was fine, nothing was visibly wrong. But every morning I'd wake up and have to actively talk myself into getting out of bed. I didn't know what that was. I just knew something was off.",
+    authorName: "anon",
+    featured: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4),
+  },
+  {
+    id: -2,
+    title: "Redundancy at 43 — what nobody tells you about losing your identity",
+    excerpt: "The money thing was stressful. But what nobody warned me about was how much of who I thought I was had been wrapped up in what I did. When that went, I didn't know who I was anymore. That was the harder part.",
+    content: "The money thing was stressful. But what nobody warned me about was how much of who I thought I was had been wrapped up in what I did. When that went, I didn't know who I was anymore. That was the harder part.",
+    authorName: "t_manchester",
+    featured: true,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8),
+  },
+  {
+    id: -3,
+    title: "I started therapy and it wasn't what I expected",
+    excerpt: "I thought I'd be lying on a couch being asked about my childhood. What actually happened was someone asked me a question I'd never considered and I realised I'd never really looked at myself. That was uncomfortable in a useful way.",
+    content: "I thought I'd be lying on a couch being asked about my childhood. What actually happened was someone asked me a question I'd never considered and I realised I'd never really looked at myself. That was uncomfortable in a useful way.",
+    authorName: "anon",
+    featured: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12),
+  },
+];
+
 export default function StoriesPage() {
   const [activeTab, setActiveTab] = useState<"read" | "write">("read");
 
@@ -40,6 +70,11 @@ export default function StoriesPage() {
       </div>
     );
   }
+
+  // Fall back to seed stories if the DB is empty — keeps the page alive for new visitors
+  const displayStories = (approvedStories && approvedStories.length > 0)
+    ? approvedStories
+    : SEED_STORIES as any[];
 
   return (
     <div className="min-h-screen bg-[#060810] text-white p-8">
@@ -84,14 +119,9 @@ export default function StoriesPage() {
         {/* TAB: READ — story cards with excerpt + Next.js Link to SEO page */}
         {activeTab === "read" && (
           <div className="space-y-6">
-            {approvedStories?.length === 0 ? (
-              <div className="p-8 border border-dashed border-zinc-800 rounded-xl text-center text-zinc-500 italic">
-                Nothing published yet. Be the first to share something.
-              </div>
-            ) : (
-              approvedStories?.map((story) => {
-                const preview = story.excerpt || story.content.substring(0, 240);
-                const isLong = story.content.length > 240;
+            {displayStories.map((story: any) => {
+              const preview = story.excerpt || story.content.substring(0, 240);
+              const isLong = story.content.length > 240;
 
                 return (
                   <Card key={story.id} className="bg-zinc-900/60 border-zinc-800 backdrop-blur-md hover:border-blue-500/30 transition-all duration-300">
@@ -132,8 +162,7 @@ export default function StoriesPage() {
                     </CardContent>
                   </Card>
                 );
-              })
-            )}
+              })}
           </div>
         )}
 

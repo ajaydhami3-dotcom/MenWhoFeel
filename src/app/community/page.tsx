@@ -110,9 +110,16 @@ export default function CommunityPage() {
             </div>
             <h1 className="text-5xl font-black italic uppercase tracking-tighter">Community</h1>
             <p className="text-zinc-500 font-medium mt-3 max-w-xl">
-              Say what&apos;s on your mind. Listen to what&apos;s on someone else&apos;s. Messages disappear after 24 hours.
+              Say what&apos;s on your mind. Listen to what&apos;s on someone else&apos;s.{" "}
+              <span className="text-zinc-400">Messages disappear after 24 hours — so nothing you say here follows you around.</span>
             </p>
           </div>
+        </div>
+
+        {/* Daily conversation prompt */}
+        <div className="mb-6 p-5 rounded-xl bg-blue-500/5 border border-blue-500/15">
+          <p className="text-xs font-black uppercase tracking-widest text-blue-500 mb-1">Today&apos;s question</p>
+          <p className="text-zinc-300 font-medium text-sm">What&apos;s one thing you&apos;ve been carrying this week that you haven&apos;t said out loud yet?</p>
         </div>
 
         {/* Chat */}

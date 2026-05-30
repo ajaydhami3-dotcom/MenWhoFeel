@@ -80,6 +80,15 @@ const COMMUNITY_SNIPPETS = [
 
 function StoriesSection() {
   const { data: stories, isLoading } = trpc.stories.getApprovedStories.useQuery();
+
+  const HOMEPAGE_SEED_STORIES = [
+    { id: -1, title: "The day I finally admitted I wasn't okay", excerpt: "I'd been telling everyone I was fine for about two years. Nothing was visibly wrong. But something was off.", authorName: "anon" },
+    { id: -2, title: "Redundancy at 43 — what nobody tells you", excerpt: "The money thing was stressful. But nobody warned me about losing my identity along with the job.", authorName: "t_manchester" },
+    { id: -3, title: "I started therapy and it wasn't what I expected", excerpt: "I thought I'd be lying on a couch. What happened was someone asked a question I'd never considered before.", authorName: "anon" },
+  ];
+
+  const displayStories = (stories && stories.length > 0) ? stories : HOMEPAGE_SEED_STORIES as any[];
+
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -102,13 +111,9 @@ function StoriesSection() {
                 <CardContent><div className="h-12 bg-secondary rounded" /></CardContent>
               </Card>
             ))
-          ) : stories?.length === 0 ? (
-            <div className="md:col-span-3 p-10 border border-dashed border-border/40 rounded-xl text-center bg-card/50">
-              <p className="text-muted-foreground text-sm">Nothing matched that yet. Be the first to share something.</p>
-            </div>
           ) : (
-            stories?.map((story) => (
-              <Link key={story.id} href={`/stories/${story.id}`}>
+            displayStories.slice(0, 3).map((story: any) => (
+              <Link key={story.id} href={story.id > 0 ? `/stories/${story.id}` : "/stories"}>
                 <Card className="h-full bg-card/80 backdrop-blur-sm border-border/40 hover:border-blue-500/30 transition-all duration-300 hover:scale-[1.01] card-glow flex flex-col">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold line-clamp-2 text-foreground">{story.title}</CardTitle>
@@ -277,20 +282,20 @@ function FooterCTA() {
           Anonymous. Free. Always.
         </div>
         <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-          You don&apos;t have to carry everything silently.
+          You&apos;ve read this far. That means something.
         </h2>
         <p className="text-muted-foreground mb-7 leading-relaxed text-sm">
-          Whatever&apos;s going on — bring it here. No account, no judgement, no record.
+          Take one more step. No account, no record, no explaining yourself first.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/assessment">
             <Button size="lg" className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold px-8 shadow-lg shadow-blue-500/20">
-              Check In
+              Start here
             </Button>
           </Link>
-          <Link href="/stories/new">
+          <Link href="/stories">
             <Button size="lg" variant="outline" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 px-8">
-              Share Anonymously
+              Read what others have shared
             </Button>
           </Link>
         </div>

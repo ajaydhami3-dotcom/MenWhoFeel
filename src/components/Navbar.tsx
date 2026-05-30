@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart, Phone, Users } from "lucide-react";
+import { Menu, X, Heart, Phone, Users, BookOpen, Target, Wrench } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -11,7 +11,10 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const navLinks = [
+    { href: "/stories", label: "Stories", icon: BookOpen },
     { href: "/community", label: "Community", icon: Users },
+    { href: "/challenges", label: "Challenges", icon: Target },
+    { href: "/guides", label: "Support & Growth", icon: Wrench },
     { href: "/about", label: "About", icon: Heart },
     { href: "/crisis-helpline", label: "Crisis Helpline", icon: Phone },
   ];

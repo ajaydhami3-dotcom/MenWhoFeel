@@ -49,7 +49,7 @@ export default function AboutPage() {
           <Card className="bg-card/80 border-border/40">
             <CardContent className="p-5">
               <Target className="h-6 w-6 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Actionable Growth</h3>
+              <h3 className="font-semibold mb-1">Something to do, not just feel</h3>
               <p className="text-sm text-muted-foreground">Check-ins, challenges, and guides to help things actually move — not just feel acknowledged.</p>
             </CardContent>
           </Card>

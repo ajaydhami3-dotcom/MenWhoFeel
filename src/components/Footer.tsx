@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Camera, Play, MessageSquare, Mail, Heart, Shield, FileText, AlertTriangle, Phone } from "lucide-react";
-
 export default function Footer() {
   return (
     <footer className="w-full border-t border-border/40 bg-[#060810]/80 backdrop-blur-sm mt-auto">
@@ -48,8 +47,8 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Social — only live links shown */}
-          <div>
+         {/* Social — only live links shown */}
+<div>
   <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">
     Connect
   </h4>
@@ -82,7 +81,9 @@ export default function Footer() {
       className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors"
       aria-label="X"
     >
-      <Twitter className="h-4 w-4 text-muted-foreground hover:text-primary" />
+      <span className="text-xs font-bold text-muted-foreground hover:text-primary">
+        X
+      </span>
     </a>
   </div>
 

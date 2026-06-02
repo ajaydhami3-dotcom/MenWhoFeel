@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Shield, Heart } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Disclaimer | Men Who Feel",
+  description: "Men Who Feel is a peer support community, not a substitute for professional mental health care. Read our full disclaimer before using the platform.",
+};
 
 export default function DisclaimerPage() {
   return (

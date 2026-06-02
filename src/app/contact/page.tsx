@@ -78,15 +78,15 @@ export default function ContactPage() {
               <CardContent className="p-5">
                 <h3 className="font-semibold mb-3">Social Media</h3>
                 <div className="space-y-2">
-                  <a href="https://instagram.com/menwhofeel.club" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                    <Camera className="h-4 w-4" /> @menwhofeel.club
+                  <a href="https://instagram.com/men_whofeel" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <Camera className="h-4 w-4" /> @men_whofeel
                   </a>
-                  <a href="https://youtube.com/@menwhofeel.club" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                    <Play className="h-4 w-4" /> @menwhofeel.club
+                  <a href="https://youtube.com/@MenWhoFeelClub" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <Play className="h-4 w-4" /> @MenWhoFeelClub
                   </a>
-                  <span className="flex items-center gap-2 text-sm text-muted-foreground/50">
-                    <Hash className="h-4 w-4" /> X - Coming Soon
-                  </span>
+                  <a href="https://x.com/men_whofeel" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <Hash className="h-4 w-4" /> @men_whofeel on X
+                  </a>
                   <span className="flex items-center gap-2 text-sm text-muted-foreground/50">
                     <MessageCircle className="h-4 w-4" /> Discord - Coming Soon
                   </span>

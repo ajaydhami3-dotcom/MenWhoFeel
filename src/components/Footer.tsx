@@ -50,21 +50,54 @@ export default function Footer() {
 
           {/* Social — only live links shown */}
           <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Connect</h4>
-            <div className="flex flex-wrap gap-3">
-              <a href="https://instagram.com/menwhofeel.club" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" aria-label="Instagram">
-                <Camera className="h-4 w-4 text-muted-foreground hover:text-primary" />
-              </a>
-              <a href="https://youtube.com/@menwhofeel.club" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors" aria-label="YouTube">
-                <Play className="h-4 w-4 text-muted-foreground hover:text-primary" />
-              </a>
-              {/* X and Discord removed until accounts are live */}
-            </div>
-            <div className="mt-4 text-xs text-muted-foreground space-y-1">
-              <p>@menwhofeel.club</p>
-            </div>
-          </div>
-        </div>
+  <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">
+    Connect
+  </h4>
+
+  <div className="flex flex-wrap gap-3">
+    <a
+      href="https://instagram.com/men_whofeel"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors"
+      aria-label="Instagram"
+    >
+      <Camera className="h-4 w-4 text-muted-foreground hover:text-primary" />
+    </a>
+
+    <a
+      href="https://youtube.com/@MenWhoFeelClub"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors"
+      aria-label="YouTube"
+    >
+      <Play className="h-4 w-4 text-muted-foreground hover:text-primary" />
+    </a>
+
+    <a
+      href="https://x.com/men_whofeel"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors"
+      aria-label="X"
+    >
+      <Twitter className="h-4 w-4 text-muted-foreground hover:text-primary" />
+    </a>
+  </div>
+
+  <div className="mt-4 text-xs text-muted-foreground space-y-1">
+    <p>@men_whofeel</p>
+    <p>
+      <a
+        href="mailto:menwhofeelclub@gmail.com"
+        className="hover:text-primary"
+      >
+        menwhofeelclub@gmail.com
+      </a>
+    </p>
+  </div>
+</div>
 
         <div className="mt-8 pt-8 border-t border-border/20 text-center text-xs text-muted-foreground">
           <p>© MenWhoFeel. Not a substitute for professional mental health care.</p>

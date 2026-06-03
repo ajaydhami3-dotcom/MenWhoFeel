@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: "Anonymous Men's Mental Health Community | Men Who Feel",
+  title: { absolute: "Anonymous Men's Mental Health Community | Men Who Feel" },
   description:
     "Join the anonymous men's mental health community. Real-time conversations, no account, no judgment. Messages are temporary — say what you actually mean.",
   keywords: [

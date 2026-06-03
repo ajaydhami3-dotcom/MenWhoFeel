@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: "Daily Challenges for Men | Men Who Feel",
+  title: { absolute: "Daily Challenges for Men | Men Who Feel" },
   description:
     "Daily, weekly, and monthly challenges to build discipline, emotional resilience, and forward momentum. One step at a time. No account needed.",
   keywords: [

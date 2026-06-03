@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: "Crisis Helplines Worldwide — Help Is Available | Men Who Feel",
+  title: { absolute: "Crisis Helplines Worldwide — Help Is Available | Men Who Feel" },
   description:
     "Crisis helpline numbers for 25+ countries. If you're struggling, help is available right now. You are not alone. Free, confidential support.",
   keywords: [

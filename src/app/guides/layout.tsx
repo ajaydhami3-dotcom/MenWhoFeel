@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: "Free Mental Health Resources for Men | Men Who Feel",
+  title: { absolute: "Free Mental Health Resources for Men | Men Who Feel" },
   description:
     "Free curated resources for men — mental health, financial stability, relationships, stress, and physical wellbeing. No sign-up, no paywall. Just useful things.",
   keywords: [

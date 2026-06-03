@@ -1,251 +1,81 @@
-"use client";
+// This is a SERVER component — stories are fetched at request time and
+// included directly in the HTML that Google crawls. No "Loading stories..." ever.
+import { db } from "@/db";
+import { stories } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import StoriesClient, { type StoryItem } from "./StoriesClient";
 
-import { useState } from "react";
-import Link from "next/link";
-import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { BookOpen, PenTool, User, Clock, CheckCircle, Send } from "lucide-react";
+// ISR: re-generate the page at most every 5 minutes so new approved
+// stories appear without a full deploy.
+export const revalidate = 300;
 
-const SEED_STORIES = [
+// Seed stories shown when the DB is unreachable or empty.
+// Dates are ISO strings so they serialise cleanly across the server→client boundary.
+const SEED_STORIES: StoryItem[] = [
   {
     id: -1,
     title: "The day I finally admitted I wasn't okay",
-    excerpt: "I'd been telling everyone I was fine for about two years. My job was stable, my relationship was fine, nothing was visibly wrong. But every morning I'd wake up and have to actively talk myself into getting out of bed. I didn't know what that was. I just knew something was off.",
-    content: "I'd been telling everyone I was fine for about two years. My job was stable, my relationship was fine, nothing was visibly wrong. But every morning I'd wake up and have to actively talk myself into getting out of bed. I didn't know what that was. I just knew something was off.",
+    excerpt:
+      "I'd been telling everyone I was fine for about two years. My job was stable, my relationship was fine, nothing was visibly wrong. But every morning I'd wake up and have to actively talk myself into getting out of bed.",
+    content:
+      "I'd been telling everyone I was fine for about two years. My job was stable, my relationship was fine, nothing was visibly wrong. But every morning I'd wake up and have to actively talk myself into getting out of bed. I didn't know what that was. I just knew something was off.",
     authorName: "anon",
     featured: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4),
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(),
   },
   {
     id: -2,
     title: "Redundancy at 43 — what nobody tells you about losing your identity",
-    excerpt: "The money thing was stressful. But what nobody warned me about was how much of who I thought I was had been wrapped up in what I did. When that went, I didn't know who I was anymore. That was the harder part.",
-    content: "The money thing was stressful. But what nobody warned me about was how much of who I thought I was had been wrapped up in what I did. When that went, I didn't know who I was anymore. That was the harder part.",
+    excerpt:
+      "The money thing was stressful. But what nobody warned me about was how much of who I thought I was had been wrapped up in what I did.",
+    content:
+      "The money thing was stressful. But what nobody warned me about was how much of who I thought I was had been wrapped up in what I did. When that went, I didn't know who I was anymore. That was the harder part.",
     authorName: "t_manchester",
     featured: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8),
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(),
   },
   {
     id: -3,
     title: "I started therapy and it wasn't what I expected",
-    excerpt: "I thought I'd be lying on a couch being asked about my childhood. What actually happened was someone asked me a question I'd never considered and I realised I'd never really looked at myself. That was uncomfortable in a useful way.",
-    content: "I thought I'd be lying on a couch being asked about my childhood. What actually happened was someone asked me a question I'd never considered and I realised I'd never really looked at myself. That was uncomfortable in a useful way.",
+    excerpt:
+      "I thought I'd be lying on a couch being asked about my childhood. What actually happened was someone asked me a question I'd never considered.",
+    content:
+      "I thought I'd be lying on a couch being asked about my childhood. What actually happened was someone asked me a question I'd never considered and I realised I'd never really looked at myself. That was uncomfortable in a useful way.",
     authorName: "anon",
     featured: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12),
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
   },
 ];
 
-export default function StoriesPage() {
-  const [activeTab, setActiveTab] = useState<"read" | "write">("read");
+async function fetchApprovedStories(): Promise<StoryItem[]> {
+  try {
+    const rows = await db
+      .select()
+      .from(stories)
+      .where(eq(stories.status, "approved"))
+      .orderBy(desc(stories.createdAt));
 
-  const [title, setTitle] = useState("");
-  const [authorName, setAuthorName] = useState("");
-  const [content, setContent] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const { data: approvedStories, isLoading } = trpc.stories.getApprovedStories.useQuery();
-  const submitMutation = trpc.stories.submitStory.useMutation({
-    onSuccess: () => {
-      setIsSubmitted(true);
-      setTitle("");
-      setAuthorName("");
-      setContent("");
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (title.length < 3 || content.length < 20) return;
-    submitMutation.mutate({ title, content, authorName });
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#060810] flex items-center justify-center">
-        <div className="text-blue-500 font-black animate-pulse tracking-tighter text-2xl uppercase italic">
-          Loading stories...
-        </div>
-      </div>
-    );
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      excerpt: r.excerpt ?? null,
+      content: r.content,
+      authorName: r.authorName,
+      featured: r.featured ?? false,
+      createdAt: r.createdAt.toISOString(),
+    }));
+  } catch (err) {
+    // DB unavailable (e.g. missing env var in preview) — fall back to seeds
+    console.error("[stories/page] DB fetch failed, using seed stories:", err);
+    return [];
   }
+}
 
-  // Fall back to seed stories if the DB is empty — keeps the page alive for new visitors
-  const displayStories = (approvedStories && approvedStories.length > 0)
-    ? approvedStories
-    : SEED_STORIES as any[];
+export default async function StoriesPage() {
+  const dbStories = await fetchApprovedStories();
+  const displayStories = dbStories.length > 0 ? dbStories : SEED_STORIES;
 
-  return (
-    <div className="min-h-screen bg-[#060810] text-white p-8">
-      <div className="max-w-4xl mx-auto">
-
-        {/* Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 text-blue-500 mb-2">
-            <BookOpen className="w-5 h-5" />
-            <span className="text-xs font-black uppercase tracking-[0.3em]">Brotherhood</span>
-          </div>
-          <h1 className="text-5xl font-black italic uppercase tracking-tighter">Stories</h1>
-          <p className="text-zinc-400 font-medium mt-3 max-w-xl">
-            Real men, real situations. Read how others came through hard times — or share your own so the next man knows he's not alone.
-          </p>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-4 mb-10 border-b border-zinc-800 pb-4">
-          <button
-            onClick={() => setActiveTab("read")}
-            className={`flex items-center gap-2 px-6 py-3 font-bold uppercase tracking-widest text-xs rounded-xl transition-all ${
-              activeTab === "read"
-                ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                : "bg-zinc-900 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-            }`}
-          >
-            <BookOpen className="w-4 h-4" /> The Archives
-          </button>
-          <button
-            onClick={() => { setActiveTab("write"); setIsSubmitted(false); }}
-            className={`flex items-center gap-2 px-6 py-3 font-bold uppercase tracking-widest text-xs rounded-xl transition-all ${
-              activeTab === "write"
-                ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                : "bg-zinc-900 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-            }`}
-          >
-            <PenTool className="w-4 h-4" /> Share your story
-          </button>
-        </div>
-
-        {/* TAB: READ — story cards with excerpt + Next.js Link to SEO page */}
-        {activeTab === "read" && (
-          <div className="space-y-6">
-            {displayStories.map((story: any) => {
-              const preview = story.excerpt || story.content.substring(0, 240);
-              const isLong = story.content.length > 240;
-
-                return (
-                  <Card key={story.id} className="bg-zinc-900/60 border-zinc-800 backdrop-blur-md hover:border-blue-500/30 transition-all duration-300">
-                    <CardHeader className="pb-2 border-b border-white/5">
-                      {story.featured && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest rounded mb-2 w-fit">
-                          Featured
-                        </span>
-                      )}
-                      <CardTitle className="text-2xl font-bold text-white leading-tight">{story.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-5">
-                      <p
-                        className="text-zinc-400 leading-relaxed mb-5 break-words"
-                        style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
-                      >
-                        {preview}{isLong && !story.excerpt ? "…" : ""}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-5">
-                          <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
-                            <User className="w-4 h-4" /> {story.authorName}
-                          </div>
-                          <div className="flex items-center gap-2 text-zinc-600 text-xs font-bold uppercase tracking-widest">
-                            <Clock className="w-4 h-4" /> {new Date(story.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-
-                        {/* SEO Link — always shown so every story is accessible */}
-                        <Link
-                            href={`/stories/${story.id}`}
-                            className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600 border border-blue-500/30 hover:border-blue-500 text-blue-400 hover:text-white text-xs font-black uppercase tracking-widest rounded-lg transition-all"
-                          >
-                            Read story →
-                          </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-          </div>
-        )}
-
-        {/* TAB: WRITE */}
-        {activeTab === "write" && (
-          <Card className="bg-zinc-900/60 border-zinc-800 backdrop-blur-md">
-            <CardContent className="p-8">
-              {isSubmitted ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle className="w-8 h-8 text-emerald-500" />
-                  </div>
-                  <h3 className="text-2xl font-black uppercase tracking-tight text-white mb-2">Your story is in safe hands.</h3>
-                  <p className="text-zinc-400 max-w-sm mx-auto">
-                    It'll be reviewed before going live. Once it's approved, it'll be here for the next man who needs it.
-                  </p>
-                  <button
-                    onClick={() => setActiveTab("read")}
-                    className="mt-8 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold uppercase tracking-widest text-xs rounded-xl transition-all"
-                  >
-                    Back to stories
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                  <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl text-sm text-blue-400 mb-4">
-                    <p>
-                      <strong>Keep it honest.</strong> What actually happened, and how did you get through it. All stories are reviewed before publishing. No spam, no selling.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">
-                      Give your story a title
-                    </label>
-                    <Input
-                      required
-                      placeholder="e.g. How I rebuilt my finances in 6 months"
-                      className="bg-black/50 border-zinc-800 text-white h-12 focus:ring-blue-500/50"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">
-                      Name or handle (optional — leave blank to stay anonymous)
-                    </label>
-                    <Input
-                      placeholder="Anonymous"
-                      className="bg-black/50 border-zinc-800 text-white h-12 focus:ring-blue-500/50"
-                      value={authorName}
-                      onChange={(e) => setAuthorName(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">
-                      What happened, and how did you come through it?
-                    </label>
-                    <textarea
-                      required
-                      className="w-full h-64 bg-black/50 border border-zinc-800 rounded-xl p-4 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none resize-none placeholder:text-zinc-700"
-                      placeholder="Be specific. The details are what actually help other men."
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submitMutation.isPending || title.length < 3 || content.length < 20}
-                    className="self-end px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-sm rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:hover:bg-blue-600 flex items-center gap-2"
-                  >
-                    {submitMutation.isPending ? "Sending..." : <><Send className="w-4 h-4" /> Share my story</>}
-                  </button>
-                </form>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-      </div>
-    </div>
-  );
+  // At this point the full list is embedded in the server-rendered HTML.
+  // Google will index every title, excerpt, author and date — no JS needed.
+  return <StoriesClient initialStories={displayStories} />;
 }

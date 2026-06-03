@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: "Real Men's Stories — Anonymous & Unfiltered | Men Who Feel",
+  title: { absolute: "Real Men's Stories — Anonymous & Unfiltered | Men Who Feel" },
   description:
     "Real stories from real men about how they came through hard times — depression, burnout, grief, financial stress, and more. Anonymous. Shared so no man feels alone.",
   keywords: [

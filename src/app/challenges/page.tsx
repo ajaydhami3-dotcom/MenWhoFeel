@@ -1,446 +1,55 @@
-"use client";
+// SERVER component — challenges list is fetched at request time and
+// included directly in the HTML. No "Loading challenges..." spinner for Google.
+import { db } from "@/db";
+import { challenges } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import ChallengesClient, { type ChallengeItem } from "./ChallengesClient";
 
-import { useState, useMemo } from "react";
-import { trpc } from "@/lib/trpc";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Lock, CheckCircle2, Flame, Trophy, Timer, Calendar,
-  Target, Edit3, Loader2, Sword, Star,
-} from "lucide-react";
+// ISR: re-generate at most every 5 minutes so new challenges appear
+// without a full deploy.
+export const revalidate = 300;
 
-const TEST_USER_ID = "guest_warrior_1";
+// Seed challenges shown when the DB is unreachable or empty.
+const SEED_CHALLENGES: ChallengeItem[] = [
+  { id: -1,   title: "Write it down",               description: "Spend 5 minutes writing whatever's in your head. No structure, no goal — just get it out of your head and onto paper.",                                          category: "daily",  type: "habit",      instructions: null, dayOfWeek: null },
+  { id: -2,   title: "One honest conversation",      description: "Tell someone — anyone — one true thing about how you're actually doing. Doesn't have to be deep. Just honest.",                                                category: "daily",  type: "habit",      instructions: null, dayOfWeek: null },
+  { id: -3,   title: "Move for 10 minutes",          description: "Walk, stretch, do push-ups — doesn't matter what. 10 minutes of physical movement. Your mind follows your body.",                                             category: "daily",  type: "exercise",   instructions: null, dayOfWeek: null },
+  { id: -4,   title: "No phone for one hour",        description: "Pick an hour today and put the phone in another room. Notice what fills the space.",                                                                          category: "daily",  type: "discipline", instructions: null, dayOfWeek: null },
+  { id: -5,   title: "Name three things",            description: "Before you sleep tonight, name three specific things that happened today — not things to be grateful for, just three things that were real.",                 category: "daily",  type: "habit",      instructions: null, dayOfWeek: null },
+  { id: -6,   title: "Reach out first",              description: "Message or call someone you haven't spoken to in a while. Don't wait for them to check on you.",                                                            category: "daily",  type: "habit",      instructions: null, dayOfWeek: null },
+  { id: -7,   title: "One thing you've been avoiding", description: "Pick one task or conversation you've been putting off and take one small step toward it today.",                                                            category: "daily",  type: "discipline", instructions: null, dayOfWeek: null },
+  { id: -101, title: "Write a letter you won't send", description: "Write an uncensored letter to someone — a person, a version of yourself, a situation. Say the thing you'd never actually say. Then decide what to do with it.", category: "weekly", type: "habit",      instructions: null, dayOfWeek: null },
+  { id: -102, title: "Sleep audit",                  description: "For 7 days, track when you go to sleep and wake up. No changes required — just observe the pattern honestly.",                                                category: "weekly", type: "habit",      instructions: null, dayOfWeek: null },
+];
 
-const SEED_CHALLENGES = {
-  daily: [
-    { id: -1, title: "Write it down", description: "Spend 5 minutes writing whatever's in your head. No structure, no goal — just get it out of your head and onto paper.", category: "daily" },
-    { id: -2, title: "One honest conversation", description: "Tell someone — anyone — one true thing about how you're actually doing. Doesn't have to be deep. Just honest.", category: "daily" },
-    { id: -3, title: "Move for 10 minutes", description: "Walk, stretch, do push-ups — doesn't matter what. 10 minutes of physical movement. Your mind follows your body.", category: "daily" },
-    { id: -4, title: "No phone for one hour", description: "Pick an hour today and put the phone in another room. Notice what fills the space.", category: "daily" },
-    { id: -5, title: "Name three things", description: "Before you sleep tonight, name three specific things that happened today — not things to be grateful for, just three things that were real.", category: "daily" },
-    { id: -6, title: "Reach out first", description: "Message or call someone you haven't spoken to in a while. Don't wait for them to check on you.", category: "daily" },
-    { id: -7, title: "One thing you've been avoiding", description: "Pick one task or conversation you've been putting off and take one small step toward it today.", category: "daily" },
-  ],
-  weekly: [
-    { id: -101, title: "Write a letter you won't send", description: "Write an uncensored letter to someone — a person, a version of yourself, a situation. Say the thing you'd never actually say. Then decide what to do with it.", category: "weekly" },
-    { id: -102, title: "Sleep audit", description: "For 7 days, track when you go to sleep and wake up. No changes required — just observe the pattern honestly.", category: "weekly" },
-  ],
-};
+async function fetchActiveChallenges(): Promise<ChallengeItem[]> {
+  try {
+    const rows = await db
+      .select()
+      .from(challenges)
+      .where(eq(challenges.active, true));
 
-export default function ChallengesPage() {
-  const utils = trpc.useUtils();
-
-  const { data: challenges, isLoading: loadingChallenges } = trpc.challenges.getChallenges.useQuery();
-  const { data: progress, isLoading: loadingProgress } = trpc.challenges.getUserProgress.useQuery({
-    userIdentifier: TEST_USER_ID,
-  });
-
-  const completeMutation = trpc.challenges.completeChallenge.useMutation({
-    onSuccess: () => {
-      utils.challenges.getUserProgress.invalidate();
-    },
-  });
-
-  const [activeTab, setActiveTab] = useState<"daily" | "weekly" | "monthly">("daily");
-  const [monthlyLog, setMonthlyLog] = useState("");
-
-  // Streak logic
-  const currentStreak = useMemo(() => {
-    if (!progress || progress.length === 0) return 0;
-    const dates = progress
-      .filter((p) => p.completedAt!)
-      .map((p) => new Date(p.completedAt!).setHours(0, 0, 0, 0));
-    const uniqueDates = [...new Set(dates)].sort((a, b) => b - a);
-    if (uniqueDates.length === 0) return 0;
-    const today = new Date().setHours(0, 0, 0, 0);
-    const yesterday = today - 86400000;
-    let streak = 0;
-    let checkDate = today;
-    if (uniqueDates[0] === today) {
-      streak++;
-      checkDate = yesterday;
-      uniqueDates.shift();
-    } else if (uniqueDates[0] === yesterday) {
-      checkDate = yesterday;
-    } else {
-      return 0;
-    }
-    for (const date of uniqueDates) {
-      if (date === checkDate) {
-        streak++;
-        checkDate -= 86400000;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  }, [progress]);
-
-  // One daily per day
-  const hasDoneDailyToday = useMemo(() => {
-    if (!progress || !challenges) return false;
-    const today = new Date().setHours(0, 0, 0, 0);
-    return progress.some((p) => {
-      if (!p.completedAt!) return false;
-      const challenge = challenges.find((c) => c.id === p.challengeId);
-      if (challenge?.category !== "daily") return false;
-      return new Date(p.completedAt!).setHours(0, 0, 0, 0) === today;
-    });
-  }, [progress, challenges]);
-
-  if (loadingChallenges || loadingProgress) {
-    return (
-      <div className="min-h-screen bg-[#060810] flex items-center justify-center">
-        <div className="text-blue-500 font-black animate-pulse tracking-tighter text-2xl uppercase italic">
-          Loading challenges...
-        </div>
-      </div>
-    );
-  }
-
-  const completedIds = progress?.map((p) => p.challengeId) || [];
-  const allChallenges =
-    challenges && challenges.length > 0
-      ? challenges
-      : ([...SEED_CHALLENGES.daily, ...SEED_CHALLENGES.weekly] as any[]);
-
-  // Original ordered lists (used for lock-checking logic)
-  const dailyChallenges = allChallenges.filter((c: any) => c.category === "daily");
-  const weeklyChallenges = allChallenges.filter((c: any) => c.category === "weekly");
-
-  // ── SORTED daily list: preserve original index, but push completed to bottom ──
-  // The "current day" (first available uncompleted) floats to top automatically.
-  const sortedDailyChallenges = useMemo(() => {
-    const withOriginalIndex = dailyChallenges.map((c: any, i: number) => ({
-      ...c,
-      originalIndex: i,
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      category: r.category,
+      type: r.type,
+      instructions: r.instructions ?? null,
+      dayOfWeek: r.dayOfWeek ?? null,
     }));
-    const incomplete = withOriginalIndex.filter((c: any) => !completedIds.includes(c.id));
-    const completed = withOriginalIndex.filter((c: any) => completedIds.includes(c.id));
-    return [...incomplete, ...completed];
-  }, [dailyChallenges, completedIds]);
-
-  // Find the index of the first unlocked+uncompleted challenge in sorted list
-  // That one gets the "Today" badge
-  const todayIndex = useMemo(() => {
-    return sortedDailyChallenges.findIndex((c: any) => {
-      const isCompleted = completedIds.includes(c.id);
-      if (isCompleted) return false;
-      const isPreviousDone =
-        c.originalIndex === 0 ||
-        completedIds.includes(dailyChallenges[c.originalIndex - 1]?.id);
-      const isSequenceLocked = c.originalIndex > 0 && !isPreviousDone;
-      const isTimeLocked = !isSequenceLocked && hasDoneDailyToday;
-      return !isSequenceLocked && !isTimeLocked;
-    });
-  }, [sortedDailyChallenges, completedIds, dailyChallenges, hasDoneDailyToday]);
-
-  return (
-    <div className="min-h-screen bg-[#060810] text-white p-8">
-      <div className="max-w-5xl mx-auto">
-
-        {/* Header */}
-        <div className="mb-8 flex justify-between items-end">
-          <div>
-            <div className="flex items-center gap-2 text-blue-500 mb-2">
-              <Sword className="w-5 h-5" />
-              <span className="text-xs font-black uppercase tracking-[0.3em]">The Forge</span>
-            </div>
-            <h1 className="text-5xl font-black italic uppercase tracking-tighter">Challenges</h1>
-          </div>
-          {/* Streak counter */}
-          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-[10px] text-zinc-500 font-bold uppercase">Current streak</p>
-              <p className="text-xl font-black text-amber-500">
-                {currentStreak} {currentStreak === 1 ? "day" : "days"}
-              </p>
-            </div>
-            <Flame className={`w-8 h-8 ${currentStreak > 0 ? "text-amber-500" : "text-zinc-700"}`} />
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-4 mb-10 border-b border-zinc-800 pb-4">
-          <TabButton active={activeTab === "daily"} onClick={() => setActiveTab("daily")} icon={Flame} label="Daily" />
-          <TabButton active={activeTab === "weekly"} onClick={() => setActiveTab("weekly")} icon={Target} label="Weekly" />
-          <TabButton active={activeTab === "monthly"} onClick={() => setActiveTab("monthly")} icon={Calendar} label="Monthly check-in" />
-        </div>
-
-        {/* ── DAILY ── */}
-        {activeTab === "daily" && (
-          <div className="space-y-4">
-            <p className="text-zinc-400 font-medium mb-6">One challenge per day. Discipline is built slowly.</p>
-
-            {sortedDailyChallenges.map((challenge: any, displayIndex: number) => {
-              const isCompleted = completedIds.includes(challenge.id);
-
-              // Use originalIndex for sequential lock checking against the original ordered array
-              const isPreviousDone =
-                challenge.originalIndex === 0 ||
-                completedIds.includes(dailyChallenges[challenge.originalIndex - 1]?.id);
-              const isSequenceLocked = challenge.originalIndex > 0 && !isPreviousDone;
-              const isTimeLocked = !isCompleted && !isSequenceLocked && hasDoneDailyToday;
-
-              // "Today" badge on the first available uncompleted+unlocked challenge
-              const isToday = displayIndex === todayIndex;
-
-              return (
-                <ChallengeCard
-                  key={challenge.id}
-                  title={`Day ${challenge.originalIndex + 1}: ${challenge.title}`}
-                  description={
-                    isSequenceLocked
-                      ? "Finish the previous challenge to unlock this one."
-                      : isTimeLocked
-                      ? "Come back tomorrow. One a day is the whole point."
-                      : challenge.description
-                  }
-                  isCompleted={isCompleted}
-                  isLocked={isSequenceLocked || isTimeLocked}
-                  lockReason={isTimeLocked ? "time" : "sequence"}
-                  isToday={isToday}
-                  isSaving={
-                    completeMutation.isPending &&
-                    completeMutation.variables?.challengeId === challenge.id
-                  }
-                  onComplete={() =>
-                    completeMutation.mutate({
-                      challengeId: challenge.id,
-                      userIdentifier: TEST_USER_ID,
-                    })
-                  }
-                />
-              );
-            })}
-          </div>
-        )}
-
-        {/* ── WEEKLY ── */}
-        {activeTab === "weekly" && (
-          <div className="space-y-4">
-            <p className="text-zinc-400 font-medium mb-6">
-              Bigger goals, longer focus. Unlock these by keeping up with your daily challenges.
-            </p>
-            {weeklyChallenges.length === 0 ? (
-              <div className="p-8 border border-dashed border-zinc-800 rounded-xl text-center text-zinc-500 italic">
-                No weekly challenges added yet.
-              </div>
-            ) : (
-              (() => {
-                // Sort weeklies: incomplete first, completed last
-                const withIndex = weeklyChallenges.map((c: any, i: number) => ({
-                  ...c,
-                  originalIndex: i,
-                }));
-                const incompleteW = withIndex.filter((c: any) => !completedIds.includes(c.id));
-                const completedW = withIndex.filter((c: any) => completedIds.includes(c.id));
-                const sortedWeeklies = [...incompleteW, ...completedW];
-
-                return sortedWeeklies.map((challenge: any) => {
-                  const isCompleted = completedIds.includes(challenge.id);
-                  const isPreviousWeekDone =
-                    challenge.originalIndex === 0 ||
-                    completedIds.includes(weeklyChallenges[challenge.originalIndex - 1]?.id);
-                  const requiredDailyIndex = challenge.originalIndex * 7 - 1;
-                  const requiredDailyChallenge = dailyChallenges[requiredDailyIndex];
-                  const hasCompletedRequiredDaily =
-                    challenge.originalIndex === 0 ||
-                    (requiredDailyChallenge &&
-                      completedIds.includes(requiredDailyChallenge.id));
-                  const isLocked = !isPreviousWeekDone || !hasCompletedRequiredDaily;
-
-                  let lockMessage = challenge.description;
-                  if (isLocked) {
-                    if (!isPreviousWeekDone) {
-                      lockMessage = "Finish the previous weekly challenge to unlock this one.";
-                    } else if (!hasCompletedRequiredDaily) {
-                      lockMessage = `Reach Day ${challenge.originalIndex * 7} in your daily challenges to unlock this one.`;
-                    }
-                  }
-
-                  return (
-                    <ChallengeCard
-                      key={challenge.id}
-                      title={`Week ${challenge.originalIndex + 1}: ${challenge.title}`}
-                      description={isLocked ? lockMessage : challenge.description}
-                      isCompleted={isCompleted}
-                      isLocked={isLocked}
-                      lockReason="sequence"
-                      isToday={false}
-                      isSaving={
-                        completeMutation.isPending &&
-                        completeMutation.variables?.challengeId === challenge.id
-                      }
-                      onComplete={() =>
-                        completeMutation.mutate({
-                          challengeId: challenge.id,
-                          userIdentifier: TEST_USER_ID,
-                        })
-                      }
-                    />
-                  );
-                });
-              })()
-            )}
-          </div>
-        )}
-
-        {/* ── MONTHLY CHECK-IN ── */}
-        {activeTab === "monthly" && (
-          <div className="space-y-6">
-            <p className="text-zinc-400 font-medium mb-6">
-              Step back and look at the last 30 days honestly. What moved? What didn't?
-            </p>
-            <Card className="bg-zinc-900/60 border-zinc-800 backdrop-blur-md">
-              <CardContent className="p-8 flex flex-col gap-6">
-                <div className="flex items-center gap-3 text-blue-400">
-                  <Edit3 className="w-6 h-6" />
-                  <h2 className="text-2xl font-bold uppercase tracking-tight text-white">Monthly log</h2>
-                </div>
-                <textarea
-                  className="w-full h-48 bg-black/50 border border-zinc-800 rounded-xl p-4 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none resize-none placeholder:text-zinc-700"
-                  placeholder="What did you actually do this month? Where did you grow? Where did you fall short? Be honest."
-                  value={monthlyLog}
-                  onChange={(e) => setMonthlyLog(e.target.value)}
-                />
-                <button className="self-end px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-sm rounded-lg transition-all active:scale-95">
-                  Save my log
-                </button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  } catch (err) {
+    // DB unavailable — fall back to seeds.
+    console.error("[challenges/page] DB fetch failed, using seed challenges:", err);
+    return [];
+  }
 }
 
-// ─── Tab button ───────────────────────────────────────────────────────────────
-function TabButton({ active, onClick, icon: Icon, label }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-3 font-bold uppercase tracking-widest text-xs rounded-xl transition-all ${
-        active
-          ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-          : "bg-zinc-900 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-      }`}
-    >
-      <Icon className="w-4 h-4" /> {label}
-    </button>
-  );
-}
+export default async function ChallengesPage() {
+  const dbChallenges = await fetchActiveChallenges();
+  const initialChallenges = dbChallenges.length > 0 ? dbChallenges : SEED_CHALLENGES;
 
-// ─── Challenge card ───────────────────────────────────────────────────────────
-function ChallengeCard({
-  title,
-  description,
-  isCompleted,
-  isLocked,
-  lockReason,
-  isToday,
-  isSaving,
-  onComplete,
-}: {
-  title: string;
-  description: string;
-  isCompleted: boolean;
-  isLocked: boolean;
-  lockReason: string;
-  isToday: boolean;
-  isSaving: boolean;
-  onComplete: () => void;
-}) {
-  return (
-    <div className="relative">
-      {/* "Today" badge floats above the card */}
-      {isToday && (
-        <div className="absolute -top-3 left-6 z-10 flex items-center gap-1.5 px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-blue-900/40">
-          <Star className="w-3 h-3 fill-white" />
-          Today&apos;s challenge
-        </div>
-      )}
-
-      <Card
-        className={`relative overflow-hidden border-zinc-800 transition-all duration-500 ${
-          isToday ? "ring-2 ring-blue-500/50 ring-offset-2 ring-offset-[#060810]" : ""
-        } ${
-          isLocked
-            ? "opacity-50 grayscale"
-            : "bg-zinc-900/60 hover:border-blue-500/50 backdrop-blur-md"
-        } ${isCompleted ? "border-emerald-500/30 bg-emerald-500/5" : ""}`}
-      >
-        <CardContent className={`p-6 ${isToday ? "pt-7" : ""}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-5">
-              <div
-                className={`w-14 h-14 rounded-xl flex items-center justify-center border-2 ${
-                  isCompleted
-                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                    : isLocked
-                    ? "bg-zinc-800 border-zinc-700 text-zinc-600"
-                    : "bg-blue-500/10 border-blue-500/50 text-blue-400"
-                }`}
-              >
-                {isCompleted ? (
-                  <CheckCircle2 className="w-6 h-6" />
-                ) : isLocked && lockReason === "time" ? (
-                  <Timer className="w-6 h-6" />
-                ) : isLocked ? (
-                  <Lock className="w-6 h-6" />
-                ) : (
-                  <Sword className="w-6 h-6" />
-                )}
-              </div>
-
-              <div>
-                <h3
-                  className={`text-xl font-bold uppercase tracking-tight ${
-                    isCompleted ? "text-emerald-400 line-through opacity-50" : "text-white"
-                  }`}
-                >
-                  {title}
-                </h3>
-                <p className="text-zinc-400 text-sm font-medium mt-1">{description}</p>
-              </div>
-            </div>
-
-            {!isLocked && !isCompleted && (
-              <button
-                onClick={onComplete}
-                disabled={isSaving}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs rounded-lg transition-all active:scale-95 shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center gap-2 shrink-0"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Saving...
-                  </>
-                ) : (
-                  "Mark done"
-                )}
-              </button>
-            )}
-
-            {isCompleted && (
-              <div className="flex items-center gap-2 text-emerald-500 font-black text-xs uppercase italic shrink-0">
-                <Trophy className="w-4 h-4" /> Done
-              </div>
-            )}
-
-            {isLocked && lockReason === "time" && (
-              <div className="flex items-center gap-2 text-zinc-500 font-black text-xs uppercase shrink-0">
-                <Timer className="w-4 h-4" /> Back tomorrow
-              </div>
-            )}
-          </div>
-        </CardContent>
-
-        <div
-          className={`absolute bottom-0 left-0 h-1 transition-all duration-1000 ${
-            isCompleted ? "w-full bg-emerald-500" : "w-0 bg-blue-500"
-          }`}
-        />
-      </Card>
-    </div>
-  );
+  // Challenge titles and descriptions are embedded in the server-rendered HTML.
+  // The client component handles user progress overlays via tRPC (user-specific).
+  return <ChallengesClient initialChallenges={initialChallenges} />;
 }

@@ -5,7 +5,7 @@ import { Heart, Users, Shield, Flame, Target, BookOpen } from "lucide-react";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: "About Men Who Feel — Anonymous Mental Health Support for Men",
+  title: { absolute: "About Men Who Feel — Anonymous Mental Health Support for Men" },
   description:
     "MenWhoFeel was built because too many men carry things alone. A safe, anonymous space where men can talk honestly — no account, no record, no judgment.",
   keywords: [

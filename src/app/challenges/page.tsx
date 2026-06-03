@@ -3,7 +3,10 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
-import { Lock, CheckCircle2, Flame, Trophy, Timer, Calendar, Target, Edit3, Loader2, Sword } from "lucide-react";
+import {
+  Lock, CheckCircle2, Flame, Trophy, Timer, Calendar,
+  Target, Edit3, Loader2, Sword, Star,
+} from "lucide-react";
 
 const TEST_USER_ID = "guest_warrior_1";
 
@@ -22,7 +25,6 @@ const SEED_CHALLENGES = {
     { id: -102, title: "Sleep audit", description: "For 7 days, track when you go to sleep and wake up. No changes required — just observe the pattern honestly.", category: "weekly" },
   ],
 };
-
 
 export default function ChallengesPage() {
   const utils = trpc.useUtils();
@@ -96,10 +98,41 @@ export default function ChallengesPage() {
   }
 
   const completedIds = progress?.map((p) => p.challengeId) || [];
-  // Use live challenges from DB, fall back to seeds if empty
-  const allChallenges = (challenges && challenges.length > 0) ? challenges : [...SEED_CHALLENGES.daily, ...SEED_CHALLENGES.weekly] as any[];
+  const allChallenges =
+    challenges && challenges.length > 0
+      ? challenges
+      : ([...SEED_CHALLENGES.daily, ...SEED_CHALLENGES.weekly] as any[]);
+
+  // Original ordered lists (used for lock-checking logic)
   const dailyChallenges = allChallenges.filter((c: any) => c.category === "daily");
   const weeklyChallenges = allChallenges.filter((c: any) => c.category === "weekly");
+
+  // ── SORTED daily list: preserve original index, but push completed to bottom ──
+  // The "current day" (first available uncompleted) floats to top automatically.
+  const sortedDailyChallenges = useMemo(() => {
+    const withOriginalIndex = dailyChallenges.map((c: any, i: number) => ({
+      ...c,
+      originalIndex: i,
+    }));
+    const incomplete = withOriginalIndex.filter((c: any) => !completedIds.includes(c.id));
+    const completed = withOriginalIndex.filter((c: any) => completedIds.includes(c.id));
+    return [...incomplete, ...completed];
+  }, [dailyChallenges, completedIds]);
+
+  // Find the index of the first unlocked+uncompleted challenge in sorted list
+  // That one gets the "Today" badge
+  const todayIndex = useMemo(() => {
+    return sortedDailyChallenges.findIndex((c: any) => {
+      const isCompleted = completedIds.includes(c.id);
+      if (isCompleted) return false;
+      const isPreviousDone =
+        c.originalIndex === 0 ||
+        completedIds.includes(dailyChallenges[c.originalIndex - 1]?.id);
+      const isSequenceLocked = c.originalIndex > 0 && !isPreviousDone;
+      const isTimeLocked = !isSequenceLocked && hasDoneDailyToday;
+      return !isSequenceLocked && !isTimeLocked;
+    });
+  }, [sortedDailyChallenges, completedIds, dailyChallenges, hasDoneDailyToday]);
 
   return (
     <div className="min-h-screen bg-[#060810] text-white p-8">
@@ -118,7 +151,9 @@ export default function ChallengesPage() {
           <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex items-center gap-4">
             <div className="text-right">
               <p className="text-[10px] text-zinc-500 font-bold uppercase">Current streak</p>
-              <p className="text-xl font-black text-amber-500">{currentStreak} {currentStreak === 1 ? "day" : "days"}</p>
+              <p className="text-xl font-black text-amber-500">
+                {currentStreak} {currentStreak === 1 ? "day" : "days"}
+              </p>
             </div>
             <Flame className={`w-8 h-8 ${currentStreak > 0 ? "text-amber-500" : "text-zinc-700"}`} />
           </div>
@@ -131,20 +166,28 @@ export default function ChallengesPage() {
           <TabButton active={activeTab === "monthly"} onClick={() => setActiveTab("monthly")} icon={Calendar} label="Monthly check-in" />
         </div>
 
-        {/* DAILY */}
+        {/* ── DAILY ── */}
         {activeTab === "daily" && (
           <div className="space-y-4">
             <p className="text-zinc-400 font-medium mb-6">One challenge per day. Discipline is built slowly.</p>
-            {dailyChallenges.map((challenge, index) => {
-              const isPreviousDone = index === 0 || completedIds.includes(dailyChallenges[index - 1].id);
+
+            {sortedDailyChallenges.map((challenge: any, displayIndex: number) => {
               const isCompleted = completedIds.includes(challenge.id);
-              const isSequenceLocked = index > 0 && !isPreviousDone;
+
+              // Use originalIndex for sequential lock checking against the original ordered array
+              const isPreviousDone =
+                challenge.originalIndex === 0 ||
+                completedIds.includes(dailyChallenges[challenge.originalIndex - 1]?.id);
+              const isSequenceLocked = challenge.originalIndex > 0 && !isPreviousDone;
               const isTimeLocked = !isCompleted && !isSequenceLocked && hasDoneDailyToday;
+
+              // "Today" badge on the first available uncompleted+unlocked challenge
+              const isToday = displayIndex === todayIndex;
 
               return (
                 <ChallengeCard
                   key={challenge.id}
-                  title={`Day ${index + 1}: ${challenge.title}`}
+                  title={`Day ${challenge.originalIndex + 1}: ${challenge.title}`}
                   description={
                     isSequenceLocked
                       ? "Finish the previous challenge to unlock this one."
@@ -155,61 +198,99 @@ export default function ChallengesPage() {
                   isCompleted={isCompleted}
                   isLocked={isSequenceLocked || isTimeLocked}
                   lockReason={isTimeLocked ? "time" : "sequence"}
-                  isSaving={completeMutation.isPending && completeMutation.variables?.challengeId === challenge.id}
-                  onComplete={() => completeMutation.mutate({ challengeId: challenge.id, userIdentifier: TEST_USER_ID })}
+                  isToday={isToday}
+                  isSaving={
+                    completeMutation.isPending &&
+                    completeMutation.variables?.challengeId === challenge.id
+                  }
+                  onComplete={() =>
+                    completeMutation.mutate({
+                      challengeId: challenge.id,
+                      userIdentifier: TEST_USER_ID,
+                    })
+                  }
                 />
               );
             })}
           </div>
         )}
 
-        {/* WEEKLY */}
+        {/* ── WEEKLY ── */}
         {activeTab === "weekly" && (
           <div className="space-y-4">
-            <p className="text-zinc-400 font-medium mb-6">Bigger goals, longer focus. Unlock these by keeping up with your daily challenges.</p>
+            <p className="text-zinc-400 font-medium mb-6">
+              Bigger goals, longer focus. Unlock these by keeping up with your daily challenges.
+            </p>
             {weeklyChallenges.length === 0 ? (
               <div className="p-8 border border-dashed border-zinc-800 rounded-xl text-center text-zinc-500 italic">
                 No weekly challenges added yet.
               </div>
             ) : (
-              weeklyChallenges.map((challenge, index) => {
-                const isCompleted = completedIds.includes(challenge.id);
-                const isPreviousWeekDone = index === 0 || completedIds.includes(weeklyChallenges[index - 1].id);
-                const requiredDailyIndex = index * 7 - 1;
-                const requiredDailyChallenge = dailyChallenges[requiredDailyIndex];
-                const hasCompletedRequiredDaily =
-                  index === 0 || (requiredDailyChallenge && completedIds.includes(requiredDailyChallenge.id));
-                const isLocked = !isPreviousWeekDone || !hasCompletedRequiredDaily;
-                let lockMessage = challenge.description;
-                if (isLocked) {
-                  if (!isPreviousWeekDone) {
-                    lockMessage = "Finish the previous weekly challenge to unlock this one.";
-                  } else if (!hasCompletedRequiredDaily) {
-                    lockMessage = `Reach Day ${index * 7} in your daily challenges to unlock this one.`;
-                  }
-                }
+              (() => {
+                // Sort weeklies: incomplete first, completed last
+                const withIndex = weeklyChallenges.map((c: any, i: number) => ({
+                  ...c,
+                  originalIndex: i,
+                }));
+                const incompleteW = withIndex.filter((c: any) => !completedIds.includes(c.id));
+                const completedW = withIndex.filter((c: any) => completedIds.includes(c.id));
+                const sortedWeeklies = [...incompleteW, ...completedW];
 
-                return (
-                  <ChallengeCard
-                    key={challenge.id}
-                    title={`Week ${index + 1}: ${challenge.title}`}
-                    description={isLocked ? lockMessage : challenge.description}
-                    isCompleted={isCompleted}
-                    isLocked={isLocked}
-                    lockReason="sequence"
-                    isSaving={completeMutation.isPending && completeMutation.variables?.challengeId === challenge.id}
-                    onComplete={() => completeMutation.mutate({ challengeId: challenge.id, userIdentifier: TEST_USER_ID })}
-                  />
-                );
-              })
+                return sortedWeeklies.map((challenge: any) => {
+                  const isCompleted = completedIds.includes(challenge.id);
+                  const isPreviousWeekDone =
+                    challenge.originalIndex === 0 ||
+                    completedIds.includes(weeklyChallenges[challenge.originalIndex - 1]?.id);
+                  const requiredDailyIndex = challenge.originalIndex * 7 - 1;
+                  const requiredDailyChallenge = dailyChallenges[requiredDailyIndex];
+                  const hasCompletedRequiredDaily =
+                    challenge.originalIndex === 0 ||
+                    (requiredDailyChallenge &&
+                      completedIds.includes(requiredDailyChallenge.id));
+                  const isLocked = !isPreviousWeekDone || !hasCompletedRequiredDaily;
+
+                  let lockMessage = challenge.description;
+                  if (isLocked) {
+                    if (!isPreviousWeekDone) {
+                      lockMessage = "Finish the previous weekly challenge to unlock this one.";
+                    } else if (!hasCompletedRequiredDaily) {
+                      lockMessage = `Reach Day ${challenge.originalIndex * 7} in your daily challenges to unlock this one.`;
+                    }
+                  }
+
+                  return (
+                    <ChallengeCard
+                      key={challenge.id}
+                      title={`Week ${challenge.originalIndex + 1}: ${challenge.title}`}
+                      description={isLocked ? lockMessage : challenge.description}
+                      isCompleted={isCompleted}
+                      isLocked={isLocked}
+                      lockReason="sequence"
+                      isToday={false}
+                      isSaving={
+                        completeMutation.isPending &&
+                        completeMutation.variables?.challengeId === challenge.id
+                      }
+                      onComplete={() =>
+                        completeMutation.mutate({
+                          challengeId: challenge.id,
+                          userIdentifier: TEST_USER_ID,
+                        })
+                      }
+                    />
+                  );
+                });
+              })()
             )}
           </div>
         )}
 
-        {/* MONTHLY CHECK-IN */}
+        {/* ── MONTHLY CHECK-IN ── */}
         {activeTab === "monthly" && (
           <div className="space-y-6">
-            <p className="text-zinc-400 font-medium mb-6">Step back and look at the last 30 days honestly. What moved? What didn't?</p>
+            <p className="text-zinc-400 font-medium mb-6">
+              Step back and look at the last 30 days honestly. What moved? What didn't?
+            </p>
             <Card className="bg-zinc-900/60 border-zinc-800 backdrop-blur-md">
               <CardContent className="p-8 flex flex-col gap-6">
                 <div className="flex items-center gap-3 text-blue-400">
@@ -229,12 +310,12 @@ export default function ChallengesPage() {
             </Card>
           </div>
         )}
-
       </div>
     </div>
   );
 }
 
+// ─── Tab button ───────────────────────────────────────────────────────────────
 function TabButton({ active, onClick, icon: Icon, label }: any) {
   return (
     <button
@@ -250,83 +331,116 @@ function TabButton({ active, onClick, icon: Icon, label }: any) {
   );
 }
 
-function ChallengeCard({ title, description, isCompleted, isLocked, lockReason, isSaving, onComplete }: any) {
+// ─── Challenge card ───────────────────────────────────────────────────────────
+function ChallengeCard({
+  title,
+  description,
+  isCompleted,
+  isLocked,
+  lockReason,
+  isToday,
+  isSaving,
+  onComplete,
+}: {
+  title: string;
+  description: string;
+  isCompleted: boolean;
+  isLocked: boolean;
+  lockReason: string;
+  isToday: boolean;
+  isSaving: boolean;
+  onComplete: () => void;
+}) {
   return (
-    <Card
-      className={`relative overflow-hidden border-zinc-800 transition-all duration-500 ${
-        isLocked ? "opacity-50 grayscale" : "bg-zinc-900/60 hover:border-blue-500/50 backdrop-blur-md"
-      } ${isCompleted ? "border-emerald-500/50 bg-emerald-500/5" : ""}`}
-    >
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <div
-              className={`w-14 h-14 rounded-xl flex items-center justify-center border-2 ${
-                isCompleted
-                  ? "bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                  : isLocked
-                  ? "bg-zinc-800 border-zinc-700 text-zinc-600"
-                  : "bg-blue-500/10 border-blue-500/50 text-blue-400"
-              }`}
-            >
-              {isCompleted ? (
-                <CheckCircle2 className="w-6 h-6" />
-              ) : isLocked && lockReason === "time" ? (
-                <Timer className="w-6 h-6" />
-              ) : isLocked ? (
-                <Lock className="w-6 h-6" />
-              ) : (
-                <Sword className="w-6 h-6" />
-              )}
-            </div>
+    <div className="relative">
+      {/* "Today" badge floats above the card */}
+      {isToday && (
+        <div className="absolute -top-3 left-6 z-10 flex items-center gap-1.5 px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-blue-900/40">
+          <Star className="w-3 h-3 fill-white" />
+          Today&apos;s challenge
+        </div>
+      )}
 
-            <div>
-              <h3
-                className={`text-xl font-bold uppercase tracking-tight ${
-                  isCompleted ? "text-emerald-400 line-through opacity-50" : "text-white"
+      <Card
+        className={`relative overflow-hidden border-zinc-800 transition-all duration-500 ${
+          isToday ? "ring-2 ring-blue-500/50 ring-offset-2 ring-offset-[#060810]" : ""
+        } ${
+          isLocked
+            ? "opacity-50 grayscale"
+            : "bg-zinc-900/60 hover:border-blue-500/50 backdrop-blur-md"
+        } ${isCompleted ? "border-emerald-500/30 bg-emerald-500/5" : ""}`}
+      >
+        <CardContent className={`p-6 ${isToday ? "pt-7" : ""}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-5">
+              <div
+                className={`w-14 h-14 rounded-xl flex items-center justify-center border-2 ${
+                  isCompleted
+                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                    : isLocked
+                    ? "bg-zinc-800 border-zinc-700 text-zinc-600"
+                    : "bg-blue-500/10 border-blue-500/50 text-blue-400"
                 }`}
               >
-                {title}
-              </h3>
-              <p className="text-zinc-400 text-sm font-medium mt-1">{description}</p>
+                {isCompleted ? (
+                  <CheckCircle2 className="w-6 h-6" />
+                ) : isLocked && lockReason === "time" ? (
+                  <Timer className="w-6 h-6" />
+                ) : isLocked ? (
+                  <Lock className="w-6 h-6" />
+                ) : (
+                  <Sword className="w-6 h-6" />
+                )}
+              </div>
+
+              <div>
+                <h3
+                  className={`text-xl font-bold uppercase tracking-tight ${
+                    isCompleted ? "text-emerald-400 line-through opacity-50" : "text-white"
+                  }`}
+                >
+                  {title}
+                </h3>
+                <p className="text-zinc-400 text-sm font-medium mt-1">{description}</p>
+              </div>
             </div>
+
+            {!isLocked && !isCompleted && (
+              <button
+                onClick={onComplete}
+                disabled={isSaving}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs rounded-lg transition-all active:scale-95 shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center gap-2 shrink-0"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  "Mark done"
+                )}
+              </button>
+            )}
+
+            {isCompleted && (
+              <div className="flex items-center gap-2 text-emerald-500 font-black text-xs uppercase italic shrink-0">
+                <Trophy className="w-4 h-4" /> Done
+              </div>
+            )}
+
+            {isLocked && lockReason === "time" && (
+              <div className="flex items-center gap-2 text-zinc-500 font-black text-xs uppercase shrink-0">
+                <Timer className="w-4 h-4" /> Back tomorrow
+              </div>
+            )}
           </div>
+        </CardContent>
 
-          {!isLocked && !isCompleted && (
-            <button
-              onClick={onComplete}
-              disabled={isSaving}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs rounded-lg transition-all active:scale-95 shadow-lg shadow-blue-900/20 disabled:opacity-50 flex items-center gap-2"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Saving...
-                </>
-              ) : (
-                "Mark done"
-              )}
-            </button>
-          )}
-
-          {isCompleted && (
-            <div className="flex items-center gap-2 text-emerald-500 font-black text-xs uppercase italic">
-              <Trophy className="w-4 h-4" /> Done
-            </div>
-          )}
-
-          {isLocked && lockReason === "time" && (
-            <div className="flex items-center gap-2 text-zinc-500 font-black text-xs uppercase">
-              <Timer className="w-4 h-4" /> Back tomorrow
-            </div>
-          )}
-        </div>
-      </CardContent>
-
-      <div
-        className={`absolute bottom-0 left-0 h-1 transition-all duration-1000 ${
-          isCompleted ? "w-full bg-emerald-500" : "w-0 bg-blue-500"
-        }`}
-      />
-    </Card>
+        <div
+          className={`absolute bottom-0 left-0 h-1 transition-all duration-1000 ${
+            isCompleted ? "w-full bg-emerald-500" : "w-0 bg-blue-500"
+          }`}
+        />
+      </Card>
+    </div>
   );
 }

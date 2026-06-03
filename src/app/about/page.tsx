@@ -2,9 +2,36 @@ import type { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, Users, Shield, Flame, Target, BookOpen } from "lucide-react";
 
+const BASE_URL = "https://www.menwhofeel.online";
+
 export const metadata: Metadata = {
-  title: "About | Men Who Feel",
-  description: "Built because too many men are carrying things alone. Learn what MenWhoFeel is and why it exists.",
+  title: "About Men Who Feel — Anonymous Mental Health Support for Men",
+  description:
+    "MenWhoFeel was built because too many men carry things alone. A safe, anonymous space where men can talk honestly — no account, no record, no judgment.",
+  keywords: [
+    "about men who feel",
+    "men's mental health community",
+    "anonymous support for men",
+    "men's safe space online",
+    "why men don't talk about feelings",
+  ],
+  openGraph: {
+    title: "About Men Who Feel — Built Because Too Many Men Carry Things Alone",
+    description:
+      "MenWhoFeel is an anonymous space where men can talk honestly — no account, no record, no judgment. Built for men, by men who've been there.",
+    url: `${BASE_URL}/about`,
+    siteName: "Men Who Feel",
+    type: "website",
+    images: [{ url: `${BASE_URL}/logo.png`, alt: "About Men Who Feel" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "About Men Who Feel — Anonymous Mental Health Support",
+    description:
+      "MenWhoFeel is an anonymous space for men to talk honestly — no account, no judgment.",
+    site: "@men_whofeel",
+  },
+  alternates: { canonical: `${BASE_URL}/about` },
 };
 
 export default function AboutPage() {
@@ -12,7 +39,7 @@ export default function AboutPage() {
     <div className="min-h-screen py-12 px-4">
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-10">
-          <img src="/logo.png" alt="MenWhoFeel" className="h-20 mx-auto mb-4" />
+          <img src="/logo.png" alt="MenWhoFeel — Anonymous mental health support for men" className="h-20 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-gradient">About MenWhoFeel</h1>
           <p className="text-muted-foreground mt-2">Built because too many men are carrying things alone.</p>
         </div>
@@ -35,28 +62,28 @@ export default function AboutPage() {
           <Card className="bg-card/80 border-border/40">
             <CardContent className="p-5">
               <Flame className="h-6 w-6 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Anonymous & Safe</h3>
+              <h2 className="font-semibold mb-1">Anonymous & Safe</h2>
               <p className="text-sm text-muted-foreground">No name, no account, nothing tied to you. Say what you actually mean.</p>
             </CardContent>
           </Card>
           <Card className="bg-card/80 border-border/40">
             <CardContent className="p-5">
               <Users className="h-6 w-6 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Community First</h3>
+              <h2 className="font-semibold mb-1">Community First</h2>
               <p className="text-sm text-muted-foreground">Real men in real situations. Not a forum. Not a helpline. A conversation.</p>
             </CardContent>
           </Card>
           <Card className="bg-card/80 border-border/40">
             <CardContent className="p-5">
               <Target className="h-6 w-6 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Something to do, not just feel</h3>
+              <h2 className="font-semibold mb-1">Something to do, not just feel</h2>
               <p className="text-sm text-muted-foreground">Check-ins, challenges, and guides to help things actually move — not just feel acknowledged.</p>
             </CardContent>
           </Card>
           <Card className="bg-card/80 border-border/40">
             <CardContent className="p-5">
               <Shield className="h-6 w-6 text-primary mb-3" />
-              <h3 className="font-semibold mb-1">Community Guidelines</h3>
+              <h2 className="font-semibold mb-1">Community Guidelines</h2>
               <p className="text-sm text-muted-foreground">Content is held to community standards. No hate, no spam, no weaponising vulnerability.</p>
             </CardContent>
           </Card>

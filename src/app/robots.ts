@@ -6,7 +6,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/assessment/results/"],
+        disallow: [
+          "/api/",
+          "/assessment/results/", // Personal results — no index value
+          "/command/",            // Personal dashboard
+          "/debrief/",            // Personal AI conversation
+        ],
       },
     ],
     sitemap: "https://www.menwhofeel.online/sitemap.xml",

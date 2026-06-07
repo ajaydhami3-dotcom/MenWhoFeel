@@ -37,14 +37,19 @@ async function getComments(slug: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await getArticleData(params);
-  if (!data) return { title: "Article Not Found | Men Who Feel" };
+  const resolvedParams = await params;
+  const BASE_URL = "https://www.menwhofeel.online";
+  if (!data) return { title: { absolute: "Article Not Found | Men Who Feel" } };
   const description = data.excerpt || data.content.substring(0, 160) + "...";
   return {
-    title: `${data.title} | Intel`,
+    title: { absolute: `${data.title} | Men Who Feel` },
     description,
+    alternates: { canonical: `${BASE_URL}/intel/${resolvedParams.slug}` },
     openGraph: {
       title: data.title,
       description,
+      url: `${BASE_URL}/intel/${resolvedParams.slug}`,
+      siteName: "Men Who Feel",
       type: "article",
       authors: [data.authorName || "MenWhoFeel Core"],
       publishedTime: data.createdAt ? new Date(data.createdAt).toISOString() : new Date().toISOString(),

@@ -41,14 +41,19 @@ async function getStoryComments(storyId: number) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const story = await getStoryData(params);
-  if (!story) return { title: "Story Not Found | Men Who Feel" };
+  const resolvedParams = await params;
+  const BASE_URL = "https://www.menwhofeel.online";
+  if (!story) return { title: { absolute: "Story Not Found | Men Who Feel" } };
   const description = story.excerpt || story.content.substring(0, 160) + "...";
   return {
-    title: `${story.title} | Stories`,
+    title: { absolute: `${story.title} | Men Who Feel` },
     description,
+    alternates: { canonical: `${BASE_URL}/stories/${resolvedParams.id}` },
     openGraph: {
       title: story.title,
       description,
+      url: `${BASE_URL}/stories/${resolvedParams.id}`,
+      siteName: "Men Who Feel",
       type: "article",
       authors: [story.authorName || "Anonymous"],
       publishedTime: story.createdAt.toISOString(),

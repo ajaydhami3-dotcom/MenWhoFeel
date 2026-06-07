@@ -132,6 +132,71 @@ function StoriesSection() {
   );
 }
 
+function FounderStoryTeaser() {
+  return (
+    <section className="py-12 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="relative rounded-2xl overflow-hidden border border-blue-500/20 bg-gradient-to-br from-blue-950/40 via-[#060810] to-teal-950/30">
+          {/* Background accent */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-teal-500/5 pointer-events-none" />
+
+          <div className="relative grid lg:grid-cols-2 gap-0 items-stretch">
+            {/* Left — story label + pull quote */}
+            <div className="p-8 sm:p-10 border-b lg:border-b-0 lg:border-r border-blue-500/10">
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-400 mb-5">
+                From the founder
+              </p>
+              <blockquote className="text-xl sm:text-2xl font-bold text-foreground leading-snug mb-5">
+                &ldquo;I built this because I needed it — and it didn&apos;t exist.&rdquo;
+              </blockquote>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                Men Who Feel started as one man carrying too much with nowhere to put it. No drama.
+                No big moment. Just the quiet realisation that most men are feeling things they&apos;ve
+                never said out loud — and that maybe a space with no name attached could change that.
+              </p>
+              <Link href="/founders-story">
+                <Button
+                  variant="outline"
+                  className="border-blue-500/40 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 group"
+                >
+                  Read the full story
+                  <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+                </Button>
+              </Link>
+            </div>
+
+            {/* Right — three trust signals */}
+            <div className="p-8 sm:p-10 flex flex-col justify-center gap-5">
+              {[
+                {
+                  label: "Built anonymously",
+                  desc: "No brand agenda. No investors to please. Built by someone who needed it.",
+                },
+                {
+                  label: "No clinical jargon",
+                  desc: "This isn't therapy. It's a space — honest, private, and built around how men actually talk.",
+                },
+                {
+                  label: "Still here for a reason",
+                  desc: "Men keep coming back because it's the one place they don't have to explain themselves first.",
+                },
+              ].map((item) => (
+                <div key={item.label} className="flex items-start gap-4">
+                  <div className="mt-1 w-2 h-2 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-0.5">{item.label}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CommunitySnippetsSection() {
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 bg-[#060810]/60 border-y border-border/10">
@@ -309,6 +374,7 @@ export default function Home() {
     <div className="space-y-0">
       <HeroSection />
       <StoriesSection />
+      <FounderStoryTeaser />
       <CommunitySnippetsSection />
       <ToolkitSection />
       <ArticlesSection />

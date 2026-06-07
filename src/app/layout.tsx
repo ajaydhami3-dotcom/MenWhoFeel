@@ -97,7 +97,7 @@ const organizationSchema = {
   ],
   contactPoint: {
     "@type": "ContactPoint",
-    email: "menwhofeelclub@gmail.com",
+    email: "support@menwhofeel.online",
     contactType: "customer support",
   },
 };

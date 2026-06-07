@@ -68,8 +68,8 @@ export default function ContactPage() {
                   <Mail className="h-4 w-4 text-primary" />
                   Email
                 </h3>
-                <a href="mailto:menwhofeelclub@gmail.com" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  menwhofeelclub@gmail.com
+                <a href="mailto:support@menwhofeel.online" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  support@menwhofeel.online
                 </a>
               </CardContent>
             </Card>

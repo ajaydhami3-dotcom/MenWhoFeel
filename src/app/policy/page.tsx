@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+const BASE_URL = "https://www.menwhofeel.online";
+
 export const metadata: Metadata = {
   title: "Community Policy | Men Who Feel",
   description: "Read the Men Who Feel community policy. Our guidelines ensure a safe, respectful space for men to share experiences and support one another without judgment.",
+  alternates: { canonical: `${BASE_URL}/policy` },
 };
 
 export default function PolicyPage() {
@@ -70,8 +73,8 @@ export default function PolicyPage() {
       <h2 className="text-xl font-semibold mt-8 mb-3">8. Reporting</h2>
       <p className="mb-4 text-muted-foreground leading-relaxed">
         If you see content that violates this policy, please contact us at{" "}
-        <a href="mailto:menwhofeelclub@gmail.com" className="text-primary underline">
-          menwhofeelclub@gmail.com
+        <a href="mailto:support@menwhofeel.online" className="text-primary underline">
+          support@menwhofeel.online
         </a>
         . We review all reports and aim to respond within 48 hours.
       </p>

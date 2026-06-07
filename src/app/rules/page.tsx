@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+const BASE_URL = "https://www.menwhofeel.online";
+
 export const metadata: Metadata = {
   title: "Community Rules | Men Who Feel",
   description: "The Men Who Feel community rules. Simple, clear standards to keep this a safe and supportive space for every man here.",
+  alternates: { canonical: `${BASE_URL}/rules` },
 };
 
 export default function RulesPage() {
@@ -94,8 +97,8 @@ export default function RulesPage() {
           <strong className="text-foreground">Enforcement:</strong> Violations of these
           rules may result in content removal or loss of access to the platform. To
           report a violation, contact us at{" "}
-          <a href="mailto:menwhofeelclub@gmail.com" className="text-primary underline">
-            menwhofeelclub@gmail.com
+          <a href="mailto:support@menwhofeel.online" className="text-primary underline">
+            support@menwhofeel.online
           </a>.
         </p>
       </div>

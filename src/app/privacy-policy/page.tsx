@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 
+const BASE_URL = "https://www.menwhofeel.online";
+
 export const metadata: Metadata = {
   title: "Privacy Policy | Men Who Feel",
   description: "Learn how Men Who Feel handles your data. We collect minimal information, never sell personal data, and are committed to your privacy and anonymity.",
+  alternates: { canonical: `${BASE_URL}/privacy-policy` },
 };
 
 export default function PrivacyPolicyPage() {
@@ -72,8 +75,8 @@ export default function PrivacyPolicyPage() {
         protection laws (including the GDPR for users in the UK and EU) to access,
         correct, or request deletion of information we hold about you. To exercise
         these rights or raise a privacy concern, please contact us at{" "}
-        <a href="mailto:menwhofeelclub@gmail.com" className="text-primary underline">
-          menwhofeelclub@gmail.com
+        <a href="mailto:support@menwhofeel.online" className="text-primary underline">
+          support@menwhofeel.online
         </a>.
       </p>
 
@@ -101,8 +104,8 @@ export default function PrivacyPolicyPage() {
       <h2 className="text-xl font-semibold mt-8 mb-3">11. Contact</h2>
       <p className="mb-4 text-muted-foreground leading-relaxed">
         For any privacy-related questions or requests, please contact us at:{" "}
-        <a href="mailto:menwhofeelclub@gmail.com" className="text-primary underline">
-          menwhofeelclub@gmail.com
+        <a href="mailto:support@menwhofeel.online" className="text-primary underline">
+          support@menwhofeel.online
         </a>
       </p>
 

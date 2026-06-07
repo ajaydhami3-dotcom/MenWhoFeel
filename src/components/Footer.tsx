@@ -184,10 +184,10 @@ export default function Footer() {
 
               <p>
                 <a
-                  href="mailto:menwhofeelclub@gmail.com"
+                  href="mailto:support@menwhofeel.online"
                   className="hover:text-primary"
                 >
-                  menwhofeelclub@gmail.com
+                  support@menwhofeel.online
                 </a>
               </p>
             </div>

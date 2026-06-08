@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen, Flame, ScrollText, Target,
   Heart, Wrench, LayoutDashboard, Lock,
-  Menu, X, ChevronLeft, ChevronRight
+  Menu, X, ChevronLeft, ChevronRight, Coffee
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -112,6 +112,37 @@ export default function Sidebar() {
               <p className="text-xs text-muted-foreground leading-relaxed">
                 No account needed. Nothing you share here is tied to your identity. This space belongs to you.
               </p>
+            </div>
+          )}
+
+          {/* Ko-fi Support — subtle, below the fold */}
+          {(!isCollapsed || isMobileOpen) && (
+            <div className="mx-4 mt-3">
+              <a
+                href="https://ko-fi.com/menwhofeel"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2.5 rounded-md text-xs text-muted-foreground hover:text-foreground border border-border/25 hover:border-border/60 hover:bg-secondary/30 transition-all duration-200 group w-full"
+                aria-label="Support Men Who Feel on Ko-fi"
+              >
+                <Coffee className="h-3.5 w-3.5 text-amber-400/60 group-hover:text-amber-400 shrink-0 transition-colors" />
+                <span>Support this space</span>
+              </a>
+            </div>
+          )}
+
+          {/* Collapsed state: icon-only donate */}
+          {isCollapsed && !isMobileOpen && (
+            <div className="px-3 mt-3">
+              <a
+                href="https://ko-fi.com/menwhofeel"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Support Men Who Feel"
+                className="flex items-center justify-center px-3 py-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/30 transition-all duration-200"
+              >
+                <Coffee className="h-5 w-5 text-amber-400/60 hover:text-amber-400" />
+              </a>
             </div>
           )}
         </div>

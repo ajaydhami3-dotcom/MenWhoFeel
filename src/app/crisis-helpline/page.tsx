@@ -32,6 +32,8 @@ const defaultHelplines = [
   { country: "Sweden", countryCode: "SE", organization: "Mind Självmordslinjen", phoneNumber: "90101", description: "Suicide prevention line", availableHours: "24/7", website: "https://mind.se/" },
 
   // --- ASIA ---
+  { country: "India", countryCode: "IN", organization: "Kiran Mental Health Helpline (Govt. of India)", phoneNumber: "1800-599-0019", description: "Free 24/7 government mental health rehabilitation helpline. Toll-free across India.", availableHours: "24/7", website: "https://nimhans.ac.in/kiran-mental-health-rehabilitation-helpline/" },
+  { country: "India", countryCode: "IN", organization: "iCall (TISS)", phoneNumber: "9152987821", description: "Psychosocial helpline by Tata Institute of Social Sciences — counselling & emotional support", availableHours: "Mon–Sat 8am–10pm", website: "https://icallhelpline.org" },
   { country: "India", countryCode: "IN", organization: "Vandrevala Foundation", phoneNumber: "9999 666 555", description: "Mental health helpline", availableHours: "24/7", website: "https://www.vandrevalafoundation.com" },
   { country: "India", countryCode: "IN", organization: "AASRA", phoneNumber: "9820466726", description: "Crisis intervention and suicide prevention", availableHours: "24/7", website: "http://www.aasra.info/" },
   { country: "Japan", countryCode: "JP", organization: "TELL Lifeline", phoneNumber: "03-5774-0992", description: "English-speaking crisis support", availableHours: "Varies", website: "https://telljp.com/" },
@@ -75,6 +77,25 @@ export default function CrisisHelplinePage() {
             If you or someone you know is in crisis, please reach out. Help is available 24/7 around the world.
           </p>
         </div>
+
+        <Card className="mb-5 border-blue-500/40 bg-blue-950/30">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Phone className="h-5 w-5 text-blue-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold text-blue-300 text-sm">In India? Call Kiran — free, 24/7</p>
+                <p className="text-xs text-blue-400/70 mt-0.5">
+                  Government of India mental health helpline. Toll-free. Multilingual.
+                </p>
+              </div>
+            </div>
+            <a href="tel:18005990019" className="shrink-0">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-6">
+                <Phone className="h-4 w-4 mr-2" /> 1800-599-0019
+              </Button>
+            </a>
+          </CardContent>
+        </Card>
 
         <Card className="mb-8 border-red-500/30 bg-red-950/20">
           <CardContent className="p-4 flex items-start gap-3">

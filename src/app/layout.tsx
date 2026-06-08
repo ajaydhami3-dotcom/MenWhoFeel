@@ -8,29 +8,33 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 
-const manrope = Manrope({ subsets: ["latin"] });
+const manrope = Manrope({ subsets: ["latin"], display: "swap" });
 
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "Men Who Feel — Anonymous Mental Health Support for Men",
+    default: "Men Who Feel | Men's Mental Health Community",
     template: "%s | Men Who Feel",
   },
   description:
-    "Anonymous mental health support community for men. Share what's real, find your footing, and connect with men going through the same thing. No account. No judgment. Free.",
+    "Anonymous free community for men's mental health. Drop the weight, share what's real, find footing alongside men going through the same thing. No account needed.",
   keywords: [
-    "men's mental health",
-    "anonymous mental health support",
+    "men's mental health community",
+    "anonymous men support group online",
+    "men mental health online free",
+    "men feeling alone mental health",
+    "anonymous mental health support for men",
     "men's support community",
     "mental health for men",
-    "men emotional support",
+    "men emotional support online",
     "men's online support group",
     "anonymous support for men",
     "men mental health forum",
     "men struggling with emotions",
     "men's wellbeing community",
+    "men mental health counselling",
   ],
   authors: [{ name: "Men Who Feel", url: BASE_URL }],
   creator: "Men Who Feel",
@@ -47,9 +51,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Men Who Feel — Anonymous Mental Health Support for Men",
+    title: "Men Who Feel | Men's Mental Health Community",
     description:
-      "Anonymous mental health support community for men. Share what's real, find your footing, and connect with men going through the same thing. No account. Free.",
+      "Anonymous free community for men's mental health. Drop the weight, share what's real, find footing alongside men going through the same thing. No account needed.",
     siteName: "Men Who Feel",
     type: "website",
     url: BASE_URL,
@@ -59,15 +63,15 @@ export const metadata: Metadata = {
         url: `${BASE_URL}/logo.png`,
         width: 512,
         height: 512,
-        alt: "Men Who Feel — Anonymous mental health support for men",
+        alt: "Men Who Feel — Anonymous men's mental health support community",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Men Who Feel — Anonymous Mental Health Support for Men",
+    title: "Men Who Feel | Men's Mental Health Community",
     description:
-      "Anonymous mental health support community for men. Share what's real, find your footing, and connect with men going through the same thing. No account. Free.",
+      "Anonymous free community for men's mental health. Drop the weight, share what's real, find footing alongside men going through the same thing. No account needed.",
     site: "@men_whofeel",
     creator: "@men_whofeel",
     images: [`${BASE_URL}/logo.png`],
@@ -89,11 +93,12 @@ const organizationSchema = {
   url: BASE_URL,
   logo: `${BASE_URL}/logo.png`,
   description:
-    "Anonymous mental health support community for men. A space to share what's real, find footing, and connect with men going through the same thing.",
+    "Anonymous mental health support community for men. A free space to share what's real, find footing, and connect with men going through the same thing. No account needed.",
   sameAs: [
     "https://instagram.com/men_whofeel",
     "https://youtube.com/@MenWhoFeelClub",
     "https://x.com/men_whofeel",
+    "https://ko-fi.com/menwhofeel",
   ],
   contactPoint: {
     "@type": "ContactPoint",

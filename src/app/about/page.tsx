@@ -5,9 +5,9 @@ import { Heart, Users, Shield, Flame, Target, BookOpen } from "lucide-react";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: { absolute: "About Men Who Feel — Anonymous Mental Health Support for Men" },
+  title: { absolute: "About | Men Who Feel — Men's Mental Health Community" },
   description:
-    "MenWhoFeel was built because too many men carry things alone. A safe, anonymous space where men can talk honestly — no account, no record, no judgment.",
+    "MenWhoFeel is a free anonymous space where men can talk honestly — no account, no record, no judgment. Built because too many men carry things alone.",
   keywords: [
     "about men who feel",
     "men's mental health community",
@@ -39,7 +39,14 @@ export default function AboutPage() {
     <div className="min-h-screen py-12 px-4">
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-10">
-          <img src="/logo.png" alt="MenWhoFeel — Anonymous mental health support for men" className="h-20 mx-auto mb-4" />
+          <img
+            src="/logo.png"
+            alt="Men Who Feel — Anonymous men's mental health community"
+            className="h-20 mx-auto mb-4"
+            width={80}
+            height={80}
+            loading="lazy"
+          />
           <h1 className="text-3xl font-bold text-gradient">About MenWhoFeel</h1>
           <p className="text-muted-foreground mt-2">Built because too many men are carrying things alone.</p>
         </div>

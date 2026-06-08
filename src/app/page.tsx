@@ -23,7 +23,7 @@ function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-4">
-              Anonymous support for men
+              Anonymous · Free · No account needed
             </p>
             <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-5 text-foreground">
               The one place you don&apos;t have to{" "}
@@ -364,6 +364,17 @@ function FooterCTA() {
             </Button>
           </Link>
         </div>
+        <p className="mt-10 text-xs text-muted-foreground/50">
+          This space is free and always will be.{" "}
+          <a
+            href="https://ko-fi.com/menwhofeel"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-muted-foreground transition-colors"
+          >
+            If it&apos;s helped, you&apos;re welcome to keep it going →
+          </a>
+        </p>
       </div>
     </section>
   );

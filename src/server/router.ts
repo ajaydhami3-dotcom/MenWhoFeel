@@ -6,7 +6,10 @@ import { assessmentRouter } from "./assessment-router";
 import { guidesRouter } from "./guides-router";
 import { helplinesRouter } from "./helplines-router";
 import { intelRouter } from "./intel-router";
-import { announcementsRouter } from "./announcements-router"; // <-- 1. IMPORT
+import { announcementsRouter } from "./announcements-router";
+import { communityRouter } from "./community-router";
+import { communicationRouter } from "./communication-router";
+import { moderationRouter } from "./moderation-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -19,7 +22,10 @@ export const appRouter = createRouter({
   guides: guidesRouter,
   helplines: helplinesRouter,
   intel: intelRouter,
-  announcements: announcementsRouter, // <-- 2. WIRE IT IN
+  announcements: announcementsRouter,
+  community: communityRouter,
+  communication: communicationRouter,
+  moderation: moderationRouter,
 });
 
 export type AppRouter = typeof appRouter;

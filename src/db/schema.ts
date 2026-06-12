@@ -25,6 +25,28 @@ export const guideCategoryEnum = pgEnum("guide_category", ["overcoming_crisis", 
 export const difficultyEnum = pgEnum("difficulty", ["beginner", "intermediate", "advanced"]);
 export const resourceTypeEnum = pgEnum("resource_type", ["video", "pdf", "book", "link"]);
 
+// New enums for community redesign
+export const postCategoryEnum = pgEnum("post_category", [
+  "mental_health",
+  "anxiety",
+  "depression",
+  "relationships",
+  "career",
+  "loneliness",
+  "self_improvement",
+  "venting",
+  "advice_needed",
+  "success_stories",
+  "need_support_now",
+]);
+
+export const reportTargetEnum = pgEnum("report_target", [
+  "post",
+  "comment",
+  "communication_message",
+  "communication_reply",
+]);
+
 // ==========================================
 // Users (auth system)
 // ==========================================
@@ -95,7 +117,7 @@ export const challenges = pgTable(
     category: challengeCategoryEnum("category").notNull(),
     type: challengeTypeEnum("type").notNull(),
     instructions: text("instructions"),
-    dayOfWeek: integer("dayOfWeek"), 
+    dayOfWeek: integer("dayOfWeek"),
     active: boolean("active").default(true).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
@@ -205,7 +227,7 @@ export const helplines = pgTable(
 );
 
 // ==========================================
-// Resource Hub (Videos, PDFs, Books)
+// Resource Hub
 // ==========================================
 export const resources = pgTable(
   "resources",
@@ -238,6 +260,117 @@ export const userProgress = pgTable("user_progress", {
 });
 
 // ==========================================
+// Community Posts (NEW)
+// ==========================================
+export const communityPosts = pgTable(
+  "community_posts",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title", { length: 300 }).notNull(),
+    content: text("content").notNull(),
+    category: postCategoryEnum("category").notNull(),
+    anonymousId: varchar("anonymousId", { length: 50 }).notNull(),
+    viewCount: integer("viewCount").default(0).notNull(),
+    upvoteCount: integer("upvoteCount").default(0).notNull(),
+    reportCount: integer("reportCount").default(0).notNull(),
+    flagged: boolean("flagged").default(false).notNull(),
+    flagReasons: text("flagReasons"),
+    deleted: boolean("deleted").default(false).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    categoryIdx: index("community_posts_category_idx").on(table.category),
+    createdAtIdx: index("community_posts_created_at_idx").on(table.createdAt),
+    upvoteIdx: index("community_posts_upvote_idx").on(table.upvoteCount),
+    flaggedIdx: index("community_posts_flagged_idx").on(table.flagged),
+  })
+);
+
+// ==========================================
+// Community Comments (NEW)
+// ==========================================
+export const communityComments = pgTable(
+  "community_comments",
+  {
+    id: serial("id").primaryKey(),
+    postId: integer("postId").notNull(),
+    parentCommentId: integer("parentCommentId"),
+    content: text("content").notNull(),
+    anonymousId: varchar("anonymousId", { length: 50 }).notNull(),
+    reportCount: integer("reportCount").default(0).notNull(),
+    flagged: boolean("flagged").default(false).notNull(),
+    flagReasons: text("flagReasons"),
+    deleted: boolean("deleted").default(false).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    postIdIdx: index("community_comments_post_id_idx").on(table.postId),
+    parentIdx: index("community_comments_parent_idx").on(table.parentCommentId),
+  })
+);
+
+// ==========================================
+// Communication Messages (NEW)
+// ==========================================
+export const communicationMessages = pgTable(
+  "communication_messages",
+  {
+    id: serial("id").primaryKey(),
+    content: text("content").notNull(),
+    anonymousId: varchar("anonymousId", { length: 50 }).notNull(),
+    status: varchar("status", { length: 50 }).default("active").notNull(),
+    reportCount: integer("reportCount").default(0).notNull(),
+    flagged: boolean("flagged").default(false).notNull(),
+    flagReasons: text("flagReasons"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    createdAtIdx: index("communication_messages_created_at_idx").on(table.createdAt),
+    statusIdx: index("communication_messages_status_idx").on(table.status),
+  })
+);
+
+// ==========================================
+// Communication Replies (NEW)
+// ==========================================
+export const communicationReplies = pgTable(
+  "communication_replies",
+  {
+    id: serial("id").primaryKey(),
+    messageId: integer("messageId").notNull(),
+    content: text("content").notNull(),
+    anonymousId: varchar("anonymousId", { length: 50 }).notNull(),
+    reportCount: integer("reportCount").default(0).notNull(),
+    flagged: boolean("flagged").default(false).notNull(),
+    flagReasons: text("flagReasons"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    messageIdIdx: index("communication_replies_message_id_idx").on(table.messageId),
+  })
+);
+
+// ==========================================
+// Community Reports (NEW)
+// ==========================================
+export const communityReports = pgTable(
+  "community_reports",
+  {
+    id: serial("id").primaryKey(),
+    targetType: reportTargetEnum("targetType").notNull(),
+    targetId: integer("targetId").notNull(),
+    reason: varchar("reason", { length: 500 }).notNull(),
+    resolved: boolean("resolved").default(false).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    targetIdx: index("community_reports_target_idx").on(table.targetType, table.targetId),
+    resolvedIdx: index("community_reports_resolved_idx").on(table.resolved),
+  })
+);
+
+// ==========================================
 // Relations
 // ==========================================
 export const storiesRelations = relations(stories, ({ many }) => ({
@@ -255,7 +388,32 @@ export const challengesRelations = relations(challenges, ({ many }) => ({
 export const userChallengesRelations = relations(userChallenges, ({ one }) => ({
   challenge: one(challenges, { fields: [userChallenges.challengeId], references: [challenges.id] }),
 }));
-// --- ASSESSMENT TABLES ---
+
+export const communityPostsRelations = relations(communityPosts, ({ many }) => ({
+  comments: many(communityComments),
+}));
+
+export const communityCommentsRelations = relations(communityComments, ({ one, many }) => ({
+  post: one(communityPosts, { fields: [communityComments.postId], references: [communityPosts.id] }),
+  replies: many(communityComments, { relationName: "comment_replies" }),
+  parent: one(communityComments, {
+    fields: [communityComments.parentCommentId],
+    references: [communityComments.id],
+    relationName: "comment_replies",
+  }),
+}));
+
+export const communicationMessagesRelations = relations(communicationMessages, ({ many }) => ({
+  replies: many(communicationReplies),
+}));
+
+export const communicationRepliesRelations = relations(communicationReplies, ({ one }) => ({
+  message: one(communicationMessages, { fields: [communicationReplies.messageId], references: [communicationMessages.id] }),
+}));
+
+// ==========================================
+// Assessment tables (unchanged)
+// ==========================================
 export const assessmentQuestions = pgTable("assessment_questions", {
   id: serial("id").primaryKey(),
   questionText: text("question_text").notNull(),
@@ -277,7 +435,7 @@ export const assessmentResults = pgTable("assessment_results", {
   resultCategory: varchar("result_category", { length: 50 }).notNull(),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
 });
-// --- ASSESSMENT ACTION PLANS ---
+
 export const assessmentActionPlans = pgTable("assessment_action_plans", {
   id: serial("id").primaryKey(),
   category: varchar("category", { length: 50 }).unique().notNull(),
@@ -287,7 +445,7 @@ export const assessmentActionPlans = pgTable("assessment_action_plans", {
   step2: text("step_2").notNull(),
   step3: text("step_3").notNull(),
 });
-// --- SEO ARTICLES (INTEL) ---
+
 export const articles = pgTable("articles", {
   id: serial("id").primaryKey(),
   slug: varchar("slug", { length: 255 }).unique().notNull(),
@@ -298,7 +456,6 @@ export const articles = pgTable("articles", {
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
 });
 
-// --- ANNOUNCEMENTS (BROADCASTS) ---
 export const announcements = pgTable("announcements", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -307,7 +464,7 @@ export const announcements = pgTable("announcements", {
   active: boolean("active").default(true),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
 });
-// --- ARTICLE COMMENTS ---
+
 export const articleComments = pgTable("article_comments", {
   id: serial("id").primaryKey(),
   articleSlug: varchar("articleSlug", { length: 255 }).notNull(),

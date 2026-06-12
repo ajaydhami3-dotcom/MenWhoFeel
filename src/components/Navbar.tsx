@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart, Phone, Users, BookOpen, Target, Wrench, Coffee } from "lucide-react";
+import { Menu, X, Heart, Phone, Users, BookOpen, Target, Wrench, Coffee, MessageCircle } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -13,13 +13,14 @@ export default function Navbar() {
   const navLinks = [
     { href: "/stories", label: "Stories", icon: BookOpen },
     { href: "/community", label: "Community", icon: Users },
+    { href: "/communication", label: "Communication", icon: MessageCircle },
     { href: "/challenges", label: "Challenges", icon: Target },
     { href: "/guides", label: "Support & Growth", icon: Wrench },
     { href: "/about", label: "About", icon: Heart },
     { href: "/crisis-helpline", label: "Crisis Helpline", icon: Phone },
   ];
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname === path || pathname.startsWith(path + "/");
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-[#060810]/90 backdrop-blur-xl">
@@ -51,6 +52,8 @@ export default function Navbar() {
                   ? "bg-primary/10 text-primary"
                   : link.href === "/crisis-helpline"
                   ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                  : link.href === "/communication"
+                  ? "text-teal-400 hover:text-teal-300 hover:bg-teal-500/10"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >
@@ -102,6 +105,8 @@ export default function Navbar() {
                   ? "bg-primary/10 text-primary"
                   : link.href === "/crisis-helpline"
                   ? "text-amber-400 hover:bg-amber-500/10"
+                  : link.href === "/communication"
+                  ? "text-teal-400 hover:bg-teal-500/10"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >

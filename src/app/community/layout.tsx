@@ -3,21 +3,20 @@ import type { Metadata } from "next";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: { absolute: "Anonymous Men's Mental Health Community | Men Who Feel" },
+  title: { absolute: "Anonymous Community Forum | Men Who Feel" },
   description:
-    "Join the anonymous men's mental health community. Real-time conversations, no account, no judgment. Messages are temporary — say what you actually mean.",
+    "Join the anonymous men's mental health community forum. Discuss, vent, seek advice, and find support — no accounts, no usernames, no judgment.",
   keywords: [
-    "anonymous men's support community",
-    "men's mental health forum",
+    "anonymous men's community forum",
+    "men mental health discussion",
+    "anonymous support forum",
     "men's online support group",
-    "anonymous support chat for men",
-    "men talking honestly online",
-    "men's community mental health",
+    "anonymous mental health community",
   ],
   openGraph: {
-    title: "Anonymous Men's Mental Health Community",
+    title: "Anonymous Community Forum | Men Who Feel",
     description:
-      "Real-time, anonymous conversations for men. No account, no record, no judgment. Say what you actually mean.",
+      "Anonymous forum for men's mental health. No accounts, no profiles. Just real conversations.",
     url: `${BASE_URL}/community`,
     siteName: "Men Who Feel",
     type: "website",
@@ -25,14 +24,13 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Anonymous Men's Mental Health Community | Men Who Feel",
-    description:
-      "Real-time, anonymous conversations for men. No account, no record, no judgment.",
+    title: "Anonymous Community Forum | Men Who Feel",
+    description: "Anonymous forum for men's mental health. No accounts, no profiles.",
     site: "@men_whofeel",
   },
   alternates: { canonical: `${BASE_URL}/community` },
 };
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function CommunityLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import {
   BookOpen, ChevronRight, FileText, Search,
-  Brain, HeartPulse, Briefcase, Dumbbell, LayoutGrid, X,
+  Brain, HeartPulse, Briefcase, Dumbbell, LayoutGrid, X, Flame, TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,24 +11,24 @@ import { Input } from "@/components/ui/input";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type Category = "All" | "Mental Health" | "Stress & Relationships" | "Money & Work" | "Physical Health";
-
 export type ArticleItem = {
   id: string;
   slug: string | null;
   title: string;
   excerpt?: string | null;
-  category: Exclude<Category, "All">;
-  createdAt: string; // ISO string — serialisable from server
+  category: string;          // DB-driven category name
+  categorySlug: string | null;
+  createdAt: string;         // ISO string — serialisable from server
 };
 
 interface Props {
   initialArticles: ArticleItem[];
 }
 
-// ─── Category config ──────────────────────────────────────────────────────────
+// ─── Category config (covers all 6 DB categories) ────────────────────────────
+// All class names are stored as complete strings so Tailwind v4 doesn't purge them.
 
-const CATEGORY_CONFIG: Record<Exclude<Category, "All">, {
+const CATEGORY_CONFIG: Record<string, {
   icon: React.ElementType;
   color: string;
   bg: string;
@@ -40,43 +40,59 @@ const CATEGORY_CONFIG: Record<Exclude<Category, "All">, {
     bg: "bg-blue-400/10",
     border: "border-blue-400/30",
   },
-  "Stress & Relationships": {
+  "Relationships": {
     icon: HeartPulse,
     color: "text-rose-400",
     bg: "bg-rose-400/10",
     border: "border-rose-400/30",
   },
-  "Money & Work": {
+  "Physical Wellbeing": {
+    icon: Dumbbell,
+    color: "text-green-400",
+    bg: "bg-green-400/10",
+    border: "border-green-400/30",
+  },
+  "Finances & Career": {
     icon: Briefcase,
     color: "text-emerald-400",
     bg: "bg-emerald-400/10",
     border: "border-emerald-400/30",
   },
-  "Physical Health": {
-    icon: Dumbbell,
+  "Emotions": {
+    icon: Flame,
     color: "text-amber-400",
     bg: "bg-amber-400/10",
     border: "border-amber-400/30",
   },
+  "Self Improvement": {
+    icon: TrendingUp,
+    color: "text-purple-400",
+    bg: "bg-purple-400/10",
+    border: "border-purple-400/30",
+  },
 };
 
-const CATEGORIES: Category[] = [
-  "All",
-  "Mental Health",
-  "Stress & Relationships",
-  "Money & Work",
-  "Physical Health",
-];
+const DEFAULT_CONFIG = {
+  icon: LayoutGrid,
+  color: "text-blue-400",
+  bg: "bg-blue-400/10",
+  border: "border-blue-400/30",
+};
 
 // ─── Main client component ────────────────────────────────────────────────────
-// Receives initialArticles pre-populated from the server — no useQuery, no
-// loading state, no shimmer. The read tab has actual content from first paint.
 
 export default function IntelClient({ initialArticles }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<Category>("All");
+  const [activeCategory, setActiveCategory] = useState<string>("All");
 
-  // Filter by search term and category — all client-side from server-preloaded data
+  // Derive available categories from the articles (only shows categories with content)
+  const availableCategories = useMemo(() => {
+    const catSet = new Set<string>();
+    for (const a of initialArticles) catSet.add(a.category);
+    return ["All", ...Array.from(catSet).sort()];
+  }, [initialArticles]);
+
+  // Filter by search term and category
   const filtered = useMemo(() => {
     let result = initialArticles;
     if (activeCategory !== "All") {
@@ -144,13 +160,10 @@ export default function IntelClient({ initialArticles }: Props) {
         {/* Category filter chips */}
         {!hasSearch && (
           <div className="flex flex-wrap gap-2 mb-8">
-            {CATEGORIES.map((cat) => {
+            {availableCategories.map((cat) => {
               const isActive = activeCategory === cat;
-              const count =
-                cat === "All"
-                  ? initialArticles.length
-                  : (categoryCounts[cat] ?? 0);
-              const config = cat !== "All" ? CATEGORY_CONFIG[cat as Exclude<Category, "All">] : null;
+              const count = cat === "All" ? initialArticles.length : (categoryCounts[cat] ?? 0);
+              const config = cat !== "All" ? (CATEGORY_CONFIG[cat] ?? DEFAULT_CONFIG) : null;
               const CatIcon = config?.icon ?? LayoutGrid;
 
               return (
@@ -196,26 +209,29 @@ export default function IntelClient({ initialArticles }: Props) {
           </div>
         )}
 
-        {/* Category header (when filtered) */}
-        {!hasSearch && activeCategory !== "All" && (
-          <div
-            className={`flex items-center gap-3 p-4 rounded-xl border mb-6 ${CATEGORY_CONFIG[activeCategory as Exclude<Category, "All">].bg} ${CATEGORY_CONFIG[activeCategory as Exclude<Category, "All">].border}`}
-          >
-            {(() => {
-              const config = CATEGORY_CONFIG[activeCategory as Exclude<Category, "All">];
-              const Icon = config.icon;
-              return <Icon className={`w-5 h-5 ${config.color}`} />;
-            })()}
-            <span className={`text-sm font-bold ${CATEGORY_CONFIG[activeCategory as Exclude<Category, "All">].color}`}>
-              {activeCategory}
-            </span>
-            <span className="text-zinc-600 text-xs ml-auto">
-              {filtered.length} article{filtered.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-        )}
+        {/* Active category header */}
+        {!hasSearch && activeCategory !== "All" && (() => {
+          const config = CATEGORY_CONFIG[activeCategory] ?? DEFAULT_CONFIG;
+          const Icon = config.icon;
+          return (
+            <div className={`flex items-center gap-3 p-4 rounded-xl border mb-6 ${config.bg} ${config.border}`}>
+              <Icon className={`w-5 h-5 ${config.color}`} />
+              <span className={`text-sm font-bold ${config.color}`}>{activeCategory}</span>
+              <span className="text-zinc-600 text-xs ml-auto">
+                {filtered.length} article{filtered.length !== 1 ? "s" : ""}
+              </span>
+              {/* Link to full category page */}
+              <Link
+                href={`/category/${initialArticles.find(a => a.category === activeCategory)?.categorySlug ?? ""}`}
+                className={`text-[10px] font-black uppercase tracking-widest ${config.color} hover:opacity-80 transition-opacity`}
+              >
+                View category →
+              </Link>
+            </div>
+          );
+        })()}
 
-        {/* Article grid — populated from server data, visible on first paint */}
+        {/* Article grid */}
         {filtered.length === 0 ? (
           <div className="py-16 text-center border border-dashed border-zinc-800 rounded-xl">
             <p className="text-zinc-600 italic">
@@ -255,8 +271,8 @@ export default function IntelClient({ initialArticles }: Props) {
 // ─── Article card ─────────────────────────────────────────────────────────────
 
 function ArticleCard({ article, teaser }: { article: ArticleItem; teaser?: boolean }) {
-  const config = CATEGORY_CONFIG[article.category];
-  const CatIcon = config?.icon;
+  const config = CATEGORY_CONFIG[article.category] ?? DEFAULT_CONFIG;
+  const CatIcon = config.icon;
 
   return (
     <Card className="h-full bg-zinc-900/60 border-zinc-800 backdrop-blur-md transition-all duration-300 group-hover:border-blue-500/50 group-hover:bg-zinc-900">
@@ -267,10 +283,17 @@ function ArticleCard({ article, teaser }: { article: ArticleItem; teaser?: boole
               <FileText className="w-3 h-3" />
               {new Date(article.createdAt).toLocaleDateString()}
             </div>
-            {config && CatIcon && (
-              <span
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${config.bg} ${config.color}`}
+            {article.categorySlug ? (
+              <Link
+                href={`/category/${article.categorySlug}`}
+                onClick={(e) => e.stopPropagation()}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${config.bg} ${config.color} hover:opacity-80 transition-opacity`}
               >
+                <CatIcon className="w-3 h-3" />
+                {article.category}
+              </Link>
+            ) : (
+              <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${config.bg} ${config.color}`}>
                 <CatIcon className="w-3 h-3" />
                 {article.category}
               </span>

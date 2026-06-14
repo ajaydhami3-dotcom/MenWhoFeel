@@ -10,6 +10,8 @@ import {
   boolean,
   index,
   uuid,
+  jsonb,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -25,7 +27,6 @@ export const guideCategoryEnum = pgEnum("guide_category", ["overcoming_crisis", 
 export const difficultyEnum = pgEnum("difficulty", ["beginner", "intermediate", "advanced"]);
 export const resourceTypeEnum = pgEnum("resource_type", ["video", "pdf", "book", "link"]);
 
-// New enums for community redesign
 export const postCategoryEnum = pgEnum("post_category", [
   "mental_health",
   "anxiety",
@@ -48,7 +49,7 @@ export const reportTargetEnum = pgEnum("report_target", [
 ]);
 
 // ==========================================
-// Users (auth system)
+// Users
 // ==========================================
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -245,7 +246,7 @@ export const resources = pgTable(
 );
 
 // ==========================================
-// User Progress (The Forge)
+// User Progress
 // ==========================================
 export const userProgress = pgTable("user_progress", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -260,7 +261,7 @@ export const userProgress = pgTable("user_progress", {
 });
 
 // ==========================================
-// Community Posts (NEW)
+// Community Posts
 // ==========================================
 export const communityPosts = pgTable(
   "community_posts",
@@ -288,7 +289,7 @@ export const communityPosts = pgTable(
 );
 
 // ==========================================
-// Community Comments (NEW)
+// Community Comments
 // ==========================================
 export const communityComments = pgTable(
   "community_comments",
@@ -311,7 +312,7 @@ export const communityComments = pgTable(
 );
 
 // ==========================================
-// Communication Messages (NEW)
+// Communication Messages
 // ==========================================
 export const communicationMessages = pgTable(
   "communication_messages",
@@ -332,7 +333,7 @@ export const communicationMessages = pgTable(
 );
 
 // ==========================================
-// Communication Replies (NEW)
+// Communication Replies
 // ==========================================
 export const communicationReplies = pgTable(
   "communication_replies",
@@ -352,7 +353,7 @@ export const communicationReplies = pgTable(
 );
 
 // ==========================================
-// Community Reports (NEW)
+// Community Reports
 // ==========================================
 export const communityReports = pgTable(
   "community_reports",
@@ -371,48 +372,7 @@ export const communityReports = pgTable(
 );
 
 // ==========================================
-// Relations
-// ==========================================
-export const storiesRelations = relations(stories, ({ many }) => ({
-  comments: many(storyComments),
-}));
-
-export const storyCommentsRelations = relations(storyComments, ({ one }) => ({
-  story: one(stories, { fields: [storyComments.storyId], references: [stories.id] }),
-}));
-
-export const challengesRelations = relations(challenges, ({ many }) => ({
-  userProgress: many(userChallenges),
-}));
-
-export const userChallengesRelations = relations(userChallenges, ({ one }) => ({
-  challenge: one(challenges, { fields: [userChallenges.challengeId], references: [challenges.id] }),
-}));
-
-export const communityPostsRelations = relations(communityPosts, ({ many }) => ({
-  comments: many(communityComments),
-}));
-
-export const communityCommentsRelations = relations(communityComments, ({ one, many }) => ({
-  post: one(communityPosts, { fields: [communityComments.postId], references: [communityPosts.id] }),
-  replies: many(communityComments, { relationName: "comment_replies" }),
-  parent: one(communityComments, {
-    fields: [communityComments.parentCommentId],
-    references: [communityComments.id],
-    relationName: "comment_replies",
-  }),
-}));
-
-export const communicationMessagesRelations = relations(communicationMessages, ({ many }) => ({
-  replies: many(communicationReplies),
-}));
-
-export const communicationRepliesRelations = relations(communicationReplies, ({ one }) => ({
-  message: one(communicationMessages, { fields: [communicationReplies.messageId], references: [communicationMessages.id] }),
-}));
-
-// ==========================================
-// Assessment tables (unchanged)
+// Assessment tables
 // ==========================================
 export const assessmentQuestions = pgTable("assessment_questions", {
   id: serial("id").primaryKey(),
@@ -446,6 +406,88 @@ export const assessmentActionPlans = pgTable("assessment_action_plans", {
   step3: text("step_3").notNull(),
 });
 
+// ==========================================
+// NEW: Categories
+// ==========================================
+export const categories = pgTable(
+  "categories",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 100 }).notNull(),
+    slug: varchar("slug", { length: 100 }).unique().notNull(),
+    description: text("description"),
+    color: varchar("color", { length: 50 }),
+    icon: varchar("icon", { length: 50 }),
+    sortOrder: integer("sortOrder").default(0),
+    createdAt: timestamp("createdAt").defaultNow(),
+  },
+  (table) => ({
+    slugIdx: index("categories_slug_idx").on(table.slug),
+  })
+);
+
+// ==========================================
+// NEW: Topics (pillar pages)
+// ==========================================
+export const topics = pgTable(
+  "topics",
+  {
+    id: serial("id").primaryKey(),
+    categoryId: integer("categoryId").references(() => categories.id),
+    name: varchar("name", { length: 100 }).notNull(),
+    slug: varchar("slug", { length: 100 }).unique().notNull(),
+    description: text("description"),
+    overview: text("overview"),
+    whyItMatters: text("whyItMatters"),
+    keyAreas: jsonb("keyAreas").$type<Array<{ title: string; summary: string }>>(),
+    sortOrder: integer("sortOrder").default(0),
+    createdAt: timestamp("createdAt").defaultNow(),
+  },
+  (table) => ({
+    slugIdx: index("topics_slug_idx").on(table.slug),
+    categoryIdx: index("topics_category_idx").on(table.categoryId),
+  })
+);
+
+// ==========================================
+// NEW: Tags
+// ==========================================
+export const tags = pgTable(
+  "tags",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 50 }).notNull(),
+    slug: varchar("slug", { length: 50 }).unique().notNull(),
+    createdAt: timestamp("createdAt").defaultNow(),
+  },
+  (table) => ({
+    slugIdx: index("tags_slug_idx").on(table.slug),
+  })
+);
+
+// ==========================================
+// NEW: Article Tags (junction)
+// ==========================================
+export const articleTags = pgTable(
+  "article_tags",
+  {
+    articleId: integer("articleId")
+      .notNull()
+      .references(() => articles.id, { onDelete: "cascade" }),
+    tagId: integer("tagId")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.articleId, table.tagId] }),
+    articleIdx: index("article_tags_article_idx").on(table.articleId),
+    tagIdx: index("article_tags_tag_idx").on(table.tagId),
+  })
+);
+
+// ==========================================
+// Articles (UPDATED — 6 new columns added)
+// ==========================================
 export const articles = pgTable("articles", {
   id: serial("id").primaryKey(),
   slug: varchar("slug", { length: 255 }).unique().notNull(),
@@ -454,8 +496,18 @@ export const articles = pgTable("articles", {
   content: text("content").notNull(),
   status: varchar("status", { length: 50 }).default("published"),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+  // NEW: content platform fields
+  categoryId: integer("categoryId").references(() => categories.id),
+  topicId: integer("topicId").references(() => topics.id),
+  featured: boolean("featured").default(false),
+  featuredImage: text("featuredImage"),
+  authorName: varchar("authorName", { length: 255 }).default("MenWhoFeel Core"),
+  viewCount: integer("viewCount").default(0),
 });
 
+// ==========================================
+// Announcements
+// ==========================================
 export const announcements = pgTable("announcements", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -465,6 +517,9 @@ export const announcements = pgTable("announcements", {
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
 });
 
+// ==========================================
+// Article Comments
+// ==========================================
 export const articleComments = pgTable("article_comments", {
   id: serial("id").primaryKey(),
   articleSlug: varchar("articleSlug", { length: 255 }).notNull(),
@@ -472,3 +527,85 @@ export const articleComments = pgTable("article_comments", {
   content: text("content").notNull(),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
 });
+
+// ==========================================
+// Relations
+// ==========================================
+
+// Categories → Topics
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  topics: many(topics),
+  articles: many(articles),
+}));
+
+// Topics → Articles, Topics → Categories
+export const topicsRelations = relations(topics, ({ one, many }) => ({
+  category: one(categories, { fields: [topics.categoryId], references: [categories.id] }),
+  articles: many(articles),
+}));
+
+// Tags ↔ Articles (via articleTags)
+export const tagsRelations = relations(tags, ({ many }) => ({
+  articleTags: many(articleTags),
+}));
+
+export const articleTagsRelations = relations(articleTags, ({ one }) => ({
+  article: one(articles, { fields: [articleTags.articleId], references: [articles.id] }),
+  tag: one(tags, { fields: [articleTags.tagId], references: [tags.id] }),
+}));
+
+// Articles → Categories, Topics, Tags, Comments
+export const articlesRelations = relations(articles, ({ one, many }) => ({
+  category: one(categories, { fields: [articles.categoryId], references: [categories.id] }),
+  topic: one(topics, { fields: [articles.topicId], references: [topics.id] }),
+  tags: many(articleTags),
+  comments: many(articleComments),
+}));
+
+export const articleCommentsRelations = relations(articleComments, ({ one }) => ({
+  article: one(articles, { fields: [articleComments.articleSlug], references: [articles.slug] }),
+}));
+
+// Stories
+export const storiesRelations = relations(stories, ({ many }) => ({
+  comments: many(storyComments),
+}));
+
+export const storyCommentsRelations = relations(storyComments, ({ one }) => ({
+  story: one(stories, { fields: [storyComments.storyId], references: [stories.id] }),
+}));
+
+// Challenges
+export const challengesRelations = relations(challenges, ({ many }) => ({
+  userProgress: many(userChallenges),
+}));
+
+export const userChallengesRelations = relations(userChallenges, ({ one }) => ({
+  challenge: one(challenges, { fields: [userChallenges.challengeId], references: [challenges.id] }),
+}));
+
+// Community
+export const communityPostsRelations = relations(communityPosts, ({ many }) => ({
+  comments: many(communityComments),
+}));
+
+export const communityCommentsRelations = relations(communityComments, ({ one, many }) => ({
+  post: one(communityPosts, { fields: [communityComments.postId], references: [communityPosts.id] }),
+  replies: many(communityComments, { relationName: "comment_replies" }),
+  parent: one(communityComments, {
+    fields: [communityComments.parentCommentId],
+    references: [communityComments.id],
+    relationName: "comment_replies",
+  }),
+}));
+
+export const communicationMessagesRelations = relations(communicationMessages, ({ many }) => ({
+  replies: many(communicationReplies),
+}));
+
+export const communicationRepliesRelations = relations(communicationReplies, ({ one }) => ({
+  message: one(communicationMessages, {
+    fields: [communicationReplies.messageId],
+    references: [communicationMessages.id],
+  }),
+}));

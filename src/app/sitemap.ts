@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { MetadataRoute } from "next";
 import { db } from "@/db";
 import { articles, categories, topics, tags } from "@/db/schema";

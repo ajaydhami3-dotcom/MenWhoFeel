@@ -78,6 +78,7 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: BASE_URL,
+    types: { "application/rss+xml": `${BASE_URL}/rss.xml` },
   },
   verification: {
     // Add your Google Search Console verification token here once you have it

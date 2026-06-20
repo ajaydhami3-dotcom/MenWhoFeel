@@ -529,6 +529,25 @@ export const articleComments = pgTable("article_comments", {
 });
 
 // ==========================================
+// Contact Messages (from the /contact page form)
+// ==========================================
+export const contactMessages = pgTable(
+  "contact_messages",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    email: varchar("email", { length: 320 }).notNull(),
+    message: text("message").notNull(),
+    status: varchar("status", { length: 50 }).default("new").notNull(), // new | read | replied
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    createdAtIdx: index("contact_messages_created_at_idx").on(table.createdAt),
+    statusIdx: index("contact_messages_status_idx").on(table.status),
+  })
+);
+
+// ==========================================
 // Relations
 // ==========================================
 

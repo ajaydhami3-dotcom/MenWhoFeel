@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Manrope, Source_Serif_4 } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -9,6 +9,15 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 
 const manrope = Manrope({ subsets: ["latin"], display: "swap" });
+
+// Dedicated reading font for long-form article content (see /intel/[slug]).
+// Serif body copy at a slightly larger size is measurably easier to read
+// for paragraphs of running text than the UI sans-serif used everywhere else.
+const articleFont = Source_Serif_4({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-article",
+});
 
 const BASE_URL = "https://www.menwhofeel.online";
 
@@ -78,6 +87,7 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: BASE_URL,
+    types: { "application/rss+xml": `${BASE_URL}/rss.xml` },
   },
   verification: {
     // Add your Google Search Console verification token here once you have it
@@ -144,7 +154,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${manrope.className} relative min-h-screen bg-[#060810]`}
+        className={`${manrope.className} ${articleFont.variable} relative min-h-screen bg-[#060810]`}
       >
         <div className="fixed inset-0 z-[-1] bg-[#060810]">
           <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[120px] pointer-events-none" />

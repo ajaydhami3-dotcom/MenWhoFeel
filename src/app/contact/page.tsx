@@ -5,15 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 // Swapped the missing brand icons for safe, standard Lucide alternatives
-import { Mail, MessageSquare, Send, Camera, Play, Hash, MessageCircle } from "lucide-react";
+import { Mail, MessageSquare, Send, Camera, Play, Hash, MessageCircle, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { trpc } from "@/lib/trpc";
 
 export default function ContactPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const submitMutation = trpc.contact.submitMessage.useMutation({
+    onSuccess: () => {
+      setName("");
+      setEmail("");
+      setMessage("");
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    submitMutation.mutate({ name, email, message });
   };
 
   return (
@@ -21,7 +32,7 @@ export default function ContactPage() {
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-gradient">Contact Us</h1>
-          <p className="text-muted-foreground mt-2">We'd love to hear from you. Reach out anytime.</p>
+          <p className="text-muted-foreground mt-2">We&apos;d love to hear from you. Reach out anytime.</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
@@ -33,28 +44,60 @@ export default function ContactPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {submitted ? (
+              {submitMutation.isSuccess ? (
                 <div className="text-center py-8">
                   <Send className="h-8 w-8 text-green-400 mx-auto mb-3" />
                   <p className="font-medium">Message sent!</p>
-                  <p className="text-sm text-muted-foreground">We'll get back to you soon.</p>
+                  <p className="text-sm text-muted-foreground">We&apos;ll get back to you soon.</p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="text-sm font-medium mb-1 block">Name</label>
-                    <Input placeholder="Your name" className="bg-secondary/50 border-border/40" required />
+                    <Input
+                      placeholder="Your name"
+                      className="bg-secondary/50 border-border/40"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">Email</label>
-                    <Input type="email" placeholder="your@email.com" className="bg-secondary/50 border-border/40" required />
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      className="bg-secondary/50 border-border/40"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">Message</label>
-                    <Textarea placeholder="How can we help?" className="bg-secondary/50 border-border/40 min-h-[120px]" required />
+                    <Textarea
+                      placeholder="How can we help?"
+                      className="bg-secondary/50 border-border/40 min-h-[120px]"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      required
+                    />
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white">
-                    <Send className="h-4 w-4 mr-2" /> Send Message
+
+                  {submitMutation.isError && (
+                    <div className="flex items-start gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                      <span>{submitMutation.error.message || "Something went wrong. Please try again."}</span>
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={submitMutation.isPending}
+                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white disabled:opacity-60"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {submitMutation.isPending ? "Sending..." : "Send Message"}
                   </Button>
                 </form>
               )}

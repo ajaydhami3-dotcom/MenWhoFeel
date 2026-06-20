@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Phone,
   Coffee,
+  Users,
 } from "lucide-react";
 
 export default function Footer() {
@@ -91,6 +92,16 @@ export default function Footer() {
                 >
                   <MessageSquare className="h-3 w-3" />
                   Community
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/family-and-friends"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+                >
+                  <Users className="h-3 w-3" />
+                  For Family &amp; Friends
                 </Link>
               </li>
 
@@ -219,7 +230,7 @@ export default function Footer() {
                 aria-label="Support Men Who Feel on Ko-fi"
               >
                 <Coffee className="h-3.5 w-3.5 text-amber-400/70 group-hover:text-amber-400 transition-colors" />
-                Buy us a coffee
+                Support us
               </a>
             </div>
           </div>

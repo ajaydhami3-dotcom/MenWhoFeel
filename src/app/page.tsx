@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BookOpen, MessageSquare, ArrowRight, Shield, Lock,
   Quote, Brain, HeartPulse, Dumbbell, Briefcase, Flame, TrendingUp,
+  Target, CheckCircle2,
 } from "lucide-react";
 import { db } from "@/db";
-import { stories, articles, categories, topics } from "@/db/schema";
+import { stories, articles, categories, topics, challenges } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import type { ElementType } from "react";
 
@@ -134,6 +135,24 @@ async function getHomepageArticles() {
   }
 }
 
+async function getHomepageChallenges() {
+  try {
+    return await db
+      .select({
+        id: challenges.id,
+        title: challenges.title,
+        description: challenges.description,
+        category: challenges.category,
+      })
+      .from(challenges)
+      .where(eq(challenges.active, true))
+      .orderBy(desc(challenges.createdAt))
+      .limit(3);
+  } catch {
+    return [];
+  }
+}
+
 // ─── Sections ─────────────────────────────────────────────────────────────────
 
 function HeroSection() {
@@ -193,6 +212,13 @@ type CategoryWithCount = Awaited<ReturnType<typeof getHomepageCategories>>[numbe
 type TopicRow = Awaited<ReturnType<typeof getHomepageTopics>>[number];
 type StoryRow = Awaited<ReturnType<typeof getHomepageStories>>[number];
 type ArticleRow = Awaited<ReturnType<typeof getHomepageArticles>>[number];
+type ChallengeRow = Awaited<ReturnType<typeof getHomepageChallenges>>[number];
+
+const HOMEPAGE_SEED_CHALLENGES: ChallengeRow[] = [
+  { id: -1, title: "Write it down", description: "Spend 5 minutes writing whatever's in your head. No structure, no goal — just get it out of your head and onto paper.", category: "daily" },
+  { id: -2, title: "One honest conversation", description: "Tell someone — anyone — one true thing about how you're actually doing. Doesn't have to be deep. Just honest.", category: "daily" },
+  { id: -3, title: "No phone for one hour", description: "Pick an hour today and put the phone in another room. Notice what fills the space.", category: "daily" },
+];
 
 function CategoryExplorer({ cats }: { cats: CategoryWithCount[] }) {
   if (cats.length === 0) return null;
@@ -481,6 +507,57 @@ function CheckInSection() {
   );
 }
 
+function ChallengesTeaserSection({ challengesData }: { challengesData: ChallengeRow[] }) {
+  const displayChallenges = challengesData.length > 0 ? challengesData : HOMEPAGE_SEED_CHALLENGES;
+  return (
+    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-[#060810]/60 border-y border-border/10">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex items-end justify-between mb-7">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Target className="h-4 w-4 text-emerald-400" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">
+                Take action
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">Small challenges, real momentum</h2>
+            <p className="text-muted-foreground mt-1 text-sm">Feeling it is one thing. Doing something with it is another.</p>
+          </div>
+          <Link href="/challenges">
+            <Button variant="outline" size="sm" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10">
+              All challenges <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+            </Button>
+          </Link>
+        </div>
+        <div className="grid md:grid-cols-3 gap-5">
+          {displayChallenges.slice(0, 3).map((challenge) => (
+            <Link key={challenge.id} href="/challenges">
+              <Card className="h-full bg-card/80 backdrop-blur-sm border-border/40 hover:border-emerald-500/30 transition-all duration-300 hover:scale-[1.01] card-glow flex flex-col">
+                <CardHeader className="pb-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 block">
+                    {challenge.category}
+                  </span>
+                  <CardTitle className="text-base font-semibold line-clamp-2 text-foreground">
+                    {challenge.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col justify-between">
+                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
+                    {challenge.description}
+                  </p>
+                  <p className="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Start this challenge
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FooterCTA() {
   return (
     <section className="py-16 px-4 sm:px-6 lg:px-8 border-t border-border/20">
@@ -526,11 +603,12 @@ function FooterCTA() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function Home() {
-  const [catsData, topicsData, storiesData, articlesData] = await Promise.all([
+  const [catsData, topicsData, storiesData, articlesData, challengesData] = await Promise.all([
     getHomepageCategories(),
     getHomepageTopics(),
     getHomepageStories(),
     getHomepageArticles(),
+    getHomepageChallenges(),
   ]);
 
   return (
@@ -543,6 +621,7 @@ export default async function Home() {
       <FounderStoryTeaser />
       <CommunitySnippetsSection />
       <CheckInSection />
+      <ChallengesTeaserSection challengesData={challengesData} />
       <FooterCTA />
     </div>
   );

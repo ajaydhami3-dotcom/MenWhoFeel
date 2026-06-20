@@ -79,6 +79,25 @@ async function getComments(slug: string) {
   }
 }
 
+// Article content is stored as a single block of text. Rendering it as one
+// giant paragraph (the old behavior) is hard to read — there's no visual
+// rhythm to let the eye rest. This splits it into real paragraphs so each
+// one gets its own breathing room, instead of relying on CSS to fake it.
+function splitIntoParagraphs(content: string): string[] {
+  const normalized = content.replace(/\r\n/g, "\n").trim();
+  // Prefer blank-line breaks (the natural way most articles are written).
+  const blocks = normalized
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (blocks.length > 1) return blocks;
+  // Fall back to single line breaks if the content has no blank lines at all.
+  return normalized
+    .split(/\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -201,7 +220,7 @@ export default async function SingleIntelPage({ params }: Props) {
               )}
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white leading-tight mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.2] mb-6">
               {data.title}
             </h1>
             <div className="flex flex-wrap items-center gap-6">
@@ -217,14 +236,22 @@ export default async function SingleIntelPage({ params }: Props) {
             </div>
           </header>
 
-          {/* Article body */}
-          <div className="w-full mb-8">
-            <p
-              className="text-zinc-300 text-lg leading-[1.9] break-words whitespace-pre-line"
-              style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
-            >
-              {data.content}
-            </p>
+          {/* Article body — split into real paragraphs and set in a dedicated
+              reading font (serif, larger, generous line-height) so long-form
+              content is comfortable to read instead of one dense block. */}
+          <div
+            className="w-full mb-8 text-zinc-300 text-[1.15rem] sm:text-xl"
+            style={{ fontFamily: "var(--font-article)" }}
+          >
+            {splitIntoParagraphs(data.content).map((paragraph, i) => (
+              <p
+                key={i}
+                className="mb-6 leading-[1.8] break-words"
+                style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+              >
+                {paragraph}
+              </p>
+            ))}
           </div>
 
           {/* Tags */}

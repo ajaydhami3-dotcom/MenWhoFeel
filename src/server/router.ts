@@ -10,6 +10,7 @@ import { announcementsRouter } from "./announcements-router";
 import { communityRouter } from "./community-router";
 import { communicationRouter } from "./communication-router";
 import { moderationRouter } from "./moderation-router";
+import { contactRouter } from "./contact-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -26,6 +27,7 @@ export const appRouter = createRouter({
   community: communityRouter,
   communication: communicationRouter,
   moderation: moderationRouter,
+  contact: contactRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -31,7 +31,10 @@ async function getCategoryData(slug: string) {
   try {
     const rows = await db.select().from(categories).where(eq(categories.slug, slug)).limit(1);
     return rows[0] ?? null;
-  } catch { return null; }
+  } catch (err) {
+    console.error(`[category/${slug}] getCategoryData failed:`, err);
+    return null;
+  }
 }
 
 async function getTopicsWithCount(categoryId: number) {
@@ -51,7 +54,10 @@ async function getTopicsWithCount(categoryId: number) {
         return { ...t, articleCount: count ?? 0 };
       })
     );
-  } catch { return []; }
+  } catch (err) {
+    console.error(`[category] getTopicsWithCount(${categoryId}) failed:`, err);
+    return [];
+  }
 }
 
 async function getLatestArticles(categoryId: number) {
@@ -62,20 +68,39 @@ async function getLatestArticles(categoryId: number) {
       .where(and(eq(articles.categoryId, categoryId), eq(articles.status, "published")))
       .orderBy(desc(articles.createdAt))
       .limit(6);
-  } catch { return []; }
+  } catch (err) {
+    console.error(`[category] getLatestArticles(${categoryId}) failed:`, err);
+    return [];
+  }
 }
 
 export async function generateStaticParams() {
   try {
     const rows = await db.select({ slug: categories.slug }).from(categories);
     return rows.map((r) => ({ categorySlug: r.slug }));
-  } catch { return []; }
+  } catch (err) {
+    console.error("[category] generateStaticParams failed:", err);
+    return [];
+  }
+}
+
+async function getCategoryArticleCount(categoryId: number) {
+  try {
+    const [{ count }] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(articles)
+      .where(and(eq(articles.categoryId, categoryId), eq(articles.status, "published")));
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug } = await params;
   const cat = await getCategoryData(categorySlug);
   if (!cat) return { title: { absolute: "Category Not Found | Men Who Feel" } };
+  const articleCount = await getCategoryArticleCount(cat.id);
   return {
     title: { absolute: `${cat.name} | Men Who Feel` },
     description: cat.description ?? `Explore ${cat.name} articles and topics on Men Who Feel.`,
@@ -87,6 +112,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "Men Who Feel",
       type: "website",
     },
+    // Safety net: if a category is ever created/empty before content is
+    // published under it, don't let a thin "0 articles" page get indexed.
+    ...(articleCount === 0 && {
+      robots: { index: false, follow: true },
+    }),
   };
 }
 

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
 import { tags, articleTags, articles, categories } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import Breadcrumb from "@/components/Breadcrumb";
 import { Tag, FileText } from "lucide-react";
 
@@ -17,7 +17,10 @@ async function getTagData(slug: string) {
   try {
     const rows = await db.select().from(tags).where(eq(tags.slug, slug)).limit(1);
     return rows[0] ?? null;
-  } catch { return null; }
+  } catch (err) {
+    console.error(`[tag/${slug}] getTagData failed:`, err);
+    return null;
+  }
 }
 
 async function getArticlesByTag(tagId: number) {
@@ -35,9 +38,15 @@ async function getArticlesByTag(tagId: number) {
       .from(articleTags)
       .innerJoin(articles, eq(articleTags.articleId, articles.id))
       .leftJoin(categories, eq(articles.categoryId, categories.id))
-      .where(eq(articleTags.tagId, tagId))
+      // Only published articles — unpublished/draft articles tagged ahead
+      // of publishing were previously showing up here even though they're
+      // correctly excluded from /topic and /category pages.
+      .where(and(eq(articleTags.tagId, tagId), eq(articles.status, "published")))
       .orderBy(desc(articles.createdAt));
-  } catch { return []; }
+  } catch (err) {
+    console.error(`[tag] getArticlesByTag(${tagId}) failed:`, err);
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

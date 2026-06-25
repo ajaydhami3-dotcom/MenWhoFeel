@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Men Who Feel",
+  // absolute prevents the root layout's "%s | Men Who Feel" template from
+  // being applied again on top of this (which previously produced
+  // "Privacy Policy | Men Who Feel | Men Who Feel" in the rendered <title>).
+  title: { absolute: "Privacy Policy | Men Who Feel" },
   description: "Learn how Men Who Feel handles your data. We collect minimal information, never sell personal data, and are committed to your privacy and anonymity.",
   alternates: { canonical: `${BASE_URL}/privacy-policy` },
 };

@@ -40,7 +40,10 @@ async function getTopicData(slug: string) {
       .where(eq(topics.slug, slug))
       .limit(1);
     return rows[0] ?? null;
-  } catch { return null; }
+  } catch (err) {
+    console.error(`[topic/${slug}] getTopicData failed:`, err);
+    return null;
+  }
 }
 
 async function getTopicArticles(topicId: number) {
@@ -50,14 +53,33 @@ async function getTopicArticles(topicId: number) {
       .from(articles)
       .where(and(eq(articles.topicId, topicId), eq(articles.status, "published")))
       .orderBy(desc(articles.createdAt));
-  } catch { return []; }
+  } catch (err) {
+    console.error(`[topic] getTopicArticles(${topicId}) failed:`, err);
+    return [];
+  }
 }
 
 export async function generateStaticParams() {
   try {
     const rows = await db.select({ slug: topics.slug }).from(topics);
     return rows.map((r) => ({ topicSlug: r.slug }));
-  } catch { return []; }
+  } catch (err) {
+    console.error("[topic] generateStaticParams failed:", err);
+    return [];
+  }
+}
+
+async function getTopicArticleCount(topicId: number) {
+  try {
+    const [{ count }] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(articles)
+      .where(and(eq(articles.topicId, topicId), eq(articles.status, "published")));
+    return count ?? 0;
+  } catch (err) {
+    console.error(`[topic] getTopicArticleCount(${topicId}) failed:`, err);
+    return 0;
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -65,6 +87,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const topic = await getTopicData(topicSlug);
   if (!topic) return { title: { absolute: "Topic Not Found | Men Who Feel" } };
   const desc = topic.description ?? `Explore ${topic.name} articles on Men Who Feel.`;
+  const articleCount = await getTopicArticleCount(topic.id);
+
   return {
     title: { absolute: `${topic.name} | Men Who Feel` },
     description: desc,
@@ -76,6 +100,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "Men Who Feel",
       type: "website",
     },
+    // Topics with no published articles yet ("coming soon") are real pages
+    // for visitors but shouldn't be indexed as thin/empty content — once an
+    // article is published under this topic this will index automatically.
+    ...(articleCount === 0 && {
+      robots: { index: false, follow: true },
+    }),
   };
 }
 

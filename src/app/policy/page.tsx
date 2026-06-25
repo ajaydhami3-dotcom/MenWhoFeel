@@ -4,7 +4,9 @@ import Link from "next/link";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: "Community Policy | Men Who Feel",
+  // absolute prevents the root layout's "%s | Men Who Feel" template from
+  // doubling up on top of this title.
+  title: { absolute: "Community Policy | Men Who Feel" },
   description: "Read the Men Who Feel community policy. Our guidelines ensure a safe, respectful space for men to share experiences and support one another without judgment.",
   alternates: { canonical: `${BASE_URL}/policy` },
 };

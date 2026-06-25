@@ -5,7 +5,9 @@ import { AlertTriangle, Shield, Heart } from "lucide-react";
 const BASE_URL = "https://www.menwhofeel.online";
 
 export const metadata: Metadata = {
-  title: "Disclaimer | Men Who Feel",
+  // absolute prevents the root layout's "%s | Men Who Feel" template from
+  // doubling up on top of this title.
+  title: { absolute: "Disclaimer | Men Who Feel" },
   description: "Men Who Feel is a peer support community, not a substitute for professional mental health care. Read our full disclaimer before using the platform.",
   alternates: { canonical: `${BASE_URL}/disclaimer` },
 };

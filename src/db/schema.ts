@@ -488,22 +488,44 @@ export const articleTags = pgTable(
 // ==========================================
 // Articles (UPDATED — 6 new columns added)
 // ==========================================
-export const articles = pgTable("articles", {
-  id: serial("id").primaryKey(),
-  slug: varchar("slug", { length: 255 }).unique().notNull(),
-  title: text("title").notNull(),
-  excerpt: text("excerpt").notNull(),
-  content: text("content").notNull(),
-  status: varchar("status", { length: 50 }).default("published"),
-  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-  // NEW: content platform fields
-  categoryId: integer("categoryId").references(() => categories.id),
-  topicId: integer("topicId").references(() => topics.id),
-  featured: boolean("featured").default(false),
-  featuredImage: text("featuredImage"),
-  authorName: varchar("authorName", { length: 255 }).default("MenWhoFeel Core"),
-  viewCount: integer("viewCount").default(0),
-});
+export const articles = pgTable(
+  "articles",
+  {
+    id: serial("id").primaryKey(),
+    slug: varchar("slug", { length: 255 }).unique().notNull(),
+    title: text("title").notNull(),
+    excerpt: text("excerpt").notNull(),
+    content: text("content").notNull(),
+    status: varchar("status", { length: 50 }).default("published"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    // NEW: content platform fields
+    categoryId: integer("categoryId").references(() => categories.id),
+    topicId: integer("topicId").references(() => topics.id),
+    featured: boolean("featured").default(false),
+    featuredImage: text("featuredImage"),
+    authorName: varchar("authorName", { length: 255 }).default("MenWhoFeel Core"),
+    viewCount: integer("viewCount").default(0),
+    // NEW: Intel CMS fields (admin/intel)
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    // When the article actually went/goes live. Null for drafts. Lets
+    // "scheduled" articles go live on their own once this passes, and gives
+    // an accurate publish date independent of createdAt for edited posts.
+    publishedAt: timestamp("publishedAt", { withTimezone: true }),
+    seoTitle: text("seoTitle"),
+    metaDescription: text("metaDescription"),
+    canonicalUrl: text("canonicalUrl"),
+    ogImage: text("ogImage"),
+    focusKeyword: varchar("focusKeyword", { length: 100 }),
+    // Minutes. Auto-estimated from word count in the editor, but stored
+    // (not computed on every public page view) and editable.
+    readingTime: integer("readingTime"),
+  },
+  (table) => ({
+    statusIdx: index("articles_status_idx").on(table.status),
+  })
+);
 
 // ==========================================
 // Announcements

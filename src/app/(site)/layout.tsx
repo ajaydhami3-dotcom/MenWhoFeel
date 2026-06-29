@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Source_Serif_4 } from "next/font/google";
 import Script from "next/script";
-import "./globals.css";
+import "../globals.css";
 
 import { Providers } from "@/components/Providers";
 import Navbar from "@/components/Navbar";

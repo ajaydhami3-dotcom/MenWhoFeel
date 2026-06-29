@@ -8,6 +8,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: [
           "/api/",
+          "/admin/",               // CMS — not public content
           "/assessment/results/", // Personal results — no index value
           "/command/",            // Personal dashboard
           "/debrief/",            // Personal AI conversation

@@ -7,6 +7,7 @@ import { articles, articleTags, tags } from "@/db/schema";
 import { verifyAdminSession } from "@/lib/admin/dal";
 import { slugify } from "@/lib/slug";
 import { uploadArticleImage, deleteArticleImage } from "@/lib/storage";
+import { MAX_FEATURED_IMAGE_SIZE_BYTES, MAX_FEATURED_IMAGE_SIZE_MB } from "@/lib/constants/file-size";
 
 export type ArticleStatus = "draft" | "published" | "scheduled";
 
@@ -309,7 +310,13 @@ export async function uploadFeaturedImageAction(
 
   if (!file || file.size === 0) return { success: false, error: "No file provided." };
   if (!file.type.startsWith("image/")) return { success: false, error: "File must be an image." };
-  if (file.size > 5 * 1024 * 1024) return { success: false, error: "Image must be under 5MB." };
+  if (file.size > MAX_FEATURED_IMAGE_SIZE_BYTES) {
+    const actualMb = (file.size / (1024 * 1024)).toFixed(1);
+    return {
+      success: false,
+      error: `Image is ${actualMb}MB, which is over the ${MAX_FEATURED_IMAGE_SIZE_MB}MB limit. Try compressing it or choosing a smaller file.`,
+    };
+  }
 
   try {
     const url = await uploadArticleImage(file);

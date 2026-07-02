@@ -650,3 +650,159 @@ export const communicationRepliesRelations = relations(communicationReplies, ({ 
     references: [communicationMessages.id],
   }),
 }));
+
+// ==========================================
+// Automation v1
+// ==========================================
+
+export const automationJobStatusEnum = pgEnum("automation_job_status", [
+  "pending",
+  "running",
+  "awaiting_review",
+  "approved",
+  "published",
+  "failed",
+  "cancelled",
+]);
+
+export const automationStageEnum = pgEnum("automation_stage", [
+  "research",
+  "writing",
+  "seo",
+  "image",
+  "social",
+  "complete",
+]);
+
+export const socialPlatformEnum = pgEnum("social_platform", [
+  "reddit",
+  "x",
+  "instagram",
+  "youtube",
+]);
+
+export const socialDraftStatusEnum = pgEnum("social_draft_status", [
+  "pending",
+  "approved",
+  "published",
+  "failed",
+  "skipped",
+]);
+
+export const automationJobs = pgTable(
+  "automation_jobs",
+  {
+    id: serial("id").primaryKey(),
+    topic: text("topic").notNull(),
+    status: automationJobStatusEnum("status").default("pending").notNull(),
+    stage: automationStageEnum("stage"),
+    articleId: integer("article_id").references(() => articles.id, { onDelete: "set null" }),
+    research: jsonb("research"),
+    writing: jsonb("writing"),
+    seoData: jsonb("seo_data"),
+    imageData: jsonb("image_data"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => ({
+    statusIdx: index("automation_jobs_status_idx").on(table.status),
+    createdAtIdx: index("automation_jobs_created_at_idx").on(table.createdAt),
+  })
+);
+
+export const automationLogs = pgTable(
+  "automation_logs",
+  {
+    id: serial("id").primaryKey(),
+    jobId: integer("job_id")
+      .notNull()
+      .references(() => automationJobs.id, { onDelete: "cascade" }),
+    stage: varchar("stage", { length: 50 }).notNull(),
+    level: varchar("level", { length: 10 }).default("info").notNull(),
+    message: text("message").notNull(),
+    payload: jsonb("payload"),
+    durationMs: integer("duration_ms"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    jobIdIdx: index("automation_logs_job_id_idx").on(table.jobId),
+    createdAtIdx: index("automation_logs_created_at_idx").on(table.createdAt),
+  })
+);
+
+export const automationSettings = pgTable("automation_settings", {
+  id: integer("id").primaryKey().default(1),
+  aiProvider: varchar("ai_provider", { length: 50 }).default("gemini").notNull(),
+  imageProvider: varchar("image_provider", { length: 50 }).default("fal").notNull(),
+  imageStyle: text("image_style")
+    .default("photorealistic, editorial, men's wellness")
+    .notNull(),
+  defaultAuthor: varchar("default_author", { length: 255 })
+    .default("MenWhoFeel Core")
+    .notNull(),
+  defaultCategoryId: integer("default_category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
+  redditEnabled: boolean("reddit_enabled").default(false).notNull(),
+  redditSubreddits: text("reddit_subreddits").array().default([]).notNull(),
+  xEnabled: boolean("x_enabled").default(false).notNull(),
+  instagramEnabled: boolean("instagram_enabled").default(false).notNull(),
+  defaultHashtags: text("default_hashtags").array().default([]).notNull(),
+  researchPrompt: text("research_prompt"),
+  writingPrompt: text("writing_prompt"),
+  seoPrompt: text("seo_prompt"),
+  socialPrompt: text("social_prompt"),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export const socialDrafts = pgTable(
+  "social_drafts",
+  {
+    id: serial("id").primaryKey(),
+    jobId: integer("job_id")
+      .notNull()
+      .references(() => automationJobs.id, { onDelete: "cascade" }),
+    articleId: integer("article_id").references(() => articles.id, { onDelete: "set null" }),
+    platform: socialPlatformEnum("platform").notNull(),
+    status: socialDraftStatusEnum("status").default("pending").notNull(),
+    content: jsonb("content").notNull(),
+    response: jsonb("response"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+  },
+  (table) => ({
+    jobIdIdx: index("social_drafts_job_id_idx").on(table.jobId),
+    statusIdx: index("social_drafts_status_idx").on(table.status),
+  })
+);
+
+// ── Relations ────────────────────────────────────────────────────────────────
+
+export const automationJobsRelations = relations(automationJobs, ({ one, many }) => ({
+  article: one(articles, { fields: [automationJobs.articleId], references: [articles.id] }),
+  logs: many(automationLogs),
+  socialDrafts: many(socialDrafts),
+}));
+
+export const automationLogsRelations = relations(automationLogs, ({ one }) => ({
+  job: one(automationJobs, { fields: [automationLogs.jobId], references: [automationJobs.id] }),
+}));
+
+export const socialDraftsRelations = relations(socialDrafts, ({ one }) => ({
+  job: one(automationJobs, { fields: [socialDrafts.jobId], references: [automationJobs.id] }),
+  article: one(articles, { fields: [socialDrafts.articleId], references: [articles.id] }),
+}));
+

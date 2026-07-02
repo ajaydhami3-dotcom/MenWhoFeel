@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, Source_Serif_4 } from "next/font/google";
+
 import Script from "next/script";
 import "../globals.css";
 
@@ -8,16 +8,12 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 
-const manrope = Manrope({ subsets: ["latin"], display: "swap" });
+const manrope = { className: "" };
 
 // Dedicated reading font for long-form article content (see /intel/[slug]).
 // Serif body copy at a slightly larger size is measurably easier to read
 // for paragraphs of running text than the UI sans-serif used everywhere else.
-const articleFont = Source_Serif_4({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-article",
-});
+const articleFont = { variable: "" };
 
 const BASE_URL = "https://www.menwhofeel.online";
 

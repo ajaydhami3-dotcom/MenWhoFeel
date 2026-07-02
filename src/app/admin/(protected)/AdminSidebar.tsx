@@ -14,6 +14,7 @@ import {
   Briefcase,
   BarChart3,
   Lock,
+  Zap,
 } from "lucide-react";
 
 import {
@@ -52,6 +53,18 @@ const MODULES: NavItem[] = [
       { label: "New article", href: "/admin/intel/new" },
       { label: "Categories", href: "/admin/intel/categories" },
       { label: "Tags", href: "/admin/intel/tags" },
+    ],
+  },
+  {
+    label: "Automation",
+    href: "/admin/automation",
+    icon: Zap,
+    children: [
+      { label: "Dashboard", href: "/admin/automation" },
+      { label: "Content queue", href: "/admin/automation/queue" },
+      { label: "History", href: "/admin/automation/history" },
+      { label: "Settings", href: "/admin/automation/settings" },
+      { label: "Logs", href: "/admin/automation/logs" },
     ],
   },
 ];

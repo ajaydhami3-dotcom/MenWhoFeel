@@ -115,8 +115,17 @@ export function AutomationRunner() {
     setLogs([]);
     stopPolling();
 
+    // In local dev, waitUntil() from @vercel/functions is a no-op, so the
+    // pipeline never executes via /api/automation/run. Use the synchronous
+    // route instead which awaits the pipeline before responding.
+    // Set NEXT_PUBLIC_APP_ENV=development in .env.local to enable this.
+    const route =
+      process.env.NEXT_PUBLIC_APP_ENV === "development"
+        ? "/api/automation/run-sync"
+        : "/api/automation/run";
+
     try {
-      const res = await fetch("/api/automation/run", {
+      const res = await fetch(route, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: topic.trim() }),

@@ -170,7 +170,6 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
   }
 
   const settings = await getSettings();
-  const aiProvider = (settings?.aiProvider as "gemini" | "groq") ?? "gemini";
 
   // ── STAGE 1: Research ──────────────────────────────────────────────────────
   let research: ResearchOutput | null = null;
@@ -183,10 +182,9 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
     const prompt = interpolate(template, { topic: job.topic });
 
     const start = Date.now();
-    const { data, provider, durationMs } = await callAiJson<ResearchOutput>({
+    const { data, durationMs } = await callAiJson<ResearchOutput>({
       system: "You are a research specialist for a men's emotional wellbeing platform.",
       prompt,
-      provider: aiProvider,
     });
     research = data;
 
@@ -195,7 +193,7 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
       .set({ research: research as unknown as Record<string, unknown> })
       .where(eq(automationJobs.id, jobId));
 
-    await stageLogger.timed(`Research complete via ${provider}`, durationMs, {
+    await stageLogger.timed(`Research complete via Gemini`, durationMs, {
       angle: research.angle,
     });
   } catch (err) {
@@ -217,10 +215,9 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
       research: JSON.stringify(research, null, 2),
     });
 
-    const { data, provider, durationMs } = await callAiJson<WritingOutput>({
+    const { data, durationMs } = await callAiJson<WritingOutput>({
       system: "You are the lead writer for a men's emotional wellbeing platform.",
       prompt,
-      provider: aiProvider,
       maxTokens: 4096,
     });
     writing = data;
@@ -230,7 +227,7 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
       .set({ writing: writing as unknown as Record<string, unknown> })
       .where(eq(automationJobs.id, jobId));
 
-    await stageLogger.timed(`Writing complete via ${provider}`, durationMs, {
+    await stageLogger.timed(`Writing complete via Gemini`, durationMs, {
       title: writing.title,
       wordCount: writing.content.split(/\s+/).length,
     });
@@ -257,10 +254,9 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
       slug: slugify(writing.title),
     });
 
-    const { data, provider, durationMs } = await callAiJson<SeoOutput>({
+    const { data, durationMs } = await callAiJson<SeoOutput>({
       system: "You are an SEO specialist for a men's wellbeing content platform.",
       prompt,
-      provider: aiProvider,
     });
     seo = data;
 
@@ -273,7 +269,7 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
       .set({ seoData: seo as unknown as Record<string, unknown> })
       .where(eq(automationJobs.id, jobId));
 
-    await stageLogger.timed(`SEO complete via ${provider}`, durationMs, {
+    await stageLogger.timed(`SEO complete via Gemini`, durationMs, {
       slug: seo.slug,
       focusKeyword: seo.focusKeyword,
     });
@@ -400,10 +396,9 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
       url,
     });
 
-    const { data: social, provider, durationMs } = await callAiJson<SocialOutput>({
+    const { data: social, durationMs } = await callAiJson<SocialOutput>({
       system: "You are the social media manager for a men's emotional wellbeing platform.",
       prompt,
-      provider: aiProvider,
     });
 
     // Merge admin's default subreddits into Reddit suggestions
@@ -433,7 +428,7 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
       });
     }
 
-    await stageLogger.timed(`Social content generated via ${provider}`, durationMs);
+    await stageLogger.timed(`Social content generated via Gemini`, durationMs);
   } catch (err) {
     // Social failure is non-fatal
     const msg = err instanceof Error ? err.message : String(err);

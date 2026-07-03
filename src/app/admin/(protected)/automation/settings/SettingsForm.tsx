@@ -95,7 +95,7 @@ export function SettingsForm({
   categories: { id: number; name: string }[];
 }) {
   const [form, setForm] = useState<SettingsInput>({
-    aiProvider: (settings?.aiProvider as "gemini" | "groq") ?? "gemini",
+    aiProvider: "gemini" as const,
     imageProvider: (settings?.imageProvider as "fal" | "none") ?? "fal",
     imageStyle: settings?.imageStyle ?? "photorealistic, editorial, men's wellness",
     defaultAuthor: settings?.defaultAuthor ?? "MenWhoFeel Core",
@@ -143,19 +143,10 @@ export function SettingsForm({
             <CardHeader><CardTitle className="text-base">AI provider</CardTitle></CardHeader>
             <CardContent className="space-y-5">
               <Field>
-                <FieldLabel>Provider</FieldLabel>
-                <Select value={form.aiProvider} onValueChange={(v) => set("aiProvider", v as "gemini" | "groq")}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gemini">Gemini (Google) — recommended</SelectItem>
-                    <SelectItem value="groq">Groq (Llama 3.1 70B)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FieldLabel>AI provider</FieldLabel>
+                <p className="text-sm text-muted-foreground">Gemini (Google) — gemini-1.5-flash</p>
                 <FieldDescription>
-                  Gemini is the primary provider. Groq is the automatic fallback when Gemini is unavailable.
-                  Set this to "Groq" to force Groq for all calls.
+                  Set your <code>GEMINI_API_KEY</code> environment variable in Vercel to power all automation stages.
                 </FieldDescription>
               </Field>
 

@@ -29,7 +29,7 @@ export async function cancelJobAction(jobId: number): Promise<{ success: boolean
 }
 
 export type SettingsInput = {
-  aiProvider: "gemini" | "groq";
+  aiProvider: "gemini";
   imageProvider: "fal" | "none";
   imageStyle: string;
   defaultAuthor: string;

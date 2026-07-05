@@ -8,6 +8,7 @@ export interface AiCallOptions {
   maxTokens?: number;
   temperature?: number;
   json?: boolean;
+  thinking?: boolean; // default false — thinking eats output tokens on 2.5-flash
 }
 
 export interface AiResult {
@@ -32,9 +33,14 @@ async function callGemini(options: AiCallOptions): Promise<string> {
     systemInstruction: { parts: [{ text: systemInstruction }] },
     contents: [{ role: "user", parts: [{ text: options.prompt }] }],
     generationConfig: {
-      maxOutputTokens: options.maxTokens ?? 2048,
+      maxOutputTokens: options.maxTokens ?? 4096,
       temperature: options.temperature ?? 0.7,
       ...(options.json ? { responseMimeType: "application/json" } : {}),
+      // Disable thinking by default — it silently consumes output tokens on
+      // gemini-2.5-flash before producing any response, leaving too little
+      // room for long structured JSON (e.g. full article content). Structured
+      // generation tasks don't benefit from extended thinking anyway.
+      ...(!options.thinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
     },
   };
 

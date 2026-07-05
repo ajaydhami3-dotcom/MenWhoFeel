@@ -218,7 +218,7 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
     const { data, durationMs } = await callAiJson<WritingOutput>({
       system: "You are the lead writer for a men's emotional wellbeing platform.",
       prompt,
-      maxTokens: 4096,
+      maxTokens: 8192,
     });
     writing = data;
 

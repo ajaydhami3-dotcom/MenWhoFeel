@@ -1,6 +1,74 @@
 # MenWhoFeel — Redesign
 
-## v2.1 — Refinement pass (this update)
+## v2.2 — Function-first trim (this update)
+
+The instruction this time was explicit: stop optimizing for how it looks,
+optimize for what a first-time visitor feels and does in their first 60
+seconds, and cut anything that doesn't reduce uncertainty, build trust, or
+point to a meaningful next step. That's a different exercise than
+"reshuffle sections" — it meant actually re-justifying every section
+against those three tests and cutting the ones that didn't clear the bar,
+rather than keeping everything "just in case."
+
+**Cut entirely from the homepage** (each of these still has its own full
+page and is still linked from the navbar — nothing was deleted, just
+un-featured on first visit):
+- **Toolkit preview and Challenges preview.** These show platform breadth,
+  which is a nice-to-have, not a first-60-second need — and each one is
+  another competing call-to-action pulling attention away from the one
+  thing that actually matters on a first visit. Eight different "click
+  here" options across a homepage isn't more helpful than one or two; it's
+  decision paralysis for someone who's already got enough on their mind.
+- **The separate Check-In explainer section** (the one that showed sample
+  questions). It was duplicating the hero's own Check In button — same
+  destination, explained twice, extra scrolling with no new information.
+  The de-risking info it carried ("no score, no diagnosis, no account")
+  now lives as one line directly under the hero's button instead.
+- **The Newsletter section.** Asking a first-time, possibly-distressed
+  visitor for their email before they've read a single thing or clicked
+  anything doesn't reduce uncertainty, build trust, or serve them — it's a
+  retention ask for someone who's already engaged, not a first-visit
+  need. `NewsletterForm.tsx` is still in the repo and fully working if you
+  want it back somewhere further down the funnel later.
+- **The standalone Founder-note section and the full 4-post Community
+  grid.** Both were doing real trust-building work, just as two separate
+  sections with two separate headings and CTAs. They're now one section —
+  "Built by someone who needed it. Used by men who need it now." — with a
+  single "read more from the community" link instead of two competing
+  ones.
+- **The 4-article "magazine" Intel grid**, trimmed to two plain text
+  entries. Reading is genuinely the lowest-vulnerability next step
+  available (no disclosure, no account, no interaction with anyone) — that
+  earns a spot. A full mixed-layout magazine section with its own photo
+  treatment was aesthetic polish the visitor doesn't need in the first
+  minute; it's still the full experience on `/intel` itself.
+
+**What's left — five sections, each with one job:**
+1. Hero — reduce uncertainty about what this even is, one dominant CTA
+   (Check In, now with "2 minutes · no score · no diagnosis" directly
+   under it to de-risk the click) and one lightweight secondary option
+   (a text link to Stories, not a second competing button).
+2. "What are you dealing with today" — reduce uncertainty that this fits
+   *their* specific problem, by name, immediately.
+3. Trust — who built this and proof real men are actually here, combined.
+4. Reading — the no-commitment option for someone not ready for Check-In
+   or Community yet.
+5. Closing — the same one CTA, restated once, not a new pitch.
+
+Also trimmed the data fetchers to match — `getHomepageChallenges` and
+`getHomepageGuides` are gone (they queried data that's no longer rendered),
+and the article/community queries now fetch exactly 2 rows instead of 4,
+since over-fetching data you don't display was itself a small instance of
+the same "doesn't serve a goal" problem.
+
+Validated the same way as every prior pass: clean `tsc --noEmit`, clean
+`eslint` (down to a single `<img>` warning now — the hero placeholder is
+the only image left on the page, which is itself a sign of how much
+surface area came out), and a full `next build` succeeded end to end.
+
+---
+
+## v2.1 — Refinement pass
 
 This pass kept every color, font, and design token exactly as they were —
 per your brief, nothing was rebuilt from scratch. What changed is the
@@ -79,6 +147,8 @@ policy — same single caveat as before: confirm the real Google Fonts
 fetch succeeds in an environment with normal internet access.
 
 ---
+
+## v1 — Initial pass
 
 Scope note first: the brief asked for a full redesign of everything (homepage,
 Intel, article page, Community, Toolkit, Challenges, mobile, admin, dark +

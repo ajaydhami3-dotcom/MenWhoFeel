@@ -3,17 +3,11 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import "../globals.css";
 
+import { ThemeProvider } from "next-themes";
 import { Providers } from "@/components/Providers";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
-
-const manrope = { className: "" };
-
-// Dedicated reading font for long-form article content (see /intel/[slug]).
-// Serif body copy at a slightly larger size is measurably easier to read
-// for paragraphs of running text than the UI sans-serif used everywhere else.
-const articleFont = { variable: "" };
+import { fraunces, manrope, plexMono } from "@/lib/fonts";
 
 const BASE_URL = "https://www.menwhofeel.online";
 
@@ -136,7 +130,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html
+      lang="en"
+      // next-themes sets the real `.dark` class on the client once it
+      // resolves the visitor's stored/system preference; suppressing the
+      // hydration warning here is the documented way to avoid a benign
+      // server/client mismatch on that one attribute.
+      suppressHydrationWarning
+      className={`${fraunces.variable} ${manrope.variable} ${plexMono.variable}`}
+    >
       <head>
         <Script
           id="org-schema"
@@ -149,26 +151,16 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
       </head>
-      <body
-        className={`${manrope.className} ${articleFont.variable} relative min-h-screen bg-[#060810]`}
-      >
-        <div className="fixed inset-0 z-[-1] bg-[#060810]">
-          <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[120px] pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-teal-900/8 rounded-full blur-[100px] pointer-events-none" />
-        </div>
-
-        <Providers>
-          <div className="min-h-screen flex flex-col bg-transparent">
-            <Navbar />
-
-            <div className="flex flex-1">
-              <Sidebar />
-              <main className="flex-1 min-w-0">{children}</main>
+      <body className="relative min-h-screen antialiased">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          <Providers>
+            <div className="flex min-h-screen flex-col">
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
             </div>
-
-            <Footer />
-          </div>
-        </Providers>
+          </Providers>
+        </ThemeProvider>
       </body>
 
       <Script

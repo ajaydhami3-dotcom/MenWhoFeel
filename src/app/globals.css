@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Tailwind v4 + class-based dark mode (driven by next-themes toggling
+   `.dark` on <html>). Without this, every `dark:` utility in the shadcn
+   components would silently fall back to OS-level `prefers-color-scheme`
+   instead of responding to the toggle. */
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -20,63 +26,102 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+
+  /* Brand accents, beyond the standard shadcn slots — same convention the
+     previous theme used for --warm / --teal, kept and re-themed. */
+  --color-pine: hsl(var(--pine));
+  --color-pine-foreground: hsl(var(--pine-foreground));
+  --color-signal: hsl(var(--signal));
+  --color-signal-foreground: hsl(var(--signal-foreground));
+
   --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  /* Typography. Overriding font-sans/font-mono means every existing
+     `font-sans` / `font-mono` usage in the codebase upgrades automatically;
+     font-display is new, used for headlines and the wordmark. */
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 @layer base {
-  /* Light vars kept for library compatibility but site always renders dark */
+  /* ─── Light mode (default) ───────────────────────────────────────────
+     Warm stone paper + deep warm ink, one bronze-amber accent ("ember")
+     kept for CTAs and links, plus two supporting brand hues: a muted pine
+     for growth/community moments and a distinct rust ("signal") reserved
+     for crisis/urgent contexts so it never gets confused with a normal CTA. */
   :root {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 96%;
-    --card: 222 47% 7%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 47% 7%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 32% 13%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 32% 13%;
-    --muted-foreground: 215 20% 55%;
-    --accent: 217 32% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 32% 14%;
-    --input: 217 32% 14%;
-    --ring: 224 76% 48%;
-    --radius: 0.5rem;
+    --background: 45 24% 96%;
+    --foreground: 100 10% 13%;
+    --card: 42 30% 98%;
+    --card-foreground: 100 10% 13%;
+    --popover: 42 30% 98%;
+    --popover-foreground: 100 10% 13%;
 
-    /* Warm amber accent for safety/completion moments */
-    --warm: 38 92% 50%;
-    --warm-foreground: 38 92% 15%;
-    /* Teal accent for community/connection moments */
-    --teal: 172 66% 44%;
-    --teal-foreground: 172 66% 10%;
+    --primary: 28 58% 40%;
+    --primary-foreground: 40 40% 97%;
+
+    --secondary: 45 16% 90%;
+    --secondary-foreground: 100 10% 16%;
+
+    --muted: 46 18% 92%;
+    --muted-foreground: 90 6% 38%;
+
+    --accent: 30 38% 90%;
+    --accent-foreground: 28 55% 26%;
+
+    --destructive: 9 55% 42%;
+    --destructive-foreground: 40 40% 97%;
+
+    --border: 42 16% 85%;
+    --input: 42 16% 85%;
+    --ring: 28 58% 45%;
+
+    --pine: 150 18% 24%;
+    --pine-foreground: 90 20% 95%;
+    --signal: 9 60% 40%;
+    --signal-foreground: 40 40% 97%;
+
+    --radius: 0.75rem;
   }
 
+  /* ─── Dark mode ───────────────────────────────────────────────────────
+     Deep warm charcoal (olive-black, not cold navy) — dark mode is a
+     first-class alternative here, not an inverted afterthought. */
   .dark {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 96%;
-    --card: 222 47% 7%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 47% 7%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 32% 13%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 32% 13%;
-    --muted-foreground: 215 20% 55%;
-    --accent: 217 32% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 32% 14%;
-    --input: 217 32% 14%;
-    --ring: 224 76% 48%;
+    --background: 90 12% 8%;
+    --foreground: 42 22% 93%;
+    --card: 88 11% 11%;
+    --card-foreground: 42 22% 93%;
+    --popover: 88 11% 11%;
+    --popover-foreground: 42 22% 93%;
+
+    --primary: 32 62% 55%;
+    --primary-foreground: 30 40% 12%;
+
+    --secondary: 85 8% 17%;
+    --secondary-foreground: 42 22% 93%;
+
+    --muted: 85 8% 16%;
+    --muted-foreground: 70 8% 63%;
+
+    --accent: 32 25% 20%;
+    --accent-foreground: 38 55% 78%;
+
+    --destructive: 8 58% 56%;
+    --destructive-foreground: 30 40% 12%;
+
+    --border: 85 10% 20%;
+    --input: 85 10% 20%;
+    --ring: 32 62% 55%;
+
+    --pine: 150 16% 68%;
+    --pine-foreground: 150 20% 10%;
+    --signal: 8 62% 58%;
+    --signal-foreground: 20 30% 12%;
   }
 }
 
@@ -87,25 +132,84 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+  }
+  ::selection {
+    background-color: hsl(var(--primary) / 0.22);
+  }
+
+  /* Respect reduced-motion system-wide, per the frontend design floor. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer utilities {
+  /* Brand wordmark treatment — subtle warm two-stop gradient, not a loud
+     rainbow. Kept as the same class name used across ~12 existing pages
+     (about, contact, disclaimer, guides, assessment, etc.) so those pages
+     inherit the new brand mark without needing individual edits yet. */
   .text-gradient {
-    @apply text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300;
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(
+      100deg,
+      hsl(var(--primary)),
+      hsl(9 55% 44%)
+    );
   }
+
+  /* Quiet warm elevation instead of the old blue glow. Same rationale as
+     .text-gradient above — redefining in place upgrades every page that
+     already references this class. */
   .card-glow {
-    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.08), 0 4px 24px rgba(0, 0, 0, 0.4);
+    box-shadow:
+      0 0 0 1px hsl(var(--foreground) / 0.04),
+      0 6px 24px hsl(28 30% 20% / 0.08);
   }
   .card-glow:hover {
-    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 4px 32px rgba(0, 0, 0, 0.5);
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.18),
+      0 10px 32px hsl(28 30% 20% / 0.12);
   }
-  /* Sidebar scrollbar — hidden but scrollable */
+
   .scrollbar-none {
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Comfortable long-form reading measure for article bodies. */
+  .prose-article {
+    max-width: 68ch;
+  }
+
+  /* Gentle entrance used only for above-the-fold hero content — one
+     orchestrated moment, not scattered scroll effects throughout. */
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-up {
+    animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-up {
+      animation: none;
+    }
   }
 }

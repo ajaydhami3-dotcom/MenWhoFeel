@@ -1,63 +1,82 @@
 // Full server component — no tRPC hooks, no "use client".
-// Stories and articles are now fetched directly from the DB at request time
-// and embedded in the HTML Google crawls.
+// Data is fetched directly from the DB at request time and embedded in
+// the HTML Google crawls.
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import NewsletterForm from "@/components/NewsletterForm";
+import HorizonMotif from "@/components/HorizonMotif";
 import {
-  BookOpen, MessageSquare, ArrowRight, Shield, Lock,
-  Quote, Brain, HeartPulse, Dumbbell, Briefcase, Flame, TrendingUp,
-  Target, CheckCircle2,
+  BookOpen, ArrowRight, MessageSquare,
+  Brain, HeartPulse, Dumbbell, Briefcase, Flame, TrendingUp,
+  CheckCircle2, Clock,
 } from "lucide-react";
 import { db } from "@/db";
-import { stories, articles, categories, topics, challenges } from "@/db/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { articles, categories, communityPosts, communityComments, challenges, selfHelpGuides } from "@/db/schema";
+import { eq, desc, sql, and } from "drizzle-orm";
+import { formatDistanceToNowStrict } from "date-fns";
 import type { ElementType } from "react";
 
-// ─── Static content ───────────────────────────────────────────────────────────
+// Swap this for real photography whenever you have it — a real, warm,
+// unguarded moment (walking, thinking, somewhere quiet). Until then this
+// section renders a tasteful dark gradient + the brand's horizon motif
+// instead of an empty box. A good starting point for free, properly
+// licensed images: https://unsplash.com/s/photos/man-walking-alone-rain
+// or https://unsplash.com/s/photos/man-mountain-solitude
+const HERO_IMAGE_URL = "";
 
-const HERO_SNIPPETS = [
-  { quote: "I'm exhausted pretending I'm okay.", handle: "anonymous", age: 31 },
-  { quote: "Everyone depends on me and I'm tired.", handle: "anonymous", age: 28 },
-  { quote: "I don't know how to talk about what's going on.", handle: "anonymous", age: 35 },
-  { quote: "I can't remember the last time I felt calm.", handle: "anonymous", age: 42 },
+// ─── Static seed content (shown only if the DB has nothing yet) ───────────────
+
+type CommunitySnippet = { title: string; excerpt: string; replyCount: number; time: string; href: string };
+
+const COMMUNITY_SEED: CommunitySnippet[] = [
+  { title: "I'm exhausted pretending I'm okay.", excerpt: "Everyone depends on me and I don't know who I'm allowed to depend on. Feels like the moment I stop, everything stops.", replyCount: 12, time: "2 hours ago", href: "/community" },
+  { title: "Lost my job three months ago. Still haven't told my dad.", excerpt: "Not sure why I'm ashamed. He'd probably understand more than I'm giving him credit for.", replyCount: 8, time: "5 hours ago", href: "/community" },
+  { title: "Therapy felt too clinical. This felt like talking to someone who actually gets it.", excerpt: "First time I've said any of this out loud, anonymous or not.", replyCount: 21, time: "yesterday", href: "/community" },
+  { title: "Small improvements matter more than I expected.", excerpt: "Started sleeping 7 hours a night. Didn't fix everything. Changed something, though.", replyCount: 6, time: "1 day ago", href: "/community" },
 ];
 
-const COMMUNITY_SNIPPETS = [
-  { quote: "Some days holding yourself together takes everything. I finally said it out loud and it helped.", handle: "m_uk", age: 34, time: "2 hours ago" },
-  { quote: "Lost my job three months ago. Still haven't told my dad. Not sure why I'm ashamed.", handle: "anon", age: 29, time: "5 hours ago" },
-  { quote: "Therapy felt too clinical. This felt like talking to someone who actually gets it.", handle: "anon", age: 38, time: "yesterday" },
-  { quote: "Small improvements matter. I just started sleeping 7 hours and it changed something.", handle: "dk_anon", age: 25, time: "1 day ago" },
-  { quote: "You don't have to carry everything silently. I learned that here.", handle: "anon", age: 44, time: "2 days ago" },
-  { quote: "I don't know what I'm doing but at least I know I'm not the only one who doesn't.", handle: "anon", age: 31, time: "3 days ago" },
-];
-
-// Category icons — complete class strings for Tailwind v4 scanner
+// Category tints — keyed by the literal `color` string stored in the DB
+// (unchanged, so existing category rows don't need any data migration),
+// remapped to muted, warm-harmonized pairs that hold contrast in both
+// light and dark mode.
 const CAT_ICONS: Record<string, ElementType> = {
   blue: Brain, rose: HeartPulse, green: Dumbbell,
   emerald: Briefcase, amber: Flame, purple: TrendingUp,
 };
-const CAT_STYLE: Record<string, { accent: string; bg: string; border: string; icon: string }> = {
-  blue:    { accent: "text-blue-400",    bg: "bg-blue-400/10",    border: "border-blue-400/20",    icon: "text-blue-400" },
-  rose:    { accent: "text-rose-400",    bg: "bg-rose-400/10",    border: "border-rose-400/20",    icon: "text-rose-400" },
-  green:   { accent: "text-green-400",   bg: "bg-green-400/10",   border: "border-green-400/20",   icon: "text-green-400" },
-  emerald: { accent: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20", icon: "text-emerald-400" },
-  amber:   { accent: "text-amber-400",   bg: "bg-amber-400/10",   border: "border-amber-400/20",   icon: "text-amber-400" },
-  purple:  { accent: "text-purple-400",  bg: "bg-purple-400/10",  border: "border-purple-400/20",  icon: "text-purple-400" },
+const CATEGORY_TINTS: Record<string, { text: string }> = {
+  blue:    { text: "text-slate-600 dark:text-slate-300" },
+  rose:    { text: "text-rose-700 dark:text-rose-300" },
+  green:   { text: "text-teal-700 dark:text-teal-300" },
+  emerald: { text: "text-emerald-700 dark:text-emerald-300" },
+  amber:   { text: "text-primary" },
+  purple:  { text: "text-purple-700 dark:text-purple-300" },
 };
-const DEFAULT_CAT_STYLE = CAT_STYLE.blue!;
+const DEFAULT_TINT = CATEGORY_TINTS.blue!;
+
+const DIFFICULTY_LABEL: Record<string, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
+function truncateWords(text: string, maxLen: number): string {
+  const clean = text.trim();
+  if (clean.length <= maxLen) return clean;
+  const trimmed = clean.slice(0, maxLen);
+  const lastSpace = trimmed.lastIndexOf(" ");
+  return (lastSpace > 20 ? trimmed.slice(0, lastSpace) : trimmed).trim() + "…";
+}
 
 // ─── Data fetchers ────────────────────────────────────────────────────────────
+// Every fetcher follows the file's existing convention: a direct, narrow
+// Drizzle select, wrapped in try/catch, falling back to an empty result
+// rather than throwing — a missing/unreachable DB degrades the homepage,
+// never crashes it.
 
 async function getHomepageCategories() {
   try {
-    const cats = await db
-      .select()
-      .from(categories)
-      .orderBy(categories.sortOrder);
-
-    // Single query for all article counts by category
+    const cats = await db.select().from(categories).orderBy(categories.sortOrder);
     const counts = await db
       .select({
         categoryId: articles.categoryId,
@@ -74,46 +93,6 @@ async function getHomepageCategories() {
   }
 }
 
-async function getHomepageTopics() {
-  try {
-    return await db
-      .select({
-        id: topics.id,
-        name: topics.name,
-        slug: topics.slug,
-        description: topics.description,
-        categoryName: categories.name,
-        categorySlug: categories.slug,
-        categoryColor: categories.color,
-      })
-      .from(topics)
-      .leftJoin(categories, eq(topics.categoryId, categories.id))
-      // sortOrder = 1 gives us the "primary" topic from each category (6 total)
-      .where(eq(topics.sortOrder, 1))
-      .orderBy(categories.sortOrder);
-  } catch {
-    return [];
-  }
-}
-
-async function getHomepageStories() {
-  try {
-    return await db
-      .select({
-        id: stories.id,
-        title: stories.title,
-        excerpt: stories.excerpt,
-        authorName: stories.authorName,
-      })
-      .from(stories)
-      .where(eq(stories.status, "approved"))
-      .orderBy(desc(stories.createdAt))
-      .limit(3);
-  } catch {
-    return [];
-  }
-}
-
 async function getHomepageArticles() {
   try {
     return await db
@@ -122,6 +101,11 @@ async function getHomepageArticles() {
         slug: articles.slug,
         title: articles.title,
         excerpt: articles.excerpt,
+        featuredImage: articles.featuredImage,
+        readingTime: articles.readingTime,
+        authorName: articles.authorName,
+        createdAt: articles.createdAt,
+        publishedAt: articles.publishedAt,
         categoryName: categories.name,
         categorySlug: categories.slug,
       })
@@ -129,7 +113,7 @@ async function getHomepageArticles() {
       .leftJoin(categories, eq(articles.categoryId, categories.id))
       .where(eq(articles.status, "published"))
       .orderBy(desc(articles.createdAt))
-      .limit(3);
+      .limit(4);
   } catch {
     return [];
   }
@@ -138,12 +122,7 @@ async function getHomepageArticles() {
 async function getHomepageChallenges() {
   try {
     return await db
-      .select({
-        id: challenges.id,
-        title: challenges.title,
-        description: challenges.description,
-        category: challenges.category,
-      })
+      .select({ id: challenges.id, title: challenges.title, description: challenges.description, category: challenges.category })
       .from(challenges)
       .where(eq(challenges.active, true))
       .orderBy(desc(challenges.createdAt))
@@ -153,106 +132,173 @@ async function getHomepageChallenges() {
   }
 }
 
-// ─── Sections ─────────────────────────────────────────────────────────────────
+async function getHomepageGuides() {
+  try {
+    const cols = {
+      id: selfHelpGuides.id,
+      title: selfHelpGuides.title,
+      category: selfHelpGuides.category,
+      difficulty: selfHelpGuides.difficulty,
+      estimatedMinutes: selfHelpGuides.estimatedMinutes,
+    };
+    const featured = await db.select(cols).from(selfHelpGuides).where(eq(selfHelpGuides.featured, true)).limit(4);
+    if (featured.length > 0) return featured;
+    return await db.select(cols).from(selfHelpGuides).orderBy(desc(selfHelpGuides.createdAt)).limit(4);
+  } catch {
+    return [];
+  }
+}
+
+async function getHomepageCommunityPosts(): Promise<CommunitySnippet[]> {
+  try {
+    const rows = await db
+      .select({
+        id: communityPosts.id,
+        title: communityPosts.title,
+        content: communityPosts.content,
+        createdAt: communityPosts.createdAt,
+        replyCount: sql<number>`cast(count(${communityComments.id}) as int)`,
+      })
+      .from(communityPosts)
+      .leftJoin(
+        communityComments,
+        and(eq(communityComments.postId, communityPosts.id), eq(communityComments.deleted, false))
+      )
+      .where(and(eq(communityPosts.deleted, false), eq(communityPosts.flagged, false)))
+      .groupBy(communityPosts.id)
+      .orderBy(desc(communityPosts.createdAt))
+      .limit(4);
+
+    return rows.map((r) => ({
+      title: r.title,
+      excerpt: truncateWords(r.content, 110),
+      replyCount: r.replyCount,
+      time: formatDistanceToNowStrict(new Date(r.createdAt), { addSuffix: true }),
+      href: `/community/${r.id}`,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// ─── Shared pieces ─────────────────────────────────────────────────────────────
+
+function SectionHeading({
+  eyebrow, title, subtitle, href, linkLabel,
+}: { eyebrow?: string; title: string; subtitle?: string; href?: string; linkLabel?: string }) {
+  return (
+    <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        {eyebrow && <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">{eyebrow}</p>}
+        <h2 className="font-display text-[1.9rem] font-semibold text-foreground sm:text-3xl">{title}</h2>
+        {subtitle && <p className="mt-1.5 text-[15px] text-muted-foreground">{subtitle}</p>}
+      </div>
+      {href && linkLabel && (
+        <Link href={href} className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+          {linkLabel} <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+type CategoryWithCount = Awaited<ReturnType<typeof getHomepageCategories>>[number];
+type ArticleRow = Awaited<ReturnType<typeof getHomepageArticles>>[number];
+type ChallengeRow = Awaited<ReturnType<typeof getHomepageChallenges>>[number];
+type GuideRow = Awaited<ReturnType<typeof getHomepageGuides>>[number];
+
+const HOMEPAGE_SEED_CHALLENGES: ChallengeRow[] = [
+  { id: -1, title: "Write it down", description: "Spend 5 minutes writing whatever's in your head. No structure, no goal — just get it out of your head and onto paper.", category: "daily" as ChallengeRow["category"] },
+  { id: -2, title: "One honest conversation", description: "Tell someone — anyone — one true thing about how you're actually doing. Doesn't have to be deep. Just honest.", category: "daily" as ChallengeRow["category"] },
+  { id: -3, title: "No phone for one hour", description: "Pick an hour today and put the phone in another room. Notice what fills the space.", category: "daily" as ChallengeRow["category"] },
+];
+
+// ─── Hero ─────────────────────────────────────────────────────────────────────
+// This section intentionally sits outside the site's light/dark tokens —
+// like most photo-led editorial heroes, it's a fixed warm-dark treatment
+// so a headline over a photo stays legible regardless of site theme. The
+// no-photo fallback uses the same fixed dark tones (not the light theme
+// background) so contrast holds either way, before a real photo is added.
 
 function HeroSection() {
   return (
-    <section className="relative overflow-hidden py-16 lg:py-20 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-4">
-              Anonymous · Free · No account needed
-            </p>
-            <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-5 text-foreground">
-              The one place you don&apos;t have to{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">
-                explain yourself.
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground mb-5 leading-relaxed max-w-lg">
-              Share what&apos;s real. Find your footing. You&apos;re not alone.
-            </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium mb-8">
-              <Lock className="h-3 w-3" />
-              Anonymous. No account. Nothing tied to you.
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/assessment">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold px-7 py-5 shadow-lg shadow-blue-500/20 transition-all">
-                  Check In
-                </Button>
-              </Link>
-              <Link href="/stories">
-                <Button size="lg" variant="outline" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 px-7 py-5">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Read Stories
-                </Button>
-              </Link>
-            </div>
+    <section className="relative flex min-h-[88vh] items-end overflow-hidden sm:min-h-[92vh]">
+      <div className="absolute inset-0">
+        {HERO_IMAGE_URL ? (
+          <img src={HERO_IMAGE_URL} alt="" loading="eager" className="h-full w-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#241a10] via-[#1c1710] to-[#141008]">
+            <HorizonMotif className="h-full w-full text-[#c98a4b] opacity-40" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {HERO_SNIPPETS.map((s, i) => (
-              <Card key={i} className="bg-card/70 backdrop-blur-sm border-border/40 card-glow">
-                <CardContent className="p-5">
-                  <Quote className="h-4 w-4 text-blue-500/40 mb-2" />
-                  <p className="text-sm text-foreground leading-relaxed mb-3 font-medium">&ldquo;{s.quote}&rdquo;</p>
-                  <p className="text-xs text-muted-foreground">{s.handle}, {s.age}</p>
-                </CardContent>
-              </Card>
-            ))}
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0f0c08] via-[#0f0c08]/55 to-[#0f0c08]/10" />
+      </div>
+
+      <div className="relative mx-auto w-full max-w-7xl px-4 pb-16 pt-32 sm:px-6 sm:pb-24 lg:px-8">
+        <div className="max-w-3xl">
+          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-white/70">
+            Anonymous · Free · No account needed
           </div>
+          <h1 className="font-display text-[2.75rem] font-medium leading-[1.05] tracking-tight text-[#f6f2ea] sm:text-6xl lg:text-7xl">
+            The one place
+            <br />
+            you don&apos;t have to
+            <br />
+            <span className="italic text-[#e3a463]">explain yourself.</span>
+          </h1>
+          <p className="mt-7 max-w-md text-lg leading-relaxed text-white/70">
+            Share what&apos;s real. Find your footing. You&apos;re not alone.
+          </p>
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button asChild size="lg" className="rounded-full px-7">
+              <Link href="/assessment">Check In</Link>
+            </Button>
+            <Link
+              href="/stories"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+            >
+              <BookOpen className="h-4 w-4" /> Read Stories
+            </Link>
+          </div>
+          <p className="mt-8 font-mono text-[11px] uppercase tracking-[0.14em] text-white/40">
+            Free forever · No judgment · Private · Evidence-informed
+          </p>
         </div>
       </div>
     </section>
   );
 }
 
-type CategoryWithCount = Awaited<ReturnType<typeof getHomepageCategories>>[number];
-type TopicRow = Awaited<ReturnType<typeof getHomepageTopics>>[number];
-type StoryRow = Awaited<ReturnType<typeof getHomepageStories>>[number];
-type ArticleRow = Awaited<ReturnType<typeof getHomepageArticles>>[number];
-type ChallengeRow = Awaited<ReturnType<typeof getHomepageChallenges>>[number];
+// ─── What are you dealing with today ───────────────────────────────────────────
+// Deliberately boxless — a flowing wrap of tiles rather than a bordered
+// grid, per the "less component-library, more flow" direction. Tiles are
+// real DB-backed categories, not a fixed hardcoded list, so every one
+// actually goes somewhere.
 
-const HOMEPAGE_SEED_CHALLENGES: ChallengeRow[] = [
-  { id: -1, title: "Write it down", description: "Spend 5 minutes writing whatever's in your head. No structure, no goal — just get it out of your head and onto paper.", category: "daily" },
-  { id: -2, title: "One honest conversation", description: "Tell someone — anyone — one true thing about how you're actually doing. Doesn't have to be deep. Just honest.", category: "daily" },
-  { id: -3, title: "No phone for one hour", description: "Pick an hour today and put the phone in another room. Notice what fills the space.", category: "daily" },
-];
-
-function CategoryExplorer({ cats }: { cats: CategoryWithCount[] }) {
+function StruggleSection({ cats }: { cats: CategoryWithCount[] }) {
   if (cats.length === 0) return null;
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-[#060810]/60 border-y border-border/10">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-foreground">Explore by topic</h2>
-          <p className="text-muted-foreground mt-1 text-sm">Find what you need. No need to explain why.</p>
+    <section className="py-20 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-10 max-w-xl">
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Start here</p>
+          <h2 className="font-display text-[1.9rem] font-semibold text-foreground sm:text-3xl">
+            What are you dealing with today?
+          </h2>
+          <p className="mt-2 text-[15px] text-muted-foreground">Pick what&apos;s loudest right now. There&apos;s no wrong answer.</p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-wrap gap-3">
           {cats.map((cat) => {
-            const s = CAT_STYLE[cat.color ?? "blue"] ?? DEFAULT_CAT_STYLE;
+            const tint = CATEGORY_TINTS[cat.color ?? "blue"] ?? DEFAULT_TINT;
             const Icon = CAT_ICONS[cat.color ?? "blue"] ?? Brain;
             return (
               <Link
                 key={cat.id}
                 href={`/category/${cat.slug}`}
-                className={`p-6 rounded-xl border ${s.bg} ${s.border} hover:opacity-90 transition-all group`}
+                className="group flex items-center gap-3 rounded-full border-b-2 border-transparent bg-card/70 px-6 py-4 transition-all hover:border-b-primary hover:bg-card"
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <Icon className={`w-5 h-5 ${s.icon}`} />
-                  <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${s.accent}`}>
-                    {cat.articleCount} article{cat.articleCount !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-foreground group-hover:text-white transition-colors mb-2 leading-tight">
-                  {cat.name}
-                </h3>
-                {cat.description && (
-                  <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
-                    {cat.description}
-                  </p>
-                )}
+                <Icon className={`h-4 w-4 ${tint.text}`} />
+                <span className="font-display text-base font-medium text-foreground">{cat.name}</span>
               </Link>
             );
           })}
@@ -262,245 +308,166 @@ function CategoryExplorer({ cats }: { cats: CategoryWithCount[] }) {
   );
 }
 
-function TopicsExplorer({ topicsData }: { topicsData: TopicRow[] }) {
-  if (topicsData.length === 0) return null;
-  return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex items-end justify-between mb-7">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Where do you want to start?</h2>
-            <p className="text-muted-foreground mt-1 text-sm">Pick a topic. Everything inside it was written for you.</p>
-          </div>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {topicsData.map((topic) => {
-            const s = CAT_STYLE[topic.categoryColor ?? "blue"] ?? DEFAULT_CAT_STYLE;
-            return (
-              <Link
-                key={topic.id}
-                href={`/topic/${topic.slug}`}
-                className="p-5 rounded-xl bg-card/60 border border-border/30 hover:border-blue-500/30 transition-all group"
-              >
-                {topic.categoryName && (
-                  <span className={`text-[10px] font-black uppercase tracking-[0.25em] ${s.accent} mb-2 block`}>
-                    {topic.categoryName}
-                  </span>
-                )}
-                <h3 className="font-bold text-foreground group-hover:text-white transition-colors mb-2 leading-snug">
-                  {topic.name}
-                </h3>
-                {topic.description && (
-                  <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
-                    {topic.description}
-                  </p>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
+// ─── Community — moved up, built to feel alive rather than like a forum ───────
 
-function LatestArticlesSection({ articlesData }: { articlesData: ArticleRow[] }) {
-  if (articlesData.length === 0) return null;
+function CommunityPulseSection({ posts }: { posts: CommunitySnippet[] }) {
+  const display = posts.length > 0 ? posts : COMMUNITY_SEED;
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-[#060810]/60 border-y border-border/10">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex items-end justify-between mb-7">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Useful Reads</h2>
-            <p className="text-muted-foreground mt-1 text-sm">No fluff. Written for men navigating real things.</p>
-          </div>
-          <Link href="/intel">
-            <Button variant="outline" size="sm" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
-              All reads <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-            </Button>
-          </Link>
-        </div>
-        <div className="grid md:grid-cols-3 gap-5">
-          {articlesData.map((article) => (
-            <Link key={article.id} href={`/intel/${article.slug}`}>
-              <Card className="h-full bg-card/80 backdrop-blur-sm border-border/40 hover:border-blue-500/30 transition-all duration-300 hover:scale-[1.01] card-glow flex flex-col">
-                <CardHeader className="pb-2">
-                  {article.categoryName && article.categorySlug && (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-1 block">
-                      {article.categoryName}
-                    </span>
-                  )}
-                  <CardTitle className="text-base font-semibold line-clamp-2 text-foreground">
-                    {article.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-between">
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
-                    {article.excerpt}
-                  </p>
-                  <p className="text-xs text-blue-400 font-medium">Read article</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-const HOMEPAGE_SEED_STORIES = [
-  { id: -1, title: "The day I finally admitted I wasn't okay", excerpt: "I'd been telling everyone I was fine for about two years. Nothing was visibly wrong. But something was off.", authorName: "anon" },
-  { id: -2, title: "Redundancy at 43 — what nobody tells you", excerpt: "The money thing was stressful. But nobody warned me about losing my identity along with the job.", authorName: "t_manchester" },
-  { id: -3, title: "I started therapy and it wasn't what I expected", excerpt: "I thought I'd be lying on a couch. What happened was someone asked a question I'd never considered before.", authorName: "anon" },
-];
-
-function StoriesSection({ storiesData }: { storiesData: StoryRow[] }) {
-  const displayStories = storiesData.length > 0 ? storiesData : HOMEPAGE_SEED_STORIES;
-  return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex items-end justify-between mb-7">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Men talking honestly</h2>
-            <p className="text-muted-foreground mt-1 text-sm">Real situations. No polish.</p>
-          </div>
-          <Link href="/stories">
-            <Button variant="outline" size="sm" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
-              All stories <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-            </Button>
-          </Link>
-        </div>
-        <div className="grid md:grid-cols-3 gap-5">
-          {displayStories.slice(0, 3).map((story) => (
-            <Link key={story.id} href={story.id > 0 ? `/stories/${story.id}` : "/stories"}>
-              <Card className="h-full bg-card/80 backdrop-blur-sm border-border/40 hover:border-blue-500/30 transition-all duration-300 hover:scale-[1.01] card-glow flex flex-col">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold line-clamp-2 text-foreground">
-                    {story.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-between">
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
-                    {story.excerpt}
-                  </p>
-                  <p className="text-xs text-muted-foreground">By {story.authorName}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FounderStoryTeaser() {
-  return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="relative rounded-2xl overflow-hidden border border-blue-500/20 bg-gradient-to-br from-blue-950/40 via-[#060810] to-teal-950/30">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-teal-500/5 pointer-events-none" />
-          <div className="relative grid lg:grid-cols-2 gap-0 items-stretch">
-            <div className="p-8 sm:p-10 border-b lg:border-b-0 lg:border-r border-blue-500/10">
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-blue-400 mb-5">From the founder</p>
-              <blockquote className="text-xl sm:text-2xl font-bold text-foreground leading-snug mb-5">
-                &ldquo;I built this because I needed it — and it didn&apos;t exist.&rdquo;
-              </blockquote>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                Men Who Feel started as one man carrying too much with nowhere to put it. No drama.
-                No big moment. Just the quiet realisation that most men are feeling things they&apos;ve
-                never said out loud — and that maybe a space with no name attached could change that.
+    <section className="bg-secondary/25 py-20 sm:py-28">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Community"
+          title="Men are talking, right now"
+          subtitle="Anonymous. Unfiltered. Ongoing."
+          href="/community"
+          linkLabel="Join the conversation"
+        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {display.slice(0, 4).map((s, i) => (
+            <Link key={i} href={s.href} className="group flex flex-col gap-3 rounded-2xl bg-card/80 p-6 transition-colors hover:bg-card">
+              <p className="font-display text-lg font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                {s.title}
               </p>
-              <Link href="/founders-story">
-                <Button variant="outline" className="border-blue-500/40 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 group">
-                  Read the full story
-                  <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
-                </Button>
-              </Link>
+              {s.excerpt && <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{s.excerpt}</p>}
+              <div className="mt-1 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground/70">
+                <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" /> {s.replyCount} replies</span>
+                <span className="opacity-50">·</span>
+                <span>{s.time}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Intel — mixed "magazine" layout instead of repeated identical cards ──────
+
+function ArticleMeta({ article, tone = "default", className = "" }: { article: ArticleRow; tone?: "default" | "onPhoto"; className?: string }) {
+  const date = article.publishedAt ?? article.createdAt;
+  const base = tone === "onPhoto" ? "text-white/65" : "text-muted-foreground";
+  const catColor = tone === "onPhoto" ? "text-[#e3a463]" : "text-primary";
+  return (
+    <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em] ${base} ${className}`}>
+      {article.categoryName && <span className={catColor}>{article.categoryName}</span>}
+      {article.categoryName && <span className="opacity-50">·</span>}
+      <span>{article.authorName ?? "MenWhoFeel"}</span>
+      {date && (
+        <>
+          <span className="opacity-50">·</span>
+          <span>{new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+        </>
+      )}
+      {article.readingTime && (
+        <>
+          <span className="opacity-50">·</span>
+          <span>{article.readingTime} min</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function IntelMagazineSection({ articlesData }: { articlesData: ArticleRow[] }) {
+  if (articlesData.length === 0) return null;
+  const [feature, imageLeft, ...textOnly] = articlesData;
+
+  return (
+    <section className="py-20 sm:py-28">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeading eyebrow="Intel" title="Useful reads" subtitle="No fluff. Written for men navigating real things." href="/intel" linkLabel="All reads" />
+
+        {/* Large featured — image (or fixed dark gradient fallback) with
+            bottom-aligned text, same legibility treatment as the hero. */}
+        <Link
+          href={`/intel/${feature!.slug}`}
+          className="group relative mb-6 flex min-h-[24rem] flex-col justify-end overflow-hidden rounded-3xl p-8 sm:min-h-[28rem] sm:p-12"
+        >
+          {feature!.featuredImage ? (
+            <img
+              src={feature!.featuredImage}
+              alt=""
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-[#241a10] via-[#1c1710] to-[#141008]">
+              <HorizonMotif className="h-full w-full text-[#c98a4b] opacity-30" />
             </div>
-            <div className="p-8 sm:p-10 flex flex-col justify-center gap-5">
-              {[
-                { label: "Built anonymously", desc: "No brand agenda. No investors to please. Built by someone who needed it." },
-                { label: "No clinical jargon", desc: "This isn't therapy. It's a space — honest, private, and built around how men actually talk." },
-                { label: "Still here for a reason", desc: "Men keep coming back because it's the one place they don't have to explain themselves first." },
-              ].map((item) => (
-                <div key={item.label} className="flex items-start gap-4">
-                  <div className="mt-1 w-2 h-2 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-foreground mb-0.5">{item.label}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
-                  </div>
-                </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0c08] via-[#0f0c08]/45 to-transparent" />
+          <ArticleMeta article={feature!} tone="onPhoto" className="relative mb-3" />
+          <h3 className="relative max-w-2xl font-display text-3xl font-semibold leading-tight text-[#f6f2ea] transition-colors sm:text-4xl">
+            {feature!.title}
+          </h3>
+          <p className="relative mt-2.5 max-w-xl text-[15px] text-white/70">{feature!.excerpt}</p>
+        </Link>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Image-left half-width entry */}
+          {imageLeft && (
+            <Link href={`/intel/${imageLeft.slug}`} className="group flex overflow-hidden rounded-2xl bg-secondary/40">
+              <div className="relative hidden w-2/5 shrink-0 sm:block">
+                {imageLeft.featuredImage ? (
+                  <img src={imageLeft.featuredImage} alt="" loading="lazy" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-accent/50 to-secondary" />
+                )}
+              </div>
+              <div className="flex flex-1 flex-col justify-center p-6">
+                <ArticleMeta article={imageLeft} className="mb-2.5" />
+                <h4 className="font-display text-lg font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                  {imageLeft.title}
+                </h4>
+                <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{imageLeft.excerpt}</p>
+              </div>
+            </Link>
+          )}
+
+          {/* Text-only compact entries */}
+          {textOnly.length > 0 && (
+            <div className="flex flex-col divide-y divide-border/60 rounded-2xl bg-card/40 px-6">
+              {textOnly.map((article) => (
+                <Link key={article.id} href={`/intel/${article.slug}`} className="group py-5">
+                  <ArticleMeta article={article} className="mb-2" />
+                  <h4 className="font-display text-base font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                    {article.title}
+                  </h4>
+                  <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{article.excerpt}</p>
+                </Link>
               ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </section>
   );
 }
 
-function CommunitySnippetsSection() {
+// ─── Toolkit / Challenges / Check-in / Founder / Newsletter / Closing ─────────
+
+function ToolkitPreviewSection({ guidesData }: { guidesData: GuideRow[] }) {
+  if (guidesData.length === 0) return null;
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-[#060810]/60 border-y border-border/10">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-7">
-          <h2 className="text-2xl font-bold text-foreground">What men talk about here</h2>
-          <p className="text-muted-foreground mt-1 text-sm">Anonymous. Unfiltered. Ongoing.</p>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {COMMUNITY_SNIPPETS.map((s, i) => (
-            <div key={i} className="p-4 rounded-xl bg-card/60 border border-border/30 hover:border-blue-500/20 transition-colors">
-              <p className="text-sm text-foreground leading-relaxed mb-3">&ldquo;{s.quote}&rdquo;</p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">{s.handle}, {s.age}</span>
-                <span className="text-xs text-muted-foreground/50">{s.time}</span>
+    <section className="py-20 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeading eyebrow="Toolkit" title="Something to actually do about it" subtitle="Short, practical guides — not another 40-minute video." href="/guides" linkLabel="Browse the toolkit" />
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {guidesData.slice(0, 4).map((guide) => (
+            <Link key={guide.id} href="/guides" className="group flex flex-col rounded-2xl bg-card/70 p-5 transition-colors hover:bg-card">
+              <span className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                {String(guide.category).replace(/-/g, " ")}
+              </span>
+              <h4 className="mb-3 flex-1 font-display text-base font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                {guide.title}
+              </h4>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {guide.estimatedMinutes && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {guide.estimatedMinutes} min</span>}
+                {guide.difficulty && <span>{DIFFICULTY_LABEL[guide.difficulty] ?? guide.difficulty}</span>}
               </div>
-            </div>
+            </Link>
           ))}
-        </div>
-        <div className="mt-6">
-          <Link href="/community">
-            <Button variant="outline" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Join the conversation
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CheckInSection() {
-  return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="max-w-2xl">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Daily Reflection</h2>
-          <p className="text-muted-foreground mb-1 text-sm leading-relaxed">
-            A short check-in — no diagnosis, no score. Just honest questions to help you understand where you&apos;re at.
-          </p>
-          <p className="text-muted-foreground mb-5 text-xs">Takes 2 minutes. No diagnosis.</p>
-          <div className="space-y-2 mb-6">
-            {[
-              "Have you been keeping things to yourself lately?",
-              "Do small things feel heavier than usual?",
-              "Do you feel connected to yourself lately?",
-              "When did you last feel genuinely okay?",
-            ].map((q) => (
-              <div key={q} className="flex items-start gap-3 p-3 rounded-lg bg-card/40 border border-border/20">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0" />
-                <p className="text-sm text-muted-foreground">{q}</p>
-              </div>
-            ))}
-          </div>
-          <Link href="/assessment">
-            <Button className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold shadow-md shadow-blue-500/20">
-              Begin Reflection
-            </Button>
-          </Link>
         </div>
       </div>
     </section>
@@ -510,46 +477,18 @@ function CheckInSection() {
 function ChallengesTeaserSection({ challengesData }: { challengesData: ChallengeRow[] }) {
   const displayChallenges = challengesData.length > 0 ? challengesData : HOMEPAGE_SEED_CHALLENGES;
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-[#060810]/60 border-y border-border/10">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex items-end justify-between mb-7">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="h-4 w-4 text-emerald-400" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">
-                Take action
-              </span>
-            </div>
-            <h2 className="text-2xl font-bold text-foreground">Small challenges, real momentum</h2>
-            <p className="text-muted-foreground mt-1 text-sm">Feeling it is one thing. Doing something with it is another.</p>
-          </div>
-          <Link href="/challenges">
-            <Button variant="outline" size="sm" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10">
-              All challenges <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-            </Button>
-          </Link>
-        </div>
-        <div className="grid md:grid-cols-3 gap-5">
+    <section className="bg-secondary/25 py-20 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeading eyebrow="Take action" title="Small challenges, real momentum" subtitle="Feeling it is one thing. Doing something with it is another." href="/challenges" linkLabel="All challenges" />
+        <div className="grid gap-5 md:grid-cols-3">
           {displayChallenges.slice(0, 3).map((challenge) => (
-            <Link key={challenge.id} href="/challenges">
-              <Card className="h-full bg-card/80 backdrop-blur-sm border-border/40 hover:border-emerald-500/30 transition-all duration-300 hover:scale-[1.01] card-glow flex flex-col">
-                <CardHeader className="pb-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 block">
-                    {challenge.category}
-                  </span>
-                  <CardTitle className="text-base font-semibold line-clamp-2 text-foreground">
-                    {challenge.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-between">
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
-                    {challenge.description}
-                  </p>
-                  <p className="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Start this challenge
-                  </p>
-                </CardContent>
-              </Card>
+            <Link key={challenge.id} href="/challenges" className="group flex h-full flex-col rounded-2xl bg-pine/[0.07] p-6 transition-colors hover:bg-pine/[0.12]">
+              <span className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-pine">{challenge.category}</span>
+              <h4 className="mb-2.5 font-display text-base font-semibold leading-snug text-foreground">{challenge.title}</h4>
+              <p className="mb-4 line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">{challenge.description}</p>
+              <p className="flex items-center gap-1.5 text-xs font-medium text-pine">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Start this challenge
+              </p>
             </Link>
           ))}
         </div>
@@ -558,70 +497,131 @@ function ChallengesTeaserSection({ challengesData }: { challengesData: Challenge
   );
 }
 
+function CheckInSection() {
+  const questions = [
+    "Have you been keeping things to yourself lately?",
+    "Do small things feel heavier than usual?",
+    "Do you feel connected to yourself lately?",
+    "When did you last feel genuinely okay?",
+  ];
+  return (
+    <section className="py-20 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl">
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Two minutes, in private</p>
+          <h2 className="font-display text-[1.9rem] font-semibold text-foreground sm:text-3xl">Daily reflection</h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
+            A short check-in — no diagnosis, no score. Just honest questions to help you understand where you&apos;re at.
+          </p>
+          <div className="mb-8 mt-7 space-y-3">
+            {questions.map((q) => (
+              <div key={q} className="flex items-start gap-3">
+                <div className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <p className="text-sm text-muted-foreground">{q}</p>
+              </div>
+            ))}
+          </div>
+          <Button asChild size="lg" className="rounded-full px-7">
+            <Link href="/assessment">Begin reflection</Link>
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FounderNoteSection() {
+  return (
+    <section className="bg-secondary/25 py-20 sm:py-24">
+      <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+        <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.2em] text-primary">From the founder</p>
+        <blockquote className="font-display text-2xl italic leading-snug text-foreground sm:text-[2rem]">
+          &ldquo;I built this because I needed it — and it didn&apos;t exist.&rdquo;
+        </blockquote>
+        <p className="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+          Men Who Feel started as one man carrying too much with nowhere to put it. No drama.
+          No big moment. Just the quiet realisation that most men are feeling things they&apos;ve
+          never said out loud.
+        </p>
+        <Link href="/founders-story" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+          Read the full story <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function NewsletterSection() {
+  return (
+    <section className="py-20 sm:py-24">
+      <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
+        <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Join, without joining anything</p>
+        <h2 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
+          A short note, once in a while
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+          One new guide, one new challenge, and whatever else felt worth sending. That&apos;s the
+          whole list — nothing to unsubscribe from in a hurry.
+        </p>
+        <div className="mt-7 flex justify-center">
+          <NewsletterForm />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FooterCTA() {
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 border-t border-border/20">
-      <div className="mx-auto max-w-2xl text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium mb-5">
-          <Shield className="h-3 w-3" />
-          Anonymous. Free. Always.
-        </div>
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
+    <section className="py-20 sm:py-24">
+      <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
+        <h2 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
           You&apos;ve read this far. That means something.
         </h2>
-        <p className="text-muted-foreground mb-7 leading-relaxed text-sm">
+        <p className="mb-7 mt-4 text-[15px] leading-relaxed text-muted-foreground">
           Take one more step. No account, no record, no explaining yourself first.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link href="/assessment">
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold px-8 shadow-lg shadow-blue-500/20">
-              Start here
-            </Button>
-          </Link>
-          <Link href="/stories">
-            <Button size="lg" variant="outline" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 px-8">
-              Read what others have shared
-            </Button>
-          </Link>
+        <div className="flex flex-col justify-center gap-3 sm:flex-row">
+          <Button asChild size="lg" className="rounded-full px-8">
+            <Link href="/assessment">Start here</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="rounded-full px-8">
+            <Link href="/stories">Read what others have shared</Link>
+          </Button>
         </div>
-        <p className="mt-10 text-xs text-muted-foreground/50">
-          This space is free and always will be.{" "}
-          <a
-            href="https://ko-fi.com/menwhofeel"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-muted-foreground transition-colors"
-          >
-            If it&apos;s helped, you&apos;re welcome to keep it going →
-          </a>
-        </p>
       </div>
     </section>
   );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+// Order follows the requested flow: hero → what you're dealing with →
+// community → intel → toolkit → challenges → newsletter → footer, with
+// a private check-in and the founder's note as connective tissue in
+// between rather than isolated stops. Stories still has its own full page
+// and nav link — it's just no longer duplicated here, to keep this list
+// tight rather than stacking on yet another near-identical section.
 
 export default async function Home() {
-  const [catsData, topicsData, storiesData, articlesData, challengesData] = await Promise.all([
+  const [catsData, articlesData, challengesData, guidesData, communitySnippets] = await Promise.all([
     getHomepageCategories(),
-    getHomepageTopics(),
-    getHomepageStories(),
     getHomepageArticles(),
     getHomepageChallenges(),
+    getHomepageGuides(),
+    getHomepageCommunityPosts(),
   ]);
 
   return (
-    <div className="space-y-0">
+    <div>
       <HeroSection />
-      <CategoryExplorer cats={catsData} />
-      <LatestArticlesSection articlesData={articlesData} />
-      <TopicsExplorer topicsData={topicsData} />
-      <StoriesSection storiesData={storiesData} />
-      <FounderStoryTeaser />
-      <CommunitySnippetsSection />
-      <CheckInSection />
+      <StruggleSection cats={catsData} />
+      <CommunityPulseSection posts={communitySnippets} />
+      <IntelMagazineSection articlesData={articlesData} />
+      <ToolkitPreviewSection guidesData={guidesData} />
       <ChallengesTeaserSection challengesData={challengesData} />
+      <CheckInSection />
+      <FounderNoteSection />
+      <NewsletterSection />
       <FooterCTA />
     </div>
   );

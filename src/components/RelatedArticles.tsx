@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { articles } from "@/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 interface Props {
   topicId: number | null;
@@ -17,8 +17,9 @@ export default async function RelatedArticles({
 }: Props) {
   if (!topicId) return null;
 
+  let related: { id: number; title: string; slug: string; excerpt: string }[] = [];
   try {
-    const related = await db
+    related = await db
       .select({
         id: articles.id,
         title: articles.title,
@@ -34,38 +35,38 @@ export default async function RelatedArticles({
         )
       )
       .limit(4);
-
-    if (related.length === 0) return null;
-
-    const label = topicName ? `More on ${topicName}` : "More From This Topic";
-
-    return (
-      <section className="mt-16 pt-10 border-t border-zinc-800">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-6">
-          {label}
-        </h3>
-        <div className="space-y-3">
-          {related.map((r) => (
-            <Link
-              key={r.id}
-              href={`/intel/${r.slug}`}
-              className="flex items-start gap-4 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 hover:border-blue-500/40 hover:bg-zinc-900 transition-all group"
-            >
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2 mb-1">
-                  {r.title}
-                </h4>
-                {r.excerpt && (
-                  <p className="text-xs text-zinc-500 line-clamp-1">{r.excerpt}</p>
-                )}
-              </div>
-              <ChevronRight className="w-4 h-4 text-zinc-700 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 mt-0.5" />
-            </Link>
-          ))}
-        </div>
-      </section>
-    );
   } catch {
-    return null;
+    related = [];
   }
+
+  if (related.length === 0) return null;
+
+  const label = topicName ? `More on ${topicName}` : "More from this topic";
+
+  return (
+    <section id="related-reads" className="scroll-mt-24 border-t border-border pt-10">
+      <h3 className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground/70">
+        {label}
+      </h3>
+      <div className="space-y-3">
+        {related.map((r) => (
+          <Link
+            key={r.id}
+            href={`/intel/${r.slug}`}
+            className="group flex items-start gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+          >
+            <div className="min-w-0 flex-1">
+              <h4 className="mb-1 line-clamp-2 font-display text-[15px] font-semibold text-foreground transition-colors group-hover:text-primary">
+                {r.title}
+              </h4>
+              {r.excerpt && (
+                <p className="line-clamp-1 text-xs text-muted-foreground">{r.excerpt}</p>
+              )}
+            </div>
+            <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
 }

@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Send, User } from "lucide-react";
+import { Send, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 export default function CommentForm({ slug }: { slug: string }) {
   const [authorName, setAuthorName] = useState("");
@@ -19,12 +22,13 @@ export default function CommentForm({ slug }: { slug: string }) {
 
   if (submitted) {
     return (
-      <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center">
-        <p className="text-emerald-400 font-black uppercase tracking-widest text-sm">Comment posted.</p>
-        <p className="text-zinc-500 text-xs mt-2">Your voice is part of this now.</p>
+      <div className="rounded-2xl border border-pine/25 bg-pine/[0.06] p-6 text-center">
+        <Check className="mx-auto mb-2 h-5 w-5 text-pine" />
+        <p className="font-medium text-pine">Comment posted.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Your voice is part of this now.</p>
         <button
           onClick={() => setSubmitted(false)}
-          className="mt-4 text-xs text-zinc-500 hover:text-zinc-300 underline transition-colors"
+          className="mt-4 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
         >
           Add another comment
         </button>
@@ -33,18 +37,18 @@ export default function CommentForm({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-      <p className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-5">Add your take</p>
+    <div className="rounded-2xl border border-border bg-card p-6">
+      <p className="mb-5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        Add your take
+      </p>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-zinc-600 uppercase tracking-widest mb-2">
+          <label className="mb-2 block text-xs font-medium text-muted-foreground">
             Name or handle (optional)
           </label>
-          <input
-            type="text"
+          <Input
             placeholder="Anonymous"
-            className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white text-sm placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition-all"
             value={authorName}
             onChange={(e) => setAuthorName(e.target.value)}
             maxLength={80}
@@ -52,31 +56,30 @@ export default function CommentForm({ slug }: { slug: string }) {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-zinc-600 uppercase tracking-widest mb-2">
+          <label className="mb-2 block text-xs font-medium text-muted-foreground">
             Your comment
           </label>
-          <textarea
+          <Textarea
             rows={4}
-            placeholder="What this brought up for you..."
-            className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white text-sm placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition-all resize-none"
+            placeholder="What this brought up for you…"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             maxLength={1000}
           />
-          <p className="text-xs text-zinc-700 mt-1 text-right">{content.length}/1000</p>
+          <p className="mt-1 text-right text-xs text-muted-foreground/70">{content.length}/1000</p>
         </div>
 
-        <button
+        <Button
           onClick={() => {
             if (content.trim().length < 2) return;
             addComment.mutate({ slug, authorName: authorName || undefined, content: content.trim() });
           }}
           disabled={addComment.isPending || content.trim().length < 2}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white font-black uppercase tracking-widest text-xs rounded-xl transition-all active:scale-95"
+          className="rounded-full"
         >
-          <Send className="w-4 h-4" />
-          {addComment.isPending ? "Posting..." : "Post comment"}
-        </button>
+          <Send className="h-4 w-4" />
+          {addComment.isPending ? "Posting…" : "Post comment"}
+        </Button>
       </div>
     </div>
   );

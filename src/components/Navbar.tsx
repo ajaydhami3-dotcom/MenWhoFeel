@@ -1,136 +1,151 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart, Phone, Users, BookOpen, Target, Wrench, Coffee, MessageCircle } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
+import { Menu, X, Phone, Coffee } from "lucide-react";
 import { useState } from "react";
+
+const NAV_LINKS = [
+  { href: "/stories", label: "Stories" },
+  { href: "/community", label: "Community" },
+  { href: "/communication", label: "Communication" },
+  { href: "/challenges", label: "Challenges" },
+  { href: "/guides", label: "Support & Growth" },
+  { href: "/about", label: "About" },
+];
+
+// Kept as its own constant, styled apart from NAV_LINKS everywhere it's
+// used: this is a safety-relevant link and should stay findable at a
+// glance regardless of theme or active state, not blend into the rest of
+// the nav rhythm.
+const CRISIS_LINK = { href: "/crisis-helpline", label: "Crisis Helpline" };
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  const navLinks = [
-    { href: "/stories", label: "Stories", icon: BookOpen },
-    { href: "/community", label: "Community", icon: Users },
-    { href: "/communication", label: "Communication", icon: MessageCircle },
-    { href: "/challenges", label: "Challenges", icon: Target },
-    { href: "/guides", label: "Support & Growth", icon: Wrench },
-    { href: "/about", label: "About", icon: Heart },
-    { href: "/crisis-helpline", label: "Crisis Helpline", icon: Phone },
-  ];
-
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + "/");
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-[#060810]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <img
+        {/* Logo — "Feel" is always set in italic display serif; the one
+            recurring typographic device that carries the brand, here and
+            in the footer, instead of a decorative mark. */}
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+          <Image
             src="/logo.png"
-            alt="Men Who Feel — Anonymous men's mental health community"
-            className="h-8 w-auto"
-            width={32}
-            height={32}
-            loading="eager"
+            alt="Men Who Feel"
+            width={30}
+            height={30}
+            className="h-7 w-auto"
+            priority
           />
-          <span className="hidden sm:inline text-base font-bold text-gradient">
-            MenWhoFeel
+          <span className="text-lg font-semibold tracking-tight text-foreground">
+            MenWho<span className="font-display italic text-primary">Feel</span>
           </span>
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
+        <nav className="hidden items-center gap-0.5 lg:flex">
+          {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+              className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
                 isActive(link.href)
-                  ? "bg-primary/10 text-primary"
-                  : link.href === "/crisis-helpline"
-                  ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-                  : link.href === "/communication"
-                  ? "text-teal-400 hover:text-teal-300 hover:bg-teal-500/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
               }`}
             >
-              <link.icon className="h-4 w-4" />
               {link.label}
             </Link>
           ))}
-        </div>
+          <Link
+            href={CRISIS_LINK.href}
+            className="ml-1 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium text-signal hover:bg-signal/10"
+          >
+            <Phone className="h-3.5 w-3.5" />
+            {CRISIS_LINK.label}
+          </Link>
+        </nav>
 
-        {/* Primary CTA */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* Right side: theme toggle + support link + primary CTA */}
+        <div className="hidden items-center gap-2 lg:flex">
+          <ThemeToggle />
           <a
             href="https://ko-fi.com/menwhofeel"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground border border-border/40 hover:border-border/80 hover:bg-secondary/50 transition-all duration-200"
-            aria-label="Support Men Who Feel on Ko-fi"
+            className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
           >
-            <Coffee className="h-3.5 w-3.5 text-amber-400/80" />
-            <span>Support us</span>
+            <Coffee className="h-3.5 w-3.5" />
+            Support us
           </a>
-          <Link href="/assessment">
-            <Button className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold shadow-md shadow-blue-500/20">
-              Check In
-            </Button>
-          </Link>
+          <Button asChild size="sm" className="rounded-full px-5">
+            <Link href="/assessment">Check In</Link>
+          </Button>
         </div>
 
         {/* Mobile toggle */}
-        <button
-          className="md:hidden p-2 rounded-lg hover:bg-secondary"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-1 lg:hidden">
+          <ThemeToggle />
+          <button
+            className="rounded-full p-2 text-foreground hover:bg-accent/60"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border/40 bg-[#060810]/95 backdrop-blur-xl px-4 py-4 space-y-2">
-          {navLinks.map((link) => (
+        <div className="space-y-1 border-t border-border/70 bg-background px-4 py-4 lg:hidden">
+          {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+              className={`block rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
                 isActive(link.href)
-                  ? "bg-primary/10 text-primary"
-                  : link.href === "/crisis-helpline"
-                  ? "text-amber-400 hover:bg-amber-500/10"
-                  : link.href === "/communication"
-                  ? "text-teal-400 hover:bg-teal-500/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
               }`}
             >
-              <link.icon className="h-4 w-4" />
               {link.label}
             </Link>
           ))}
-          <Link href="/assessment" onClick={() => setMobileOpen(false)}>
-            <Button className="w-full mt-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold">
-              Check In
-            </Button>
+          <Link
+            href={CRISIS_LINK.href}
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-signal hover:bg-signal/10"
+          >
+            <Phone className="h-4 w-4" />
+            {CRISIS_LINK.label}
           </Link>
+          <Button asChild className="mt-2 w-full rounded-full">
+            <Link href="/assessment" onClick={() => setMobileOpen(false)}>
+              Check In
+            </Link>
+          </Button>
           <a
             href="https://ko-fi.com/menwhofeel"
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 mt-1 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground border border-border/30 hover:border-border/60 hover:bg-secondary/30 transition-all duration-200"
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
-            <Coffee className="h-4 w-4 text-amber-400/80" />
+            <Coffee className="h-4 w-4" />
             Support this space
           </a>
         </div>
       )}
-    </nav>
+    </header>
   );
 }

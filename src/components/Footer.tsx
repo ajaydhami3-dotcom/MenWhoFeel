@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Camera,
   Play,
@@ -12,46 +13,76 @@ import {
   Coffee,
   Users,
 } from "lucide-react";
+import { db } from "@/db";
+import { topics, articles } from "@/db/schema";
+import { eq, desc, sql } from "drizzle-orm";
 
-export default function Footer() {
+function ColumnHeading({ children }: { children: React.ReactNode }) {
   return (
-    <footer className="w-full border-t border-border/40 bg-[#060810]/80 backdrop-blur-sm mt-auto">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <h4 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+      {children}
+    </h4>
+  );
+}
+
+// Ranked by published-article count so "popular" means something real,
+// rather than an arbitrary/manually-curated list that drifts out of date.
+async function getPopularTopics() {
+  try {
+    return await db
+      .select({
+        name: topics.name,
+        slug: topics.slug,
+        count: sql<number>`cast(count(${articles.id}) as int)`,
+      })
+      .from(topics)
+      .leftJoin(articles, eq(articles.topicId, topics.id))
+      .groupBy(topics.id)
+      .orderBy(desc(sql`count(${articles.id})`))
+      .limit(5);
+  } catch {
+    return [];
+  }
+}
+
+export default async function Footer() {
+  const popularTopics = await getPopularTopics();
+
+  return (
+    <footer className="mt-auto w-full border-t border-border bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-6">
           {/* Brand */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <img
-                src="/logo.png"
-                alt="Men Who Feel — Anonymous men's mental health community"
-                className="h-8 w-auto"
-                width={32}
-                height={32}
-                loading="lazy"
-              />
-              <span className="text-lg font-bold text-gradient">
-                MenWhoFeel
+          <div className="space-y-4 sm:col-span-2 lg:col-span-2">
+            <div className="flex items-center gap-2.5">
+              <Image src="/logo.png" alt="Men Who Feel" width={28} height={28} className="h-7 w-auto" />
+              <span className="text-base font-semibold tracking-tight text-foreground">
+                MenWho<span className="font-display italic text-primary">Feel</span>
               </span>
             </div>
 
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              A space where men don&apos;t have to explain themselves. Feel it,
-              say it, move through it.
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              A space where men don&apos;t have to explain themselves. Anonymous,
+              free, no account. Feel it, say it, move through it.
             </p>
 
-            {/* Universal crisis prompt */}
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-              <p className="text-xs font-semibold text-amber-400 mb-1">
-                In crisis right now?
-              </p>
-              <p className="text-xs text-muted-foreground/70 leading-relaxed">
+            <p className="border-l-2 border-primary/30 pl-3.5 font-display text-[15px] italic leading-snug text-muted-foreground">
+              &ldquo;I built this because I needed it, and it didn&apos;t exist.&rdquo;
+              <span className="mt-1 block font-mono text-[10px] not-italic uppercase tracking-[0.14em] text-muted-foreground/60">
+                — Founder, MenWhoFeel
+              </span>
+            </p>
+
+            <div className="rounded-xl border border-signal/25 bg-signal/[0.06] p-3.5">
+              <p className="mb-1 text-xs font-semibold text-signal">In crisis right now?</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 Free helplines are available 24/7 in most countries.
               </p>
             </div>
 
             <Link
               href="/crisis-helpline"
-              className="inline-flex items-center gap-2 text-xs text-amber-400 hover:text-amber-300 transition-colors"
+              className="inline-flex items-center gap-2 text-xs font-medium text-signal hover:opacity-80"
             >
               <Phone className="h-3 w-3" />
               Find a helpline near you →
@@ -60,107 +91,74 @@ export default function Footer() {
 
           {/* Navigate */}
           <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">
-              Navigate
-            </h4>
-
-            <ul className="space-y-2">
+            <ColumnHeading>Navigate</ColumnHeading>
+            <ul className="space-y-2.5">
               <li>
-                <Link
-                  href="/about"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <Heart className="h-3 w-3" />
-                  About
+                <Link href="/about" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <Heart className="h-3.5 w-3.5" /> About
                 </Link>
               </li>
-
               <li>
-                <Link
-                  href="/stories"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <FileText className="h-3 w-3" />
-                  Stories
+                <Link href="/stories" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <FileText className="h-3.5 w-3.5" /> Stories
                 </Link>
               </li>
-
               <li>
-                <Link
-                  href="/community"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <MessageSquare className="h-3 w-3" />
-                  Community
+                <Link href="/community" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <MessageSquare className="h-3.5 w-3.5" /> Community
                 </Link>
               </li>
-
               <li>
-                <Link
-                  href="/family-and-friends"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <Users className="h-3 w-3" />
-                  For Family &amp; Friends
+                <Link href="/family-and-friends" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <Users className="h-3.5 w-3.5" /> For Family &amp; Friends
                 </Link>
               </li>
-
               <li>
-                <Link
-                  href="/contact"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <Mail className="h-3 w-3" />
-                  Contact
+                <Link href="/contact" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <Mail className="h-3.5 w-3.5" /> Contact
                 </Link>
               </li>
             </ul>
           </div>
 
+          {/* Popular topics — real data, ranked by article count */}
+          {popularTopics.length > 0 && (
+            <div>
+              <ColumnHeading>Popular Topics</ColumnHeading>
+              <ul className="space-y-2.5">
+                {popularTopics.map((topic) => (
+                  <li key={topic.slug}>
+                    <Link href={`/topic/${topic.slug}`} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                      {topic.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Legal */}
           <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">
-              Legal
-            </h4>
-
-            <ul className="space-y-2">
+            <ColumnHeading>Legal</ColumnHeading>
+            <ul className="space-y-2.5">
               <li>
-                <Link
-                  href="/policy"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <FileText className="h-3 w-3" />
-                  Policy
+                <Link href="/policy" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <FileText className="h-3.5 w-3.5" /> Policy
                 </Link>
               </li>
-
               <li>
-                <Link
-                  href="/privacy-policy"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <Shield className="h-3 w-3" />
-                  Privacy Policy
+                <Link href="/privacy-policy" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <Shield className="h-3.5 w-3.5" /> Privacy Policy
                 </Link>
               </li>
-
               <li>
-                <Link
-                  href="/disclaimer"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <AlertTriangle className="h-3 w-3" />
-                  Disclaimer
+                <Link href="/disclaimer" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Disclaimer
                 </Link>
               </li>
-
               <li>
-                <Link
-                  href="/rules"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  <Shield className="h-3 w-3" />
-                  Rules
+                <Link href="/rules" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <Shield className="h-3.5 w-3.5" /> Rules
                 </Link>
               </li>
             </ul>
@@ -168,78 +166,66 @@ export default function Footer() {
 
           {/* Connect */}
           <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">
-              Connect
-            </h4>
-
-            <div className="flex flex-wrap gap-3">
+            <ColumnHeading>Connect</ColumnHeading>
+            <div className="flex flex-wrap gap-2.5">
               <a
                 href="https://instagram.com/men_whofeel"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors"
                 aria-label="Instagram"
+                className="rounded-full border border-border p-2 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
               >
-                <Camera className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                <Camera className="h-4 w-4" />
               </a>
-
               <a
                 href="https://youtube.com/@MenWhoFeelClub"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors"
                 aria-label="YouTube"
+                className="rounded-full border border-border p-2 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
               >
-                <Play className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                <Play className="h-4 w-4" />
               </a>
-
               <a
                 href="https://x.com/men_whofeel"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-secondary hover:bg-primary/20 transition-colors text-xs font-bold text-muted-foreground hover:text-primary flex items-center justify-center"
                 aria-label="X"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
               >
                 X
               </a>
             </div>
 
-            <div className="mt-4 text-xs text-muted-foreground space-y-1">
+            <div className="mt-4 space-y-1 text-xs text-muted-foreground">
               <p>@men_whofeel</p>
-
               <p>
-                <a
-                  href="mailto:support@menwhofeel.online"
-                  className="hover:text-primary"
-                >
+                <a href="mailto:support@menwhofeel.online" className="hover:text-foreground">
                   support@menwhofeel.online
                 </a>
               </p>
             </div>
 
-            {/* Ko-fi Support — tasteful, not desperate */}
-            <div className="mt-5 pt-4 border-t border-border/20">
-              <p className="text-xs text-muted-foreground mb-2.5 leading-relaxed">
-                This space is free and always will be. If it&apos;s helped you, you&apos;re welcome to keep it going.
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="mb-2.5 text-xs leading-relaxed text-muted-foreground">
+                This space is free and always will be. If it&apos;s helped you,
+                you&apos;re welcome to keep it going.
               </p>
               <a
                 href="https://ko-fi.com/menwhofeel"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-secondary/60 hover:bg-secondary border border-border/40 hover:border-border/80 text-xs font-medium text-muted-foreground hover:text-foreground transition-all duration-200 group"
-                aria-label="Support Men Who Feel on Ko-fi"
+                className="inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
               >
-                <Coffee className="h-3.5 w-3.5 text-amber-400/70 group-hover:text-amber-400 transition-colors" />
+                <Coffee className="h-3.5 w-3.5" />
                 Support us
               </a>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-border/20 text-center text-xs text-muted-foreground">
-          <p>
-            © MenWhoFeel. Not a substitute for professional mental health care.
-          </p>
+        <div className="mt-12 border-t border-border pt-8 text-center text-xs text-muted-foreground">
+          <p>© MenWhoFeel. Not a substitute for professional mental health care.</p>
         </div>
       </div>
     </footer>

@@ -155,7 +155,14 @@ export default function ChallengesClient({ forgeDays, weeklyChallenges, initialS
       </div>
 
       {authError && (
-        <p className="text-sm text-destructive mb-6">Couldn&apos;t start a session — try refreshing the page.</p>
+        <div className="text-sm text-destructive mb-6 bg-destructive/5 border border-destructive/20 rounded-xl p-4">
+          <p className="font-medium">Couldn&apos;t start a session.</p>
+          <p className="text-destructive/80 mt-1">{authError}</p>
+          <p className="text-muted-foreground mt-2 text-xs">
+            If this says something about anonymous sign-ins, they need to be enabled in Supabase Dashboard →
+            Authentication → Sign In / Providers.
+          </p>
+        </div>
       )}
 
       {isLoadingCore ? (

@@ -5,6 +5,7 @@ import {
   varchar,
   text,
   timestamp,
+  date,
   bigint,
   integer,
   boolean,
@@ -119,6 +120,11 @@ export const challenges = pgTable(
     type: challengeTypeEnum("type").notNull(),
     instructions: text("instructions"),
     dayOfWeek: integer("dayOfWeek"),
+    // 1–28 for The Forge's daily program; null for weekly/monthly rows.
+    // Replaces the old implicit "array index = day number" behavior in
+    // ChallengesClient.tsx, which broke the moment getChallenges() returned
+    // rows in a different order than they were seeded.
+    dayNumber: integer("dayNumber"),
     active: boolean("active").default(true).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
@@ -126,6 +132,7 @@ export const challenges = pgTable(
   (table) => ({
     categoryIdx: index("category_idx").on(table.category),
     activeIdx: index("active_idx").on(table.active),
+    dayNumberIdx: index("day_number_idx").on(table.dayNumber),
   })
 );
 
@@ -258,6 +265,85 @@ export const userProgress = pgTable("user_progress", {
   currentDailyId: integer("current_daily_id").default(1).notNull(),
   completedWeeklies: integer("completed_weeklies").array().default([]).notNull(),
   lastCompletedAt: timestamp("last_daily_completed_at", { withTimezone: true }),
+});
+
+// ==========================================
+// The Forge — 28-day challenge progress
+// ==========================================
+// Real per-person progress for /challenges, backed by Supabase Anonymous
+// Auth (see src/hooks/useAuth.ts + src/server/forge-router.ts). This
+// replaces the old userChallenges + hardcoded TEST_USER_ID hack, which
+// meant every visitor shared one identity and no one's streak ever really
+// persisted.
+//
+// `userId` points at this app's own `users.id` (serial int), not the raw
+// Supabase auth uuid — every request already resolves `ctx.user` via
+// `users.unionId` in server/context.ts, so this follows the same
+// identity convention the rest of the app uses instead of introducing a
+// second, parallel shape just for Forge data.
+export const forgeProgress = pgTable("forge_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  completedDays: integer("completedDays").array().default([]).notNull(),
+  skippedDays: integer("skippedDays").array().default([]).notNull(),
+  currentStreak: integer("currentStreak").default(0).notNull(),
+  longestStreak: integer("longestStreak").default(0).notNull(),
+  lastActiveDate: date("lastActiveDate"),
+  // "Pause the Forge" — while true, forge-router suspends the streak/pacing
+  // math instead of quietly punishing someone for stepping away.
+  isPaused: boolean("isPaused").default(false).notNull(),
+  forgeCompleted: boolean("forgeCompleted").default(false).notNull(),
+  completionDate: date("completionDate"),
+  // Post-Day-28 continuation. There's no real "Deep Forge" content yet —
+  // these two columns just keep the same streak mechanic going via
+  // forge-router's checkInMaintenance() until that program is designed for
+  // real, rather than leaving graduates with nothing.
+  maintenanceMode: boolean("maintenanceMode").default(false).notNull(),
+  deepForgeProgress: integer("deepForgeProgress").default(0).notNull(),
+  deepForgeCompleted: boolean("deepForgeCompleted").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+// One row per day someone actually writes/reflects on — the "what did you
+// write" detail behind forge_progress's completedDays array. A sentinel
+// dayNumber of 0 is also used for Monthly-tab log entries, which aren't
+// tied to one specific Forge day and (unlike real days) can recur — the
+// migration's unique index only enforces one-row-per-day for real days
+// 1–28, so monthly logs can accumulate a history.
+export const challengeResponses = pgTable(
+  "challenge_responses",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    dayNumber: integer("dayNumber").notNull(),
+    challengeTitle: varchar("challengeTitle", { length: 255 }).notNull(),
+    responseText: text("responseText"),
+    moodRating: integer("moodRating"),
+    completedAt: timestamp("completedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("challenge_responses_user_id_idx").on(table.userId),
+    userDayIdx: index("challenge_responses_user_day_idx").on(table.userId, table.dayNumber),
+  })
+);
+
+// Single global row (id is always 1) powering the small social-proof stat
+// on the Forge header (e.g. "1,204 men have finished the Forge"). Only
+// ever incremented server-side via Drizzle — see queries/forge.ts.
+export const anonymousStats = pgTable("anonymous_stats", {
+  id: integer("id").primaryKey().default(1),
+  totalForgeCompletions: integer("totalForgeCompletions").default(0).notNull(),
+  totalActiveUsers: integer("totalActiveUsers").default(0).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 // ==========================================
@@ -623,6 +709,15 @@ export const challengesRelations = relations(challenges, ({ many }) => ({
 
 export const userChallengesRelations = relations(userChallenges, ({ one }) => ({
   challenge: one(challenges, { fields: [userChallenges.challengeId], references: [challenges.id] }),
+}));
+
+// The Forge
+export const forgeProgressRelations = relations(forgeProgress, ({ one }) => ({
+  user: one(users, { fields: [forgeProgress.userId], references: [users.id] }),
+}));
+
+export const challengeResponsesRelations = relations(challengeResponses, ({ one }) => ({
+  user: one(users, { fields: [challengeResponses.userId], references: [users.id] }),
 }));
 
 // Community

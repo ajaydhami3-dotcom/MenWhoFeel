@@ -9,7 +9,15 @@ export type User = typeof users.$inferSelect;
 export type TrpcContext = {
   req: Request;
   resHeaders: Headers;
-  user?: User; 
+  user?: User;
+  // The validated Supabase Auth uuid, set whenever the bearer token checks
+  // out — even if no `users` row with that unionId exists yet. `ctx.user`
+  // requires that row to already exist (it's a straight SELECT below), but
+  // a brand-new anonymous session (supabase.auth.signInAnonymously()) has a
+  // perfectly valid token with nothing in `users` yet. forge-router's
+  // `init` mutation is the one place that reads this directly, to create
+  // that row on someone's very first visit.
+  supabaseUserId?: string;
 };
 
 export async function createContext(
@@ -25,8 +33,8 @@ export async function createContext(
       const { data, error } = await supabase.auth.getUser(token);
 
       if (data.user && !error) {
-        
-        // 🚨 YOUR CURSOR GOES HERE 🚨
+        ctx.supabaseUserId = data.user.id;
+
         const dbUser = await getDb().select()
           .from(users)
           .where(eq(users.unionId, data.user.id))

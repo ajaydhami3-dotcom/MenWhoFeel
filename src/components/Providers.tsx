@@ -5,6 +5,7 @@ import { httpBatchLink } from "@trpc/client";
 import React, { useState } from "react";
 import superjson from "superjson";
 import { trpc } from "@/lib/trpc";
+import { supabase } from "@/lib/supabase";
 import { Toaster } from "sonner";
 import { useTheme } from "next-themes";
 
@@ -41,6 +42,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
         httpBatchLink({
           url: "/api/trpc",
           transformer: superjson,
+          async headers() {
+            // Forwards whatever session already exists (restored or
+            // anonymous) — this never creates one itself. A page that
+            // never calls useAuth() just sends no Authorization header,
+            // and every publicQuery procedure keeps working exactly as
+            // before.
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+          },
         }),
       ],
     })

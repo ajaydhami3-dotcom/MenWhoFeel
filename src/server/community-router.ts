@@ -5,8 +5,9 @@ import {
   communityPosts,
   communityComments,
   communityReports,
+  pillars,
 } from "../db/schema";
-import { eq, desc, asc, sql, and, ilike, or, ne } from "drizzle-orm";
+import { eq, desc, asc, sql, and, ilike, or } from "drizzle-orm";
 import { checkContentSafety, isFlagged } from "@/lib/safety";
 
 const POST_CATEGORIES = [
@@ -22,6 +23,43 @@ const POST_CATEGORIES = [
   "success_stories",
   "need_support_now",
 ] as const;
+
+// Phase 6: derives communityPosts.pillarId from the (still required,
+// unchanged) category field at creation time, so new posts populate the
+// new column automatically without the creation form having to ask a
+// second question. Same mapping as the one-time backfill in
+// supabase_migration_community_pillars.sql — if you edit one, edit both.
+// self_improvement and the four tone-only categories map to null on
+// purpose: none of them is a single pillar, same reasoning as
+// categories.pillarId leaving self-improvement null in Phase 0.
+const COMMUNITY_CATEGORY_TO_PILLAR_SLUG: Record<string, string | null> = {
+  mental_health: "mental-emotional-health",
+  anxiety: "mental-emotional-health",
+  depression: "mental-emotional-health",
+  relationships: "relationships-stress",
+  loneliness: "relationships-stress",
+  career: "work-financial-stability",
+  self_improvement: null,
+  venting: null,
+  advice_needed: null,
+  success_stories: null,
+  need_support_now: null,
+};
+
+async function derivePillarId(category: string): Promise<number | null> {
+  const slug = COMMUNITY_CATEGORY_TO_PILLAR_SLUG[category];
+  if (!slug) return null;
+  try {
+    const db = getDb();
+    const [row] = await db.select({ id: pillars.id }).from(pillars).where(eq(pillars.slug, slug)).limit(1);
+    return row?.id ?? null;
+  } catch (err) {
+    // Don't fail post creation over a taxonomy lookup — pillarId staying
+    // null just means this post behaves like it did before Phase 6.
+    console.error(`[community-router] derivePillarId(${category}) failed:`, err);
+    return null;
+  }
+}
 
 export const communityRouter = createRouter({
   // ─── POSTS ──────────────────────────────────────────────────────────────────
@@ -133,6 +171,7 @@ export const communityRouter = createRouter({
       const db = getDb();
       const flags = checkContentSafety(`${input.title} ${input.content}`);
       const flagged = isFlagged(flags);
+      const pillarId = await derivePillarId(input.category);
 
       const [post] = await db
         .insert(communityPosts)
@@ -143,6 +182,7 @@ export const communityRouter = createRouter({
           anonymousId: input.anonymousId,
           flagged,
           flagReasons: flags.length ? flags.map((f) => f.type).join(",") : null,
+          pillarId,
         })
         .returning();
 

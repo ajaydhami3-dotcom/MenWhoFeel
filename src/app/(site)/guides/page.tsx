@@ -1,8 +1,9 @@
 // SERVER component — resources are fetched at request time and included
 // directly in the HTML that Google crawls. No "Loading resources..." ever.
 import { db } from "@/db";
-import { resources } from "@/db/schema";
-import GuidesClient, { type ResourceItem } from "./GuidesClient";
+import { resources, selfHelpGuides, pillars } from "@/db/schema";
+import { isNotNull } from "drizzle-orm";
+import GuidesClient, { type ResourceItem, type PillarRecord } from "./GuidesClient";
 
 // ISR: re-generate at most every 5 minutes so newly added resources
 // appear without a full deploy.
@@ -32,16 +33,54 @@ const SEED_RESOURCES: ResourceItem[] = [
   { id: "s16", name: "Testosterone, diet, and lifestyle — what the evidence actually says", url: "https://www.healthline.com/nutrition/8-ways-to-boost-testosterone", type: "link", category: "Physical Wellbeing" },
 ];
 
+// Seed pillars — mirrors supabase_migration_pillars.sql exactly, shown
+// only if the `pillars` table is unreachable or (shouldn't happen, but
+// defensively) empty.
+const SEED_PILLARS: PillarRecord[] = [
+  { id: 0, name: "Mental & Emotional Health", slug: "mental-emotional-health", description: "Understand your mind, manage your emotions, build real resilience." },
+  { id: 0, name: "Work & Financial Stability", slug: "work-financial-stability", description: "Take control of your money, your career, and your sense of security." },
+  { id: 0, name: "Relationships & Stress", slug: "relationships-stress", description: "Navigate pressure, conflict, and connection without burning out." },
+  { id: 0, name: "Physical Wellbeing", slug: "physical-wellbeing", description: "Sleep, movement, energy — the physical foundation everything else runs on." },
+];
+
+async function fetchPillars(): Promise<PillarRecord[]> {
+  try {
+    const rows = await db
+      .select({ id: pillars.id, name: pillars.name, slug: pillars.slug, description: pillars.description })
+      .from(pillars)
+      .orderBy(pillars.sortOrder);
+    return rows.length > 0 ? rows : SEED_PILLARS;
+  } catch (err) {
+    console.error("[guides/page] pillars fetch failed, using seed pillars:", err);
+    return SEED_PILLARS;
+  }
+}
+
+// Toolkit is two tables as of Phase 3 (see MIGRATION_PLAN.md 4.3):
+// `resources` (curated external links) and `selfHelpGuides` (original
+// first-party content, repurposed this phase). Only fileUrl-bearing
+// guides are included here, same reasoning as getPillarResources in
+// server/queries/pillar-content.ts — guides meant to be read as an
+// on-site page need a rendering page that doesn't exist yet.
 async function fetchResources(): Promise<ResourceItem[]> {
   try {
-    const rows = await db.select().from(resources);
-    return rows.map((r) => ({
-      id: String(r.id),
-      name: r.name,
-      url: r.url,
-      type: r.type,
-      category: r.category,
+    const [curated, guides] = await Promise.all([
+      db.select().from(resources),
+      db
+        .select({ id: selfHelpGuides.id, name: selfHelpGuides.title, url: selfHelpGuides.fileUrl, pillarName: pillars.name })
+        .from(selfHelpGuides)
+        .leftJoin(pillars, isNotNull(selfHelpGuides.pillarId))
+        .where(isNotNull(selfHelpGuides.fileUrl)),
+    ]);
+
+    const normalizedCurated: ResourceItem[] = curated.map((r) => ({
+      id: String(r.id), name: r.name, url: r.url, type: r.type, category: r.category,
     }));
+    const normalizedGuides: ResourceItem[] = guides
+      .filter((g): g is typeof g & { url: string; pillarName: string } => !!g.url && !!g.pillarName)
+      .map((g) => ({ id: `guide-${g.id}`, name: g.name, url: g.url, type: "pdf", category: g.pillarName }));
+
+    return [...normalizedCurated, ...normalizedGuides];
   } catch (err) {
     // DB unavailable — fall back to seeds.
     console.error("[guides/page] DB fetch failed, using seed resources:", err);
@@ -50,10 +89,10 @@ async function fetchResources(): Promise<ResourceItem[]> {
 }
 
 export default async function GuidesPage() {
-  const dbResources = await fetchResources();
+  const [dbResources, pillarList] = await Promise.all([fetchResources(), fetchPillars()]);
   const initialResources = dbResources.length > 0 ? dbResources : SEED_RESOURCES;
 
   // All resource names and categories are embedded in the server-rendered
   // HTML. Google indexes every item without needing to execute JavaScript.
-  return <GuidesClient initialResources={initialResources} />;
+  return <GuidesClient initialResources={initialResources} pillars={pillarList} />;
 }

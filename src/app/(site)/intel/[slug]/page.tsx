@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft, ArrowRight, Clock, User, BookOpen, MessageSquare, Eye,
+  ArrowLeft, ArrowRight, ArrowUpRight, Clock, User, BookOpen, MessageSquare, Eye, Link2,
 } from "lucide-react";
 import { db } from "@/db";
 import {
@@ -12,9 +12,12 @@ import { eq, desc, gt, ne, and } from "drizzle-orm";
 import Breadcrumb from "@/components/Breadcrumb";
 import TagList from "@/components/TagList";
 import RelatedArticles from "@/components/RelatedArticles";
+import ChallengesTeaser from "@/components/ChallengesTeaser";
 import Callout from "@/components/Callout";
 import ArticleReadingTools from "@/components/ArticleReadingTools";
 import { estimateReadingTime } from "@/lib/admin/reading-time";
+import { RESOURCE_ICONS } from "@/lib/category-style";
+import { getPillarResources, getPillarStories, getPillarJourney } from "@/server/queries/pillar-content";
 import CommentForm from "./CommentForm";
 
 const BASE_URL = "https://www.menwhofeel.online";
@@ -51,6 +54,7 @@ async function getArticleData(params: Props["params"]) {
         ogImage: articles.ogImage,
         categoryName: categories.name,
         categorySlug: categories.slug,
+        pillarId: categories.pillarId,
         topicName: topics.name,
         topicSlug: topics.slug,
       })
@@ -223,10 +227,13 @@ export default async function SingleIntelPage({ params }: Props) {
   const data = await getArticleData(params);
   if (!data) notFound();
 
-  const [comments, articleTagsList, nextArticle] = await Promise.all([
+  const [comments, articleTagsList, nextArticle, pillarResources, pillarStories, pillarJourney] = await Promise.all([
     getComments(data.slug),
     getTagsForArticle(data.id),
     getNextArticle(data.id, data.createdAt),
+    getPillarResources(data.pillarId, data.topicId),
+    getPillarStories(data.pillarId, data.topicId),
+    getPillarJourney(data.pillarId),
   ]);
 
   const paragraphs = splitIntoParagraphs(data.content);
@@ -407,6 +414,82 @@ export default async function SingleIntelPage({ params }: Props) {
         <div className="mb-14">
           <RelatedArticles topicId={data.topicId} currentArticleId={data.id} topicName={data.topicName} />
         </div>
+
+        {/* NEW: Toolkit — this page had no path at all from an article to
+            a practical resource before. Styled to match RelatedArticles
+            just above it (same border/bg/hover treatment) rather than the
+            category/topic hub pages' card style, since those two sections
+            sit right next to each other here and should read as one
+            family. Community isn't repeated here — the callout above
+            ("If this brought something up") already sends readers there
+            in a more human, context-appropriate way than a generic post
+            list would. Challenges has no pillar dimension yet (Phase 5),
+            so — same as the hub pages — it's a plain, honest cross-link
+            below rather than a fabricated pillar-specific list. */}
+        {pillarResources.length > 0 && (
+          <div className="mb-14">
+            <section className="border-t border-border pt-10">
+              <h3 className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground/70">
+                From the Toolkit
+              </h3>
+              <div className="space-y-3">
+                {pillarResources.map((resource) => {
+                  const ResIcon = RESOURCE_ICONS[resource.type] ?? Link2;
+                  return (
+                    <a
+                      key={resource.id}
+                      href={resource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+                    >
+                      <ResIcon className="h-4 w-4 shrink-0 text-primary" />
+                      <span className="flex-1 font-display text-[15px] font-semibold text-foreground transition-colors group-hover:text-primary">
+                        {resource.name}
+                      </span>
+                      <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
+                    </a>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+        )}
+
+        <div className="mb-14">
+          <ChallengesTeaser journey={pillarJourney} />
+        </div>
+
+        {/* NEW (Phase 5): Stories, topic-first — this is the strongest
+            possible version of "users reading about Anxiety should
+            discover anxiety stories" from the original philosophy doc,
+            since articles are the one content type that's always had a
+            topicId, so this section benefits from topic-level matching
+            immediately rather than waiting on tagging to catch up. Styled
+            to match the Toolkit section above, same reasoning as there. */}
+        {pillarStories.length > 0 && (
+          <div className="mb-14">
+            <section className="border-t border-border pt-10">
+              <h3 className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground/70">
+                Stories
+              </h3>
+              <div className="space-y-3">
+                {pillarStories.map((story) => (
+                  <a
+                    key={story.id}
+                    href={`/stories/${story.id}`}
+                    className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+                  >
+                    <span className="flex-1 font-display text-[15px] font-semibold text-foreground transition-colors group-hover:text-primary">
+                      {story.title}
+                    </span>
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
+                  </a>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
 
         <section id="discussion" className="scroll-mt-24 border-t border-border pt-10">
           <div className="mb-8 flex items-center gap-2">

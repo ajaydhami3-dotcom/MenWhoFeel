@@ -1,9 +1,9 @@
 // This is a SERVER component — stories are fetched at request time and
 // included directly in the HTML that Google crawls. No "Loading stories..." ever.
 import { db } from "@/db";
-import { stories } from "@/db/schema";
+import { stories, pillars } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import StoriesClient, { type StoryItem } from "./StoriesClient";
+import StoriesClient, { type StoryItem, type PillarOption } from "./StoriesClient";
 
 // ISR: re-generate the page at most every 5 minutes so new approved
 // stories appear without a full deploy.
@@ -71,11 +71,20 @@ async function fetchApprovedStories(): Promise<StoryItem[]> {
   }
 }
 
+async function fetchPillarOptions(): Promise<PillarOption[]> {
+  try {
+    return await db.select({ id: pillars.id, name: pillars.name }).from(pillars).orderBy(pillars.sortOrder);
+  } catch (err) {
+    console.error("[stories/page] pillars fetch failed:", err);
+    return [];
+  }
+}
+
 export default async function StoriesPage() {
-  const dbStories = await fetchApprovedStories();
+  const [dbStories, pillarOptions] = await Promise.all([fetchApprovedStories(), fetchPillarOptions()]);
   const displayStories = dbStories.length > 0 ? dbStories : SEED_STORIES;
 
   // At this point the full list is embedded in the server-rendered HTML.
   // Google will index every title, excerpt, author and date — no JS needed.
-  return <StoriesClient initialStories={displayStories} />;
+  return <StoriesClient initialStories={displayStories} pillars={pillarOptions} />;
 }

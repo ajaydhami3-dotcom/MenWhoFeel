@@ -2,8 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { MetadataRoute } from "next";
 import { db } from "@/db";
-import { articles, categories, topics, stories } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { articles, categories, topics, stories, tags, journeys } from "@/db/schema";
+import { eq, sql, isNull } from "drizzle-orm";
 
 const BASE_URL = "https://www.menwhofeel.online";
 
@@ -17,6 +17,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/challenges`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/guides`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/assessment`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
+    // NEW (Phase 9–10): Career Hub belongs only inside Work & Financial
+    // Stability, but the pages themselves are top-level routes.
+    { url: `${BASE_URL}/career-hub`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE_URL}/small-wins`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.75 },
     { url: `${BASE_URL}/family-and-friends`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.75 },
     { url: `${BASE_URL}/founders-story`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.75 },
     { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
@@ -32,9 +36,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let topicRoutes: MetadataRoute.Sitemap = [];
   let articleRoutes: MetadataRoute.Sitemap = [];
   let storyRoutes: MetadataRoute.Sitemap = [];
+  let tagRoutes: MetadataRoute.Sitemap = [];
+  let journeyRoutes: MetadataRoute.Sitemap = [];
 
   try {
-    const [allCategories, allTopics, publishedArticles, topicCounts, approvedStories] =
+    const [allCategories, allTopics, publishedArticles, topicCounts, approvedStories, allTags, nativeJourneys] =
       await Promise.all([
         db.select({ slug: categories.slug }).from(categories),
         db.select({ id: topics.id, slug: topics.slug }).from(topics),
@@ -59,6 +65,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           .select({ id: stories.id, createdAt: stories.createdAt })
           .from(stories)
           .where(eq(stories.status, "approved")),
+        // NEW: tag pages existed as a route before this migration touched
+        // anything, but were never added to the sitemap — flagged in
+        // MIGRATION_PLAN.md Section 2.5 as a pre-existing gap, fixed here
+        // in the QA pass rather than left for "later." Unlike topics,
+        // tag/[tagSlug]/page.tsx has no noindex-if-empty safety net of
+        // its own, so this doesn't filter empty tags out either — it
+        // matches the page's own current behavior rather than adding new
+        // logic that page doesn't have.
+        db.select({ slug: tags.slug }).from(tags),
+        // NEW (Phase 7): only journeys with journeyDays of their own get
+        // a /challenges/[slug] page — The Forge's registry row has
+        // externalHref set instead and lives at /challenges, already in
+        // staticRoutes above.
+        db.select({ slug: journeys.slug }).from(journeys).where(isNull(journeys.externalHref)),
       ]);
 
     categoryRoutes = allCategories.map((c) => ({
@@ -96,9 +116,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
+    tagRoutes = allTags.map((t) => ({
+      url: `${BASE_URL}/tag/${t.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
+
+    journeyRoutes = nativeJourneys.map((j) => ({
+      url: `${BASE_URL}/challenges/${j.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.75,
+    }));
+
     console.log(
       `Sitemap: ${publishedArticles.length} articles, ${approvedStories.length} stories, ` +
-        `${categoryRoutes.length} categories, ${topicRoutes.length}/${allTopics.length} topics (non-empty)`
+        `${categoryRoutes.length} categories, ${topicRoutes.length}/${allTopics.length} topics (non-empty), ` +
+        `${tagRoutes.length} tags, ${journeyRoutes.length} journeys`
     );
   } catch (err) {
     console.error("[sitemap] Error:", err);
@@ -110,5 +145,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...topicRoutes,
     ...articleRoutes,
     ...storyRoutes,
+    ...tagRoutes,
+    ...journeyRoutes,
   ];
 }

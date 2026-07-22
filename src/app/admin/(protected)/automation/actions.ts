@@ -42,6 +42,7 @@ export type SettingsInput = {
   researchPrompt: string | null;
   writingPrompt: string | null;
   seoPrompt: string | null;
+  categorizePrompt: string | null;
   socialPrompt: string | null;
 };
 
@@ -67,6 +68,7 @@ export async function saveSettingsAction(
         researchPrompt: input.researchPrompt?.trim() || null,
         writingPrompt: input.writingPrompt?.trim() || null,
         seoPrompt: input.seoPrompt?.trim() || null,
+        categorizePrompt: input.categorizePrompt?.trim() || null,
         socialPrompt: input.socialPrompt?.trim() || null,
       })
       .where(eq(automationSettings.id, 1));

@@ -5,21 +5,14 @@ import { db } from "@/db";
 import { categories, topics, articles } from "@/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import Breadcrumb from "@/components/Breadcrumb";
-import { BookOpen, ChevronRight, FileText } from "lucide-react";
+import ChallengesTeaser from "@/components/ChallengesTeaser";
+import { CATEGORY_TINTS, DEFAULT_TINT, RESOURCE_ICONS } from "@/lib/category-style";
+import { getPillarResources, getPillarCommunityPosts, getPillarStories, getPillarJourney } from "@/server/queries/pillar-content";
+import { BookOpen, ChevronRight, FileText, ArrowRight, Link2 } from "lucide-react";
 
 export const revalidate = 300;
 
 const BASE_URL = "https://www.menwhofeel.online";
-
-const STYLE: Record<string, { accent: string; bg: string; border: string; badge: string }> = {
-  blue:    { accent: "text-blue-400",    bg: "bg-blue-400/10",    border: "border-blue-400/20",    badge: "bg-blue-400/20 text-blue-300" },
-  rose:    { accent: "text-rose-400",    bg: "bg-rose-400/10",    border: "border-rose-400/20",    badge: "bg-rose-400/20 text-rose-300" },
-  green:   { accent: "text-green-400",   bg: "bg-green-400/10",   border: "border-green-400/20",   badge: "bg-green-400/20 text-green-300" },
-  emerald: { accent: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20", badge: "bg-emerald-400/20 text-emerald-300" },
-  amber:   { accent: "text-amber-400",   bg: "bg-amber-400/10",   border: "border-amber-400/20",   badge: "bg-amber-400/20 text-amber-300" },
-  purple:  { accent: "text-purple-400",  bg: "bg-purple-400/10",  border: "border-purple-400/20",  badge: "bg-purple-400/20 text-purple-300" },
-};
-const DEFAULT_STYLE = STYLE.blue!;
 
 type Props = { params: Promise<{ topicSlug: string }> };
 type KeyArea = { title: string; summary: string };
@@ -34,6 +27,14 @@ async function getTopicData(slug: string) {
         categoryId: topics.categoryId,
         categoryName: categories.name, categorySlug: categories.slug,
         categoryColor: categories.color,
+        // Pillar context, reached through the topic's parent category
+        // (topics don't get their own pillarId — they inherit it from
+        // categories, which got pillarId in the Phase 0 migration).
+        // Community's real pillarId column shipped in Phase 6, so this no
+        // longer needs a join to `pillars` just to get its slug — plain
+        // pillarId is now enough for every pillar-scoped query this page
+        // calls.
+        pillarId: categories.pillarId,
       })
       .from(topics)
       .leftJoin(categories, eq(topics.categoryId, categories.id))
@@ -114,10 +115,19 @@ export default async function TopicPage({ params }: Props) {
   const topic = await getTopicData(topicSlug);
   if (!topic) notFound();
 
-  const allArticles = await getTopicArticles(topic.id);
+  const [allArticles, pillarResources, communitySnippets, pillarStories, pillarJourney] = await Promise.all([
+    getTopicArticles(topic.id),
+    getPillarResources(topic.pillarId, topic.id),
+    getPillarCommunityPosts(topic.pillarId),
+    getPillarStories(topic.pillarId, topic.id),
+    getPillarJourney(topic.pillarId),
+  ]);
   const featuredArticles = allArticles.filter((a) => a.featured);
   const keyAreas = topic.keyAreas as KeyArea[] | null;
-  const s = STYLE[topic.categoryColor ?? "blue"] ?? DEFAULT_STYLE;
+  const tint = CATEGORY_TINTS[topic.categoryColor ?? "blue"] ?? DEFAULT_TINT;
+  const isEmpty =
+    allArticles.length === 0 && pillarResources.length === 0 &&
+    communitySnippets.length === 0 && pillarStories.length === 0;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -136,9 +146,9 @@ export default async function TopicPage({ params }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-[#060810] text-white py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto max-w-4xl">
 
         <Breadcrumb crumbs={[
           { label: "Home", href: "/" },
@@ -149,54 +159,60 @@ export default async function TopicPage({ params }: Props) {
         ]} />
 
         {/* Hero */}
-        <div className={`rounded-2xl border p-8 sm:p-12 mb-12 ${s.bg} ${s.border}`}>
+        <div className="animate-fade-up rounded-2xl border border-border/70 bg-card/70 p-8 sm:p-12 mb-12">
           {topic.categoryName && (
             <Link
               href={`/category/${topic.categorySlug}`}
-              className={`text-[10px] font-black uppercase tracking-[0.35em] ${s.accent} mb-4 block hover:opacity-80 transition-opacity`}
+              className={`mb-4 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.18em] ${tint.text} transition-opacity hover:opacity-80`}
             >
               ← {topic.categoryName}
             </Link>
           )}
-          <h1 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter text-white mb-4 leading-tight">
+          <h1 className="font-display text-[2.4rem] font-medium leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {topic.name}
           </h1>
           {topic.description && (
-            <p className="text-zinc-400 text-base sm:text-lg max-w-2xl leading-relaxed mb-6">
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
               {topic.description}
             </p>
           )}
-          <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${s.badge}`}>
+          <span className="mt-6 inline-block rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
             {allArticles.length} article{allArticles.length !== 1 ? "s" : ""}
           </span>
         </div>
 
         {/* Overview */}
         {topic.overview && (
-          <section className="mb-12 p-7 rounded-xl bg-zinc-900/60 border border-zinc-800">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-4">Overview</h2>
-            <p className="text-zinc-300 leading-relaxed text-base">{topic.overview}</p>
+          <section className="mb-12 rounded-xl border border-border/70 bg-card/70 p-7">
+            <h2 className="mb-4 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Overview</h2>
+            <p className="text-base leading-relaxed text-foreground/90">{topic.overview}</p>
           </section>
         )}
 
         {/* Why it matters */}
         {topic.whyItMatters && (
-          <section className="mb-12 p-7 rounded-xl bg-zinc-900/60 border border-zinc-800">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-4">Why It Matters</h2>
-            <p className="text-zinc-300 leading-relaxed text-base">{topic.whyItMatters}</p>
+          <section className="mb-12 rounded-xl border border-border/70 bg-card/70 p-7">
+            <h2 className="mb-4 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Why It Matters</h2>
+            <p className="text-base leading-relaxed text-foreground/90">{topic.whyItMatters}</p>
           </section>
         )}
 
         {/* Key areas */}
         {keyAreas && keyAreas.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-6">Key Areas</h2>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <h2 className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Key Areas</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
               {keyAreas.map((area, i) => (
-                <div key={i} className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800">
-                  <div className={`w-1.5 h-1.5 rounded-full ${s.accent.replace("text-", "bg-")} mb-3`} />
-                  <h3 className="font-bold text-white mb-2 leading-snug">{area.title}</h3>
-                  <p className="text-zinc-500 text-sm leading-relaxed">{area.summary}</p>
+                <div key={i} className="rounded-xl border border-border/70 bg-card/70 p-5">
+                  {/* Uniform primary dot instead of a per-category one:
+                      the old version derived it by string-replacing
+                      "text-" with "bg-" on the accent class, which broke
+                      the moment that class gained a dark: variant (only
+                      the first "text-" in the string got replaced). Not
+                      worth reintroducing for a decorative bullet. */}
+                  <div className="mb-3 h-1.5 w-1.5 rounded-full bg-primary" />
+                  <h3 className="mb-2 font-display font-medium leading-snug text-foreground">{area.title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{area.summary}</p>
                 </div>
               ))}
             </div>
@@ -206,24 +222,22 @@ export default async function TopicPage({ params }: Props) {
         {/* Popular / featured articles */}
         {featuredArticles.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-6">Popular Articles</h2>
+            <h2 className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Popular Articles</h2>
             <div className="space-y-3">
               {featuredArticles.map((a) => (
                 <Link
                   key={a.id}
                   href={`/intel/${a.slug}`}
-                  className="flex items-start gap-4 p-5 rounded-xl bg-zinc-900/60 border border-zinc-800 hover:border-blue-500/40 hover:bg-zinc-900 transition-all group"
+                  className="group flex items-start gap-4 rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
                 >
-                  <BookOpen className={`w-4 h-4 ${s.accent} flex-shrink-0 mt-0.5`} />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2 mb-1">
+                  <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="mb-1 line-clamp-2 font-display font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
                       {a.title}
                     </h3>
-                    {a.excerpt && (
-                      <p className="text-zinc-500 text-sm line-clamp-2">{a.excerpt}</p>
-                    )}
+                    {a.excerpt && <p className="line-clamp-2 text-sm text-muted-foreground">{a.excerpt}</p>}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-zinc-700 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 mt-0.5" />
+                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
                 </Link>
               ))}
             </div>
@@ -232,26 +246,26 @@ export default async function TopicPage({ params }: Props) {
 
         {/* All articles */}
         {allArticles.length > 0 && (
-          <section>
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-6">
-              All Articles{allArticles.length > 0 && ` (${allArticles.length})`}
+          <section className="mb-12">
+            <h2 className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
+              All Articles ({allArticles.length})
             </h2>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               {allArticles.map((a) => (
                 <Link
                   key={a.id}
                   href={`/intel/${a.slug}`}
-                  className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800 hover:border-blue-500/40 hover:bg-zinc-900 transition-all group"
+                  className="group rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
                 >
-                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-3">
-                    <FileText className="w-3 h-3" />
+                  <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    <FileText className="h-3 w-3" />
                     {a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ""}
                   </div>
-                  <h3 className="font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2 mb-2 leading-snug">
+                  <h3 className="mb-2 line-clamp-2 font-display font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
                     {a.title}
                   </h3>
                   {a.excerpt && (
-                    <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed">{a.excerpt}</p>
+                    <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{a.excerpt}</p>
                   )}
                 </Link>
               ))}
@@ -259,8 +273,106 @@ export default async function TopicPage({ params }: Props) {
           </section>
         )}
 
-        {allArticles.length === 0 && (
-          <p className="text-zinc-600 text-center py-16 italic">
+        {/* NEW — Toolkit: practical resources for this topic's pillar.
+            Pillar-level, not topic-level — resources are tagged by pillar
+            only (4 buckets), not by each of the 38 topics, so the same
+            handful of resources can appear across every topic in a given
+            pillar. Still a real improvement over the previous dead end. */}
+        {pillarResources.length > 0 && (
+          <section className="mb-12">
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">From the Toolkit</h2>
+              <Link href="/guides" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+                Full toolkit <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {pillarResources.map((resource) => {
+                const ResIcon = RESOURCE_ICONS[resource.type] ?? Link2;
+                return (
+                  <a
+                    key={resource.id}
+                    href={resource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-4 rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <ResIcon className="h-4 w-4" />
+                    </div>
+                    <span className="font-display font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                      {resource.name}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* NEW — Challenges: same honest, non-pillar-filtered cross-link
+            used on the category pages (see ChallengesTeaser.tsx). */}
+        <section className="mb-12">
+          <ChallengesTeaser journey={pillarJourney} />
+        </section>
+
+        {/* NEW — Stories: real experiences from men in this topic's
+            pillar. Expect this empty for a while on most topics — no
+            existing signal to backfill stories from, unlike resources. */}
+        {pillarStories.length > 0 && (
+          <section className="mb-12">
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Stories</h2>
+              <Link href="/stories" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+                All stories <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {pillarStories.map((story) => (
+                <Link
+                  key={story.id}
+                  href={`/stories/${story.id}`}
+                  className="group rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
+                >
+                  <h3 className="mb-2 line-clamp-2 font-display font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                    {story.title}
+                  </h3>
+                  {story.excerpt && (
+                    <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{story.excerpt}</p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* NEW — Community: contextual discussions for this topic's pillar */}
+        {communitySnippets.length > 0 && (
+          <section className="mb-12">
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">From the Community</h2>
+              <Link href="/community" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+                All discussions <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {communitySnippets.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/community/${post.id}`}
+                  className="group rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
+                >
+                  <p className="line-clamp-3 font-display font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                    {post.title}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {isEmpty && (
+          <p className="py-16 text-center italic text-muted-foreground">
             Articles on this topic are coming soon.
           </p>
         )}

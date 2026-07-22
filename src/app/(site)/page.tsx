@@ -16,15 +16,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import HorizonMotif from "@/components/HorizonMotif";
-import {
-  ArrowRight, MessageSquare,
-  Brain, HeartPulse, Dumbbell, Briefcase, Flame, TrendingUp,
-} from "lucide-react";
+import { ArrowRight, MessageSquare, Brain } from "lucide-react";
 import { db } from "@/db";
 import { articles, categories, communityPosts, communityComments } from "@/db/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { formatDistanceToNowStrict } from "date-fns";
-import type { ElementType } from "react";
+import { CAT_ICONS, CATEGORY_TINTS, DEFAULT_TINT } from "@/lib/category-style";
 
 // Swap this for real photography whenever you have it — a real, warm,
 // unguarded moment (walking, thinking, somewhere quiet). Until then this
@@ -42,23 +39,9 @@ const COMMUNITY_SEED: CommunitySnippet[] = [
   { title: "Lost my job three months ago. Still haven't told my dad.", replyCount: 8, time: "5 hours ago", href: "/community" },
 ];
 
-// Category tints — keyed by the literal `color` string stored in the DB
-// (unchanged, so existing category rows don't need any data migration),
-// remapped to muted, warm-harmonized pairs that hold contrast in both
-// light and dark mode.
-const CAT_ICONS: Record<string, ElementType> = {
-  blue: Brain, rose: HeartPulse, green: Dumbbell,
-  emerald: Briefcase, amber: Flame, purple: TrendingUp,
-};
-const CATEGORY_TINTS: Record<string, { text: string }> = {
-  blue:    { text: "text-slate-600 dark:text-slate-300" },
-  rose:    { text: "text-rose-700 dark:text-rose-300" },
-  green:   { text: "text-teal-700 dark:text-teal-300" },
-  emerald: { text: "text-emerald-700 dark:text-emerald-300" },
-  amber:   { text: "text-primary" },
-  purple:  { text: "text-purple-700 dark:text-purple-300" },
-};
-const DEFAULT_TINT = CATEGORY_TINTS.blue!;
+// CAT_ICONS / CATEGORY_TINTS / DEFAULT_TINT now live in
+// @/lib/category-style — shared with the category hub pages so a given
+// category reads as the same color everywhere it appears, not just here.
 
 // ─── Data fetchers ────────────────────────────────────────────────────────────
 // Every fetcher follows the file's existing convention: a direct, narrow

@@ -10,6 +10,7 @@ import {
   tags,
   socialDrafts,
   categories,
+  topics,
 } from "@/db/schema";
 import { callAiJson } from "./ai";
 import { makeLogger } from "./logger";
@@ -18,6 +19,7 @@ import {
   DEFAULT_RESEARCH_PROMPT,
   DEFAULT_WRITING_PROMPT,
   DEFAULT_SEO_PROMPT,
+  DEFAULT_CATEGORIZE_PROMPT,
   DEFAULT_SOCIAL_PROMPT,
   interpolate,
 } from "./prompts";
@@ -55,6 +57,11 @@ interface SeoOutput {
   ogDescription: string;
   imageAltText: string;
   canonicalUrl: string;
+}
+
+interface CategorizeOutput {
+  matchedTopicSlug: string | null;
+  reasoning: string;
 }
 
 interface SocialOutput {
@@ -181,7 +188,6 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
     const template = settings?.researchPrompt ?? DEFAULT_RESEARCH_PROMPT;
     const prompt = interpolate(template, { topic: job.topic });
 
-    const start = Date.now();
     const { data, durationMs } = await callAiJson<ResearchOutput>({
       system: "You are a research specialist for a men's emotional wellbeing platform.",
       prompt,
@@ -280,6 +286,91 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
     return;
   }
 
+  // ── STAGE 3b: Categorize ───────────────────────────────────────────────────
+  // Resolves categoryId + topicId from the actual generated content instead
+  // of always using automationSettings.defaultCategoryId. Non-fatal, same
+  // posture as image/social below: if this stage fails or can't find a
+  // confident match, the pipeline falls back to exactly the behavior every
+  // article had before this stage existed — defaultCategoryId, no topic.
+  let resolvedCategoryId: number | null = settings?.defaultCategoryId ?? null;
+  let resolvedTopicId: number | null = null;
+  try {
+    await setStage(jobId, "categorize");
+    const stageLogger = makeLogger(jobId, "categorize");
+    await stageLogger.info("Matching article to a category/topic");
+
+    const topicRows = await db
+      .select({
+        topicId: topics.id,
+        topicSlug: topics.slug,
+        topicName: topics.name,
+        topicDescription: topics.description,
+        categoryId: topics.categoryId,
+        categoryName: categories.name,
+      })
+      .from(topics)
+      .leftJoin(categories, eq(topics.categoryId, categories.id));
+
+    if (topicRows.length === 0) {
+      await stageLogger.warn("No topics found in the database — using default category");
+    } else {
+      const topicOptions = topicRows
+        .map(
+          (t) =>
+            `${t.categoryName ?? "Uncategorized"} > ${t.topicName} — ${t.topicDescription ?? "no description"} [slug: ${t.topicSlug}]`
+        )
+        .join("\n");
+
+      const template = settings?.categorizePrompt ?? DEFAULT_CATEGORIZE_PROMPT;
+      const prompt = interpolate(template, {
+        title: writing.title,
+        excerpt: writing.excerpt,
+        angle: research.angle,
+        topicOptions,
+      });
+
+      const { data: categorization, durationMs } = await callAiJson<CategorizeOutput>({
+        system: "You are a content taxonomist for a men's emotional wellbeing platform.",
+        prompt,
+      });
+
+      const matched = categorization.matchedTopicSlug
+        ? topicRows.find((t) => t.topicSlug === categorization.matchedTopicSlug)
+        : undefined;
+
+      if (matched) {
+        resolvedCategoryId = matched.categoryId;
+        resolvedTopicId = matched.topicId;
+      } else {
+        await stageLogger.warn(
+          `No confident topic match ("${categorization.reasoning}") — using default category`
+        );
+      }
+
+      await db
+        .update(automationJobs)
+        .set({
+          categorization: {
+            ...categorization,
+            resolvedCategoryId,
+            resolvedTopicId,
+          } as unknown as Record<string, unknown>,
+        })
+        .where(eq(automationJobs.id, jobId));
+
+      await stageLogger.timed(`Categorize complete via Gemini`, durationMs, {
+        matchedTopicSlug: categorization.matchedTopicSlug,
+        reasoning: categorization.reasoning,
+      });
+    }
+  } catch (err) {
+    // Non-fatal — resolvedCategoryId already defaults to
+    // settings.defaultCategoryId, same as every article got before this
+    // stage existed.
+    const msg = err instanceof Error ? err.message : String(err);
+    await makeLogger(jobId, "categorize").warn(`Categorize failed (non-fatal): ${msg}`);
+  }
+
   // ── STAGE 4: Image ─────────────────────────────────────────────────────────
   let featuredImageUrl: string | null = null;
   try {
@@ -333,8 +424,12 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
         ? writing.readingTimeMinutes
         : estimateReadingTime(wordCount);
 
-    // Resolve default category
-    let categoryId: number | null = settings?.defaultCategoryId ?? null;
+    // Category + topic resolved by the categorize stage above (falls back
+    // to settings.defaultCategoryId / null if that stage found no
+    // confident match or failed) — this is the one line that changed from
+    // every article always getting the same fixed default.
+    const categoryId = resolvedCategoryId;
+    const topicId = resolvedTopicId;
 
     const [inserted] = await db
       .insert(articles)
@@ -345,6 +440,7 @@ export async function runAutomationPipeline(jobId: number): Promise<void> {
         content: writing.content,
         status: "draft",
         categoryId,
+        topicId,
         featuredImage: featuredImageUrl,
         authorName: settings?.defaultAuthor ?? "MenWhoFeel Core",
         readingTime,

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import {
   PlayCircle, FileText, Briefcase, Brain,
@@ -19,53 +18,55 @@ export type ResourceItem = {
   category: string;
 };
 
-interface Props {
-  initialResources: ResourceItem[];
-}
+// NEW (Phase 3): pillars are now real database rows, not a hardcoded
+// object — name/description come from here. Visual treatment (icon,
+// colors) still lives client-side in PILLAR_VISUALS below, keyed by the
+// stable `slug` rather than the editable `name`, so an admin renaming a
+// pillar later doesn't silently break its icon/color.
+export type PillarRecord = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+};
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-
-const CATEGORY_CONFIG: Record<string, {
+type CategoryStyle = {
   icon: React.ElementType;
   color: string;
   bg: string;
   border: string;
   gradient: string;
   description: string;
-}> = {
-  "Mental & Emotional Health": {
-    icon: Brain,
-    color: "text-blue-400",
-    bg: "bg-blue-400/10",
-    border: "border-blue-400/20",
-    gradient: "from-blue-500/20 to-transparent",
-    description: "Understand your mind, manage your emotions, build real resilience.",
+};
+
+interface Props {
+  initialResources: ResourceItem[];
+  pillars: PillarRecord[];
+}
+
+// ─── Config ───────────────────────────────────────────────────────────────────
+
+// Visual-only, keyed by pillar slug — matches supabase_migration_pillars.sql's
+// seed slugs exactly. Name and description now come from the `pillars` prop.
+const PILLAR_VISUALS: Record<string, Omit<CategoryStyle, "description">> = {
+  "mental-emotional-health": {
+    icon: Brain, color: "text-blue-400", bg: "bg-blue-400/10",
+    border: "border-blue-400/20", gradient: "from-blue-500/20 to-transparent",
   },
-  "Work & Financial Stability": {
-    icon: Briefcase,
-    color: "text-emerald-400",
-    bg: "bg-emerald-400/10",
-    border: "border-emerald-400/20",
-    gradient: "from-emerald-500/20 to-transparent",
-    description: "Take control of your money, your career, and your sense of security.",
+  "work-financial-stability": {
+    icon: Briefcase, color: "text-emerald-400", bg: "bg-emerald-400/10",
+    border: "border-emerald-400/20", gradient: "from-emerald-500/20 to-transparent",
   },
-  "Relationships & Stress": {
-    icon: HeartPulse,
-    color: "text-rose-400",
-    bg: "bg-rose-400/10",
-    border: "border-rose-400/20",
-    gradient: "from-rose-500/20 to-transparent",
-    description: "Navigate pressure, conflict, and connection without burning out.",
+  "relationships-stress": {
+    icon: HeartPulse, color: "text-rose-400", bg: "bg-rose-400/10",
+    border: "border-rose-400/20", gradient: "from-rose-500/20 to-transparent",
   },
-  "Physical Wellbeing": {
-    icon: Dumbbell,
-    color: "text-amber-400",
-    bg: "bg-amber-400/10",
-    border: "border-amber-400/20",
-    gradient: "from-amber-500/20 to-transparent",
-    description: "Sleep, movement, energy — the physical foundation everything else runs on.",
+  "physical-wellbeing": {
+    icon: Dumbbell, color: "text-amber-400", bg: "bg-amber-400/10",
+    border: "border-amber-400/20", gradient: "from-amber-500/20 to-transparent",
   },
 };
+const DEFAULT_VISUAL = PILLAR_VISUALS["mental-emotional-health"]!;
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
   video: PlayCircle,
@@ -81,26 +82,22 @@ const TYPE_COLORS: Record<string, string> = {
   link: "bg-zinc-600 text-white",
 };
 
-const CATEGORIES = Object.keys(CATEGORY_CONFIG);
-
 // ─── Category drill-down view ─────────────────────────────────────────────────
 // Uses the already-loaded initialResources — no tRPC, no loading state.
 
 function CategoryView({
   category,
+  config,
   items,
   onBack,
 }: {
   category: string;
+  config: CategoryStyle | undefined;
   items: ResourceItem[];
   onBack: () => void;
 }) {
   const [activeType, setActiveType] = useState<"all" | "video" | "pdf" | "book" | "link">("all");
 
-  // Reset type filter when category changes
-  useEffect(() => { setActiveType("all"); }, [category]);
-
-  const config = CATEGORY_CONFIG[category];
   const Icon = config?.icon ?? Brain;
 
   const filtered = activeType === "all" ? items : items.filter((i) => i.type === activeType);
@@ -195,7 +192,13 @@ function CategoryView({
 // ─── Search results ───────────────────────────────────────────────────────────
 // Client-side search across all server-preloaded resources.
 
-function SearchResults({ term, resources }: { term: string; resources: ResourceItem[] }) {
+function SearchResults({
+  term, resources, categoryConfig,
+}: {
+  term: string;
+  resources: ResourceItem[];
+  categoryConfig: Record<string, CategoryStyle>;
+}) {
   const results = useMemo(() => {
     const t = term.toLowerCase();
     return resources.filter(
@@ -216,7 +219,7 @@ function SearchResults({ term, resources }: { term: string; resources: ResourceI
       {results.map((item) => {
         const TIcon = TYPE_ICONS[item.type] ?? LayoutGrid;
         const colorClass = TYPE_COLORS[item.type] ?? "bg-zinc-600 text-white";
-        const config = CATEGORY_CONFIG[item.category];
+        const config = categoryConfig[item.category];
         return (
           <a
             key={item.id}
@@ -245,12 +248,28 @@ function SearchResults({ term, resources }: { term: string; resources: ResourceI
 }
 
 // ─── Main client component ────────────────────────────────────────────────────
-// Receives initialResources pre-populated from the server. Category names,
-// resource titles, and counts all appear in the raw HTML — no JS needed.
+// Receives initialResources + pillars pre-populated from the server.
+// Category names, resource titles, and counts all appear in the raw HTML —
+// no JS needed.
 
-export default function GuidesClient({ initialResources }: Props) {
+export default function GuidesClient({ initialResources, pillars }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+
+  // Real pillar rows (name + description from the DB) merged with the
+  // client-side visual lookup (icon/colors, keyed by the stable slug).
+  // Falls back to the Mental & Emotional Health visual if a pillar's slug
+  // isn't recognized yet, rather than rendering with no icon at all.
+  const categoryConfig = useMemo(() => {
+    const map: Record<string, CategoryStyle> = {};
+    for (const p of pillars) {
+      const visual = PILLAR_VISUALS[p.slug] ?? DEFAULT_VISUAL;
+      map[p.name] = { ...visual, description: p.description ?? "" };
+    }
+    return map;
+  }, [pillars]);
+
+  const categories = useMemo(() => pillars.map((p) => p.name), [pillars]);
 
   // Group resources by category
   const byCategory = useMemo(() => {
@@ -281,7 +300,9 @@ export default function GuidesClient({ initialResources }: Props) {
       <div className="min-h-screen py-12 px-4">
         <div className="mx-auto max-w-3xl">
           <CategoryView
+            key={openCategory}
             category={openCategory}
+            config={categoryConfig[openCategory]}
             items={byCategory[openCategory] ?? []}
             onBack={() => setOpenCategory(null)}
           />
@@ -318,7 +339,7 @@ export default function GuidesClient({ initialResources }: Props) {
         {isSearching ? (
           <div className="mb-16">
             <h2 className="text-lg font-semibold mb-4">Search results</h2>
-            <SearchResults term={searchTerm} resources={initialResources} />
+            <SearchResults term={searchTerm} resources={initialResources} categoryConfig={categoryConfig} />
           </div>
         ) : (
           <>
@@ -332,8 +353,9 @@ export default function GuidesClient({ initialResources }: Props) {
 
               {/* Category folder cards — names and counts in the HTML */}
               <div className="grid md:grid-cols-2 gap-5">
-                {CATEGORIES.map((cat) => {
-                  const config = CATEGORY_CONFIG[cat];
+                {categories.map((cat) => {
+                  const config = categoryConfig[cat];
+                  if (!config) return null;
                   const Icon = config.icon;
                   const counts = categoryCounts[cat] ?? { total: 0, byType: {} };
                   const typeEntries = Object.entries(counts.byType).filter(([, v]) => v > 0);

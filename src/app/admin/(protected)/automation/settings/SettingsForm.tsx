@@ -23,6 +23,7 @@ import {
   DEFAULT_RESEARCH_PROMPT,
   DEFAULT_WRITING_PROMPT,
   DEFAULT_SEO_PROMPT,
+  DEFAULT_CATEGORIZE_PROMPT,
   DEFAULT_SOCIAL_PROMPT,
 } from "@/lib/automation/prompts";
 
@@ -40,6 +41,7 @@ type Settings = {
   researchPrompt: string | null;
   writingPrompt: string | null;
   seoPrompt: string | null;
+  categorizePrompt: string | null;
   socialPrompt: string | null;
 } | null;
 
@@ -108,6 +110,7 @@ export function SettingsForm({
     researchPrompt: settings?.researchPrompt ?? null,
     writingPrompt: settings?.writingPrompt ?? null,
     seoPrompt: settings?.seoPrompt ?? null,
+    categorizePrompt: settings?.categorizePrompt ?? null,
     socialPrompt: settings?.socialPrompt ?? null,
   });
   const [isPending, startTransition] = useTransition();
@@ -161,7 +164,7 @@ export function SettingsForm({
               </Field>
 
               <Field>
-                <FieldLabel>Default category</FieldLabel>
+                <FieldLabel>Default category (fallback)</FieldLabel>
                 <Select
                   value={form.defaultCategoryId ? String(form.defaultCategoryId) : "none"}
                   onValueChange={(v) => set("defaultCategoryId", v === "none" ? null : Number(v))}
@@ -177,7 +180,8 @@ export function SettingsForm({
                   </SelectContent>
                 </Select>
                 <FieldDescription>
-                  Generated articles will be assigned this category. You can change it before publishing.
+                  Each generated article is now matched to a category and topic automatically (see the Categorize
+                  prompt below). This is only used as the fallback when that match isn&apos;t confident.
                 </FieldDescription>
               </Field>
             </CardContent>
@@ -202,7 +206,7 @@ export function SettingsForm({
                 </Select>
                 <FieldDescription>
                   Fal.ai generates 1200×630 editorial images. Requires FAL_API_KEY env var.
-                  Set to "Disabled" to skip image generation (articles will have no featured image).
+                  Set to &quot;Disabled&quot; to skip image generation (articles will have no featured image).
                 </FieldDescription>
               </Field>
 
@@ -319,10 +323,11 @@ export function SettingsForm({
             <CardContent className="space-y-5">
               {(
                 [
-                  { key: "researchPrompt", label: "Research prompt", def: DEFAULT_RESEARCH_PROMPT },
-                  { key: "writingPrompt",  label: "Writing prompt",  def: DEFAULT_WRITING_PROMPT },
-                  { key: "seoPrompt",      label: "SEO prompt",      def: DEFAULT_SEO_PROMPT },
-                  { key: "socialPrompt",   label: "Social prompt",   def: DEFAULT_SOCIAL_PROMPT },
+                  { key: "researchPrompt",   label: "Research prompt",   def: DEFAULT_RESEARCH_PROMPT },
+                  { key: "writingPrompt",    label: "Writing prompt",    def: DEFAULT_WRITING_PROMPT },
+                  { key: "seoPrompt",        label: "SEO prompt",        def: DEFAULT_SEO_PROMPT },
+                  { key: "categorizePrompt", label: "Categorize prompt", def: DEFAULT_CATEGORIZE_PROMPT },
+                  { key: "socialPrompt",     label: "Social prompt",     def: DEFAULT_SOCIAL_PROMPT },
                 ] as const
               ).map(({ key, label, def }) => (
                 <Field key={key}>

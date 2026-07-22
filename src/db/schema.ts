@@ -10,6 +10,7 @@ import {
   integer,
   boolean,
   index,
+  uniqueIndex,
   uuid,
   jsonb,
   primaryKey,
@@ -25,6 +26,12 @@ export const challengeCategoryEnum = pgEnum("challenge_category", ["daily", "wee
 export const challengeTypeEnum = pgEnum("challenge_type", ["exercise", "habit", "meditation", "discipline", "spot_check"]);
 export const assessmentCategoryEnum = pgEnum("assessment_category", ["thriving", "stable", "mild_distress", "moderate_distress", "severe_distress"]);
 export const guideCategoryEnum = pgEnum("guide_category", ["overcoming_crisis", "daily_improvement", "skill_building", "emotional_regulation", "relationships", "productivity", "physical_health"]);
+// NEW: what kind of original Toolkit content this is (Phase 3 — repurposing
+// selfHelpGuides for first-party content, distinct from resources' curated
+// external links). Separate from guideCategoryEnum above, which stays as an
+// unused legacy field — see the pillarId/topicId columns below for the
+// taxonomy that's actually used going forward.
+export const guideFormatEnum = pgEnum("guide_format", ["worksheet", "checklist", "planner", "template", "journal", "pdf"]);
 export const difficultyEnum = pgEnum("difficulty", ["beginner", "intermediate", "advanced"]);
 export const resourceTypeEnum = pgEnum("resource_type", ["video", "pdf", "book", "link"]);
 
@@ -82,10 +89,20 @@ export const stories = pgTable(
     featured: boolean("featured").default(false),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+    // NEW (Phase 4): unlike categories/resources, there's no existing
+    // signal to backfill these from — no color, no naming convention,
+    // nothing already pillar-shaped. Existing stories start out
+    // untagged; new ones can be tagged at submission (see
+    // stories-router.ts's submitStory) or by editorial review later.
+    // Both nullable for exactly that reason.
+    pillarId: integer("pillarId").references(() => pillars.id),
+    topicId: integer("topicId").references(() => topics.id),
   },
   (table) => ({
     statusIdx: index("status_idx").on(table.status),
     createdAtIdx: index("created_at_idx").on(table.createdAt),
+    pillarIdx: index("stories_pillar_idx").on(table.pillarId),
+    topicIdx: index("stories_topic_idx").on(table.topicId),
   })
 );
 
@@ -207,9 +224,28 @@ export const selfHelpGuides = pgTable(
     featured: boolean("featured").default(false),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+    // NEW (Phase 3): the taxonomy this table actually uses going forward.
+    // `category` above (guideCategoryEnum) is left in place but unused —
+    // nothing read it before this table was repurposed, so there's no
+    // live behavior to preserve, and dropping it isn't worth a destructive
+    // migration for a column that costs nothing sitting idle.
+    pillarId: integer("pillarId").references(() => pillars.id),
+    topicId: integer("topicId").references(() => topics.id),
+    // What kind of original content this is (worksheet/checklist/planner/
+    // template/journal/pdf). Nullable: existing rows, if any, predate this
+    // column and haven't been categorized this way yet.
+    format: guideFormatEnum("format"),
+    // Set only for genuine downloadable attachments (e.g. a printable PDF
+    // hosted on Supabase Storage, same as articles.featuredImage). Guides
+    // meant to be read/printed as a styled page instead use `content`
+    // above and leave this null — those need a public rendering page that
+    // doesn't exist yet (tracked as a follow-up, see MIGRATION_PLAN.md).
+    fileUrl: varchar("fileUrl", { length: 1000 }),
   },
   (table) => ({
     categoryIdx: index("guide_category_idx").on(table.category),
+    pillarIdx: index("self_help_guides_pillar_idx").on(table.pillarId),
+    topicIdx: index("self_help_guides_topic_idx").on(table.topicId),
   })
 );
 
@@ -246,9 +282,27 @@ export const resources = pgTable(
     type: resourceTypeEnum("type").notNull(),
     url: varchar("url", { length: 1000 }).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    // NEW: formal FK companion to the freeform `category` text above.
+    // `category` already holds the exact 4 pillar names today ("Mental &
+    // Emotional Health", etc. — see GuidesClient.tsx's CATEGORY_CONFIG),
+    // so the backfill in supabase_migration_pillars.sql is a straight
+    // string match, not a judgment call. `category` itself is untouched;
+    // nothing reads pillarId yet — this just gives future code a real FK
+    // instead of a string to key off of. `pillars` is declared further
+    // down this file (taxonomy section) — Drizzle resolves the reference
+    // lazily via this callback, so declaration order doesn't matter.
+    pillarId: integer("pillarId").references(() => pillars.id),
+    // NEW (Phase 3): topic-level tagging, additive alongside pillarId.
+    // Nullable — most existing resources are pillar-scoped only for now;
+    // the topic-first/pillar-fallback resolution that actually uses this
+    // is Phase 5, not this one. This column just makes the data capable
+    // of it.
+    topicId: integer("topicId").references(() => topics.id),
   },
   (table) => ({
     categoryIdx: index("resource_category_idx").on(table.category),
+    pillarIdx: index("resources_pillar_idx").on(table.pillarId),
+    topicIdx: index("resources_topic_idx").on(table.topicId),
   })
 );
 
@@ -347,6 +401,271 @@ export const anonymousStats = pgTable("anonymous_stats", {
 });
 
 // ==========================================
+// Journeys (Phase 7)
+// ==========================================
+// Generalizes The Forge's mechanics (day-unlock pacing, streaks, pause/
+// resume — see forge-logic.ts, which none of this touches) into pillar-
+// specific journeys, per MIGRATION_PLAN.md 4.6. Deliberately NOT a
+// migration of Forge's data: challenges/forgeProgress/challengeResponses
+// above are untouched and keep running exactly as they do today. This is
+// new, parallel infrastructure for the three journeys Forge doesn't
+// cover (Career Reset, Relationship Reset, Physical Reset).
+//
+// `journeys` is a registry — one row per journey, including one for The
+// Forge itself (externalHref set, no journeyDays/journeyProgress rows —
+// see that column's comment) so a pillar-driven UI (ChallengesTeaser) has
+// one consistent place to look up "what's this pillar's journey" rather
+// than a hardcoded special case for Forge.
+export const journeys = pgTable(
+  "journeys",
+  {
+    id: serial("id").primaryKey(),
+    pillarId: integer("pillarId").references(() => pillars.id),
+    slug: varchar("slug", { length: 100 }).unique().notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    totalDays: integer("totalDays").notNull(),
+    // Set only for The Forge's registry row. A non-null value here means
+    // "this journey's real experience lives elsewhere" — the UI should
+    // link straight to this href instead of /challenges/[slug], and
+    // there are no journeyDays/journeyProgress rows for this journeyId
+    // (Forge's day content and progress live in challenges/forgeProgress
+    // instead, untouched by this migration).
+    externalHref: varchar("externalHref", { length: 255 }),
+    sortOrder: integer("sortOrder").default(0),
+    createdAt: timestamp("createdAt").defaultNow(),
+  },
+  (table) => ({
+    slugIdx: index("journeys_slug_idx").on(table.slug),
+    pillarIdx: index("journeys_pillar_idx").on(table.pillarId),
+  })
+);
+
+// A journey's day-by-day content — the equivalent of `challenges`'
+// category='daily' rows, but scoped to one journey via journeyId instead
+// of sharing a table with generic weekly/monthly challenges. Seeded with
+// structural placeholders only (see supabase_migration_journeys.sql) —
+// real content is deliberately out of scope for this pass.
+export const journeyDays = pgTable(
+  "journey_days",
+  {
+    id: serial("id").primaryKey(),
+    journeyId: integer("journeyId").notNull().references(() => journeys.id, { onDelete: "cascade" }),
+    dayNumber: integer("dayNumber").notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description").notNull(),
+    instructions: text("instructions"),
+    createdAt: timestamp("createdAt").defaultNow(),
+  },
+  (table) => ({
+    journeyDayIdx: uniqueIndex("journey_days_journey_day_idx").on(table.journeyId, table.dayNumber),
+  })
+);
+
+// Mirrors forge_progress exactly (same fields, same meaning — see that
+// table's comments), minus the Deep Forge/maintenance fields, which have
+// no equivalent here yet: none of these three journeys has a "what
+// happens after you finish" continuation designed. Journey-scoped instead
+// of user-scoped: forgeProgress is one row per user (you can only ever be
+// on Forge), this is one row per (user, journey) — a user can be
+// partway through Career Reset and Physical Reset at the same time.
+export const journeyProgress = pgTable(
+  "journey_progress",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    journeyId: integer("journeyId").notNull().references(() => journeys.id, { onDelete: "cascade" }),
+    completedDays: integer("completedDays").array().default([]).notNull(),
+    skippedDays: integer("skippedDays").array().default([]).notNull(),
+    currentStreak: integer("currentStreak").default(0).notNull(),
+    longestStreak: integer("longestStreak").default(0).notNull(),
+    lastActiveDate: date("lastActiveDate"),
+    isPaused: boolean("isPaused").default(false).notNull(),
+    journeyCompleted: boolean("journeyCompleted").default(false).notNull(),
+    completionDate: date("completionDate"),
+  },
+  (table) => ({
+    userJourneyIdx: uniqueIndex("journey_progress_user_journey_idx").on(table.userId, table.journeyId),
+  })
+);
+
+// Mirrors challenge_responses (one saved reflection per real day per
+// user), journey-scoped the same way journeyProgress is above.
+export const journeyResponses = pgTable(
+  "journey_responses",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    journeyId: integer("journeyId").notNull().references(() => journeys.id, { onDelete: "cascade" }),
+    dayNumber: integer("dayNumber").notNull(),
+    dayTitle: varchar("dayTitle", { length: 255 }),
+    responseText: text("responseText"),
+    moodRating: integer("moodRating"),
+    completedAt: timestamp("completedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    userJourneyDayIdx: uniqueIndex("journey_responses_user_journey_day_idx").on(
+      table.userId,
+      table.journeyId,
+      table.dayNumber
+    ),
+  })
+);
+
+// ==========================================
+// Career Hub & Small Wins (Phases 9–10)
+// ==========================================
+// Both belong ONLY inside Work & Financial Stability, per the original
+// product brief ("Career Hub belongs ONLY inside Work & Financial
+// Stability" / same for Small Wins) — that's a fixed architectural fact,
+// not something that varies per row, so neither table gets a pillarId
+// column the way resources/stories/etc. do. Discoverability is handled
+// at the routing level instead (a dedicated /career-hub and /small-wins
+// page, plus a link from that one pillar's category page), not through
+// the generic pillar-scoped query machinery built for content that
+// actually varies by pillar.
+
+export const jobResourceCategoryEnum = pgEnum("job_resource_category", [
+  "job_board",
+  "networking",
+  "salary_research",
+  "company_research",
+  "recruiter",
+  "government_program",
+]);
+
+// Curated job-search resources — job boards, salary research, government
+// workforce programs. Reuses `status` (pending/approved/rejected, same
+// as stories) as the review gate: nothing here is public until someone
+// approves it, matching the "quality and trust over quantity" posture
+// MIGRATION_PLAN.md 4.9 calls for.
+export const jobResources = pgTable(
+  "job_resources",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description").notNull(),
+    url: varchar("url", { length: 1000 }).notNull(),
+    category: jobResourceCategoryEnum("category").notNull(),
+    // Why this is here / why it's trustworthy — shown publicly, not just
+    // an internal note, since the whole point is visible vetting.
+    trustNotes: text("trustNotes"),
+    status: statusEnum("status").default("pending").notNull(),
+    featured: boolean("featured").default(false),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index("job_resources_status_idx").on(table.status),
+    categoryIdx: index("job_resources_category_idx").on(table.category),
+  })
+);
+
+export const smallWinCategoryEnum = pgEnum("small_win_category", [
+  "ai_training",
+  "freelance",
+  "microtasks",
+  "crowdsourcing",
+  "user_testing",
+  "remote_work",
+]);
+
+// Manually curated income opportunities — see MIGRATION_PLAN.md 4.9 for
+// the reasoning: no API integrations, editorial review before anything
+// goes public (same status enum/gate as jobResources above), because this
+// is exactly the kind of feature predatory "quick income" schemes target
+// the same audience for.
+export const smallWins = pgTable(
+  "small_wins",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description").notNull(),
+    url: varchar("url", { length: 1000 }).notNull(),
+    category: smallWinCategoryEnum("category").notNull(),
+    // Free text on purpose, not a number — real pay varies too much
+    // ("$15-25/hr", "$3-8 per task", "varies by project") to force into
+    // a single numeric column, and false precision here would undercut
+    // the trust this feature depends on.
+    payDetails: varchar("payDetails", { length: 255 }),
+    requirements: text("requirements"),
+    trustNotes: text("trustNotes"),
+    status: statusEnum("status").default("pending").notNull(),
+    featured: boolean("featured").default(false),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index("small_wins_status_idx").on(table.status),
+    categoryIdx: index("small_wins_category_idx").on(table.category),
+  })
+);
+
+// ==========================================
+// Resume Builder
+// ==========================================
+// Career Hub's Resume Builder — the first table in this whole migration
+// holding real PII (full name, phone, employer names) rather than
+// pseudonymous content. Per the product decision: saved server-side, tied
+// to the same anonymous session used by Forge/Journeys, so a resume
+// persists and can be resumed later — not client-side-only, which was
+// the lower-risk recommendation but not the direction chosen. Given that,
+// this table gets stricter treatment than everything else in this
+// migration: no public RLS read policy at all (see the migration file),
+// and every query must go through the resumeRouter's authedQuery
+// middleware filtering by ctx.user.id — never a public/pillar-scoped
+// query the way everything else in Career Hub is.
+//
+// One resume per user for v1 (userId is unique, same one-row-per-user
+// shape as forgeProgress) — multiple saved resumes is a reasonable future
+// addition, not needed for a first version.
+//
+// Deliberately no street address field — city/state only. Common,
+// current resume-writing guidance already advises against a full home
+// address on a public-facing document; this isn't an unusual restriction,
+// it's the normal practice.
+
+export type ResumeExperienceEntry = {
+  id: string; // client-generated, stable key for add/reorder/remove in the form
+  company: string;
+  title: string;
+  location?: string;
+  startDate: string; // "YYYY-MM"
+  endDate?: string; // omitted/empty when current is true
+  current: boolean;
+  bullets: string[];
+};
+
+export type ResumeEducationEntry = {
+  id: string;
+  school: string;
+  degree: string;
+  field?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
+export const resumes = pgTable("resumes", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  fullName: varchar("fullName", { length: 255 }),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 50 }),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 100 }),
+  summary: text("summary"),
+  template: varchar("template", { length: 50 }).default("modern").notNull(),
+  experience: jsonb("experience").$type<ResumeExperienceEntry[]>().default([]).notNull(),
+  education: jsonb("education").$type<ResumeEducationEntry[]>().default([]).notNull(),
+  skills: jsonb("skills").$type<string[]>().default([]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// ==========================================
 // Community Posts
 // ==========================================
 export const communityPosts = pgTable(
@@ -365,12 +684,24 @@ export const communityPosts = pgTable(
     deleted: boolean("deleted").default(false).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+    // NEW (Phase 6): replaces the query-time stopgap mapping
+    // (PILLAR_COMMUNITY_CATEGORIES in pillar-content.ts) with a real
+    // column. Nullable — the four tone-only categories (venting,
+    // advice_needed, success_stories, need_support_now) and
+    // self_improvement have no single pillar, same reasoning as
+    // categories.pillarId being left null for self-improvement in Phase
+    // 0. `category` itself is untouched and still required at post
+    // creation — this is additive, not a replacement for it. A full
+    // postType/pillarId split (asking two separate questions at
+    // creation) is real future scope, not part of this column.
+    pillarId: integer("pillarId").references(() => pillars.id),
   },
   (table) => ({
     categoryIdx: index("community_posts_category_idx").on(table.category),
     createdAtIdx: index("community_posts_created_at_idx").on(table.createdAt),
     upvoteIdx: index("community_posts_upvote_idx").on(table.upvoteCount),
     flaggedIdx: index("community_posts_flagged_idx").on(table.flagged),
+    pillarIdx: index("community_posts_pillar_idx").on(table.pillarId),
   })
 );
 
@@ -493,6 +824,34 @@ export const assessmentActionPlans = pgTable("assessment_action_plans", {
 });
 
 // ==========================================
+// NEW: Pillars
+// ==========================================
+// The four life-pillar taxonomy from the product principles (Intel /
+// Toolkit / Challenge / Community / Career Hub / Small Wins all roll up
+// to one of these). Deliberately mirrors `categories` in shape — the same
+// admin CRUD pattern already proven by CategoryDialog.tsx will work here
+// once a PillarDialog is built (not part of this phase; see
+// MIGRATION_PLAN.md Phase 0, which is schema-only).
+// Seeded with exactly 4 rows by supabase_migration_pillars.sql, which also
+// backfills categories.pillarId and resources.pillarId below.
+export const pillars = pgTable(
+  "pillars",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 100 }).notNull(),
+    slug: varchar("slug", { length: 100 }).unique().notNull(),
+    description: text("description"),
+    color: varchar("color", { length: 50 }),
+    icon: varchar("icon", { length: 50 }),
+    sortOrder: integer("sortOrder").default(0),
+    createdAt: timestamp("createdAt").defaultNow(),
+  },
+  (table) => ({
+    slugIdx: index("pillars_slug_idx").on(table.slug),
+  })
+);
+
+// ==========================================
 // NEW: Categories
 // ==========================================
 export const categories = pgTable(
@@ -506,9 +865,16 @@ export const categories = pgTable(
     icon: varchar("icon", { length: 50 }),
     sortOrder: integer("sortOrder").default(0),
     createdAt: timestamp("createdAt").defaultNow(),
+    // NEW: which of the 4 pillars this category rolls up to. Nullable —
+    // "self-improvement" is deliberately left unmapped on backfill (it's a
+    // cross-cutting theme, not a single pillar; see MIGRATION_PLAN.md
+    // Section 9 for the reasoning and the recommended alternative — tag
+    // it via the existing tags/articleTags system instead).
+    pillarId: integer("pillarId").references(() => pillars.id),
   },
   (table) => ({
     slugIdx: index("categories_slug_idx").on(table.slug),
+    pillarIdx: index("categories_pillar_idx").on(table.pillarId),
   })
 );
 
@@ -607,6 +973,11 @@ export const articles = pgTable(
     // Minutes. Auto-estimated from word count in the editor, but stored
     // (not computed on every public page view) and editable.
     readingTime: integer("readingTime"),
+    // NEW (Phase 3): reuses the same difficultyEnum selfHelpGuides already
+    // had (beginner/intermediate/advanced) rather than inventing a second
+    // one. Nullable — not every article needs a difficulty rating; the
+    // admin form treats it as optional.
+    difficulty: difficultyEnum("difficulty"),
   },
   (table) => ({
     statusIdx: index("articles_status_idx").on(table.status),
@@ -659,16 +1030,64 @@ export const contactMessages = pgTable(
 // Relations
 // ==========================================
 
-// Categories → Topics
-export const categoriesRelations = relations(categories, ({ many }) => ({
+// Categories → Topics, Categories → Pillar
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
   topics: many(topics),
   articles: many(articles),
+  pillar: one(pillars, { fields: [categories.pillarId], references: [pillars.id] }),
 }));
 
-// Topics → Articles, Topics → Categories
+// Pillars → Categories, Pillars → Resources
+export const pillarsRelations = relations(pillars, ({ many }) => ({
+  categories: many(categories),
+  resources: many(resources),
+  selfHelpGuides: many(selfHelpGuides),
+  stories: many(stories),
+  communityPosts: many(communityPosts),
+  journeys: many(journeys),
+}));
+
+// Journeys → Pillar, Journeys → Days, Journeys → Progress
+export const journeysRelations = relations(journeys, ({ one, many }) => ({
+  pillar: one(pillars, { fields: [journeys.pillarId], references: [pillars.id] }),
+  days: many(journeyDays),
+  progress: many(journeyProgress),
+  responses: many(journeyResponses),
+}));
+
+export const journeyDaysRelations = relations(journeyDays, ({ one }) => ({
+  journey: one(journeys, { fields: [journeyDays.journeyId], references: [journeys.id] }),
+}));
+
+export const journeyProgressRelations = relations(journeyProgress, ({ one }) => ({
+  journey: one(journeys, { fields: [journeyProgress.journeyId], references: [journeys.id] }),
+  user: one(users, { fields: [journeyProgress.userId], references: [users.id] }),
+}));
+
+export const journeyResponsesRelations = relations(journeyResponses, ({ one }) => ({
+  journey: one(journeys, { fields: [journeyResponses.journeyId], references: [journeys.id] }),
+  user: one(users, { fields: [journeyResponses.userId], references: [users.id] }),
+}));
+
+// Resources → Pillar, Resources → Topic
+export const resourcesRelations = relations(resources, ({ one }) => ({
+  pillar: one(pillars, { fields: [resources.pillarId], references: [pillars.id] }),
+  topic: one(topics, { fields: [resources.topicId], references: [topics.id] }),
+}));
+
+// Self Help Guides → Pillar, Self Help Guides → Topic
+export const selfHelpGuidesRelations = relations(selfHelpGuides, ({ one }) => ({
+  pillar: one(pillars, { fields: [selfHelpGuides.pillarId], references: [pillars.id] }),
+  topic: one(topics, { fields: [selfHelpGuides.topicId], references: [topics.id] }),
+}));
+
+// Topics → Articles, Topics → Categories, Topics → Resources, Topics → Self Help Guides, Topics → Stories
 export const topicsRelations = relations(topics, ({ one, many }) => ({
   category: one(categories, { fields: [topics.categoryId], references: [categories.id] }),
   articles: many(articles),
+  resources: many(resources),
+  selfHelpGuides: many(selfHelpGuides),
+  stories: many(stories),
 }));
 
 // Tags ↔ Articles (via articleTags)
@@ -694,8 +1113,10 @@ export const articleCommentsRelations = relations(articleComments, ({ one }) => 
 }));
 
 // Stories
-export const storiesRelations = relations(stories, ({ many }) => ({
+export const storiesRelations = relations(stories, ({ one, many }) => ({
   comments: many(storyComments),
+  pillar: one(pillars, { fields: [stories.pillarId], references: [pillars.id] }),
+  topic: one(topics, { fields: [stories.topicId], references: [topics.id] }),
 }));
 
 export const storyCommentsRelations = relations(storyComments, ({ one }) => ({
@@ -720,9 +1141,14 @@ export const challengeResponsesRelations = relations(challengeResponses, ({ one 
   user: one(users, { fields: [challengeResponses.userId], references: [users.id] }),
 }));
 
+export const resumesRelations = relations(resumes, ({ one }) => ({
+  user: one(users, { fields: [resumes.userId], references: [users.id] }),
+}));
+
 // Community
-export const communityPostsRelations = relations(communityPosts, ({ many }) => ({
+export const communityPostsRelations = relations(communityPosts, ({ one, many }) => ({
   comments: many(communityComments),
+  pillar: one(pillars, { fields: [communityPosts.pillarId], references: [pillars.id] }),
 }));
 
 export const communityCommentsRelations = relations(communityComments, ({ one, many }) => ({
@@ -764,6 +1190,10 @@ export const automationStageEnum = pgEnum("automation_stage", [
   "research",
   "writing",
   "seo",
+  // NEW (Phase 8): resolves category + topic from the generated content
+  // instead of always using automationSettings.defaultCategoryId. Sits
+  // between seo and image in the pipeline — see pipeline.ts.
+  "categorize",
   "image",
   "social",
   "complete",
@@ -795,6 +1225,9 @@ export const automationJobs = pgTable(
     research: jsonb("research"),
     writing: jsonb("writing"),
     seoData: jsonb("seo_data"),
+    // NEW (Phase 8): stores what the categorize stage decided and why,
+    // same observability pattern as research/writing/seoData above.
+    categorization: jsonb("categorization"),
     imageData: jsonb("image_data"),
     error: text("error"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -851,6 +1284,11 @@ export const automationSettings = pgTable("automation_settings", {
   researchPrompt: text("research_prompt"),
   writingPrompt: text("writing_prompt"),
   seoPrompt: text("seo_prompt"),
+  // NEW (Phase 8): admin-editable, same pattern as the four prompts
+  // above. defaultCategoryId above stops being the primary mechanism and
+  // becomes the fallback for when this stage can't confidently match a
+  // topic — see pipeline.ts.
+  categorizePrompt: text("categorize_prompt"),
   socialPrompt: text("social_prompt"),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()

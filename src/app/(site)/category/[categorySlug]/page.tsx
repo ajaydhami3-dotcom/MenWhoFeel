@@ -2,34 +2,36 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { categories, topics, articles } from "@/db/schema";
+import { categories, topics, articles, pillars } from "@/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import Breadcrumb from "@/components/Breadcrumb";
-import { ArrowRight } from "lucide-react";
+import ChallengesTeaser from "@/components/ChallengesTeaser";
+import { CAT_ICONS, CATEGORY_TINTS, DEFAULT_TINT, RESOURCE_ICONS } from "@/lib/category-style";
+import { getPillarResources, getPillarCommunityPosts, getPillarStories, getPillarJourney } from "@/server/queries/pillar-content";
+import { ArrowRight, Link2, Briefcase, TrendingUp } from "lucide-react";
 
 export const revalidate = 300;
 
 const BASE_URL = "https://www.menwhofeel.online";
 
-// Full Tailwind class strings — necessary so purge doesn't strip them
-const STYLE: Record<string, {
-  accent: string; bg: string; border: string; badge: string;
-  hoverBorder: string; hoverAccent: string; dot: string;
-}> = {
-  blue:    { accent: "text-blue-400",    bg: "bg-blue-400/10",    border: "border-blue-400/20",    badge: "bg-blue-400/20 text-blue-300",    hoverBorder: "hover:border-blue-400/40",    hoverAccent: "group-hover:text-blue-400",    dot: "bg-blue-400" },
-  rose:    { accent: "text-rose-400",    bg: "bg-rose-400/10",    border: "border-rose-400/20",    badge: "bg-rose-400/20 text-rose-300",    hoverBorder: "hover:border-rose-400/40",    hoverAccent: "group-hover:text-rose-400",    dot: "bg-rose-400" },
-  green:   { accent: "text-green-400",   bg: "bg-green-400/10",   border: "border-green-400/20",   badge: "bg-green-400/20 text-green-300",   hoverBorder: "hover:border-green-400/40",   hoverAccent: "group-hover:text-green-400",   dot: "bg-green-400" },
-  emerald: { accent: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20", badge: "bg-emerald-400/20 text-emerald-300", hoverBorder: "hover:border-emerald-400/40", hoverAccent: "group-hover:text-emerald-400", dot: "bg-emerald-400" },
-  amber:   { accent: "text-amber-400",   bg: "bg-amber-400/10",   border: "border-amber-400/20",   badge: "bg-amber-400/20 text-amber-300",   hoverBorder: "hover:border-amber-400/40",   hoverAccent: "group-hover:text-amber-400",   dot: "bg-amber-400" },
-  purple:  { accent: "text-purple-400",  bg: "bg-purple-400/10",  border: "border-purple-400/20",  badge: "bg-purple-400/20 text-purple-300",  hoverBorder: "hover:border-purple-400/40",  hoverAccent: "group-hover:text-purple-400",  dot: "bg-purple-400" },
-};
-const DEFAULT_STYLE = STYLE.blue!;
-
 type Props = { params: Promise<{ categorySlug: string }> };
 
 async function getCategoryData(slug: string) {
   try {
-    const rows = await db.select().from(categories).where(eq(categories.slug, slug)).limit(1);
+    const rows = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+        description: categories.description,
+        color: categories.color,
+        pillarId: categories.pillarId,
+        pillarName: pillars.name,
+      })
+      .from(categories)
+      .leftJoin(pillars, eq(categories.pillarId, pillars.id))
+      .where(eq(categories.slug, slug))
+      .limit(1);
     return rows[0] ?? null;
   } catch (err) {
     console.error(`[category/${slug}] getCategoryData failed:`, err);
@@ -45,15 +47,17 @@ async function getTopicsWithCount(categoryId: number) {
       .where(eq(topics.categoryId, categoryId))
       .orderBy(topics.sortOrder);
 
-    return await Promise.all(
-      topicRows.map(async (t) => {
-        const [{ count }] = await db
-          .select({ count: sql<number>`cast(count(*) as int)` })
-          .from(articles)
-          .where(and(eq(articles.topicId, t.id), eq(articles.status, "published")));
-        return { ...t, articleCount: count ?? 0 };
-      })
-    );
+    // Single grouped query instead of one COUNT(*) per topic — same fix
+    // as getHomepageCategories in page.tsx. The old version here ran an
+    // extra round trip per topic (N+1) inside a Promise.all.
+    const counts = await db
+      .select({ topicId: articles.topicId, count: sql<number>`cast(count(*) as int)` })
+      .from(articles)
+      .where(eq(articles.status, "published"))
+      .groupBy(articles.topicId);
+    const countMap = new Map(counts.map((c) => [c.topicId, c.count]));
+
+    return topicRows.map((t) => ({ ...t, articleCount: countMap.get(t.id) ?? 0 }));
   } catch (err) {
     console.error(`[category] getTopicsWithCount(${categoryId}) failed:`, err);
     return [];
@@ -67,7 +71,7 @@ async function getLatestArticles(categoryId: number) {
       .from(articles)
       .where(and(eq(articles.categoryId, categoryId), eq(articles.status, "published")))
       .orderBy(desc(articles.createdAt))
-      .limit(6);
+      .limit(4);
   } catch (err) {
     console.error(`[category] getLatestArticles(${categoryId}) failed:`, err);
     return [];
@@ -103,7 +107,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const articleCount = await getCategoryArticleCount(cat.id);
   return {
     title: { absolute: `${cat.name} | Men Who Feel` },
-    description: cat.description ?? `Explore ${cat.name} articles and topics on Men Who Feel.`,
+    description: cat.description ?? `Explore ${cat.name} articles, tools, and support on Men Who Feel.`,
     alternates: { canonical: `${BASE_URL}/category/${categorySlug}` },
     openGraph: {
       title: `${cat.name} | Men Who Feel`,
@@ -125,13 +129,21 @@ export default async function CategoryPage({ params }: Props) {
   const cat = await getCategoryData(categorySlug);
   if (!cat) notFound();
 
-  const [topicsData, latestArticles] = await Promise.all([
+  const [topicsData, latestArticles, pillarResources, communitySnippets, pillarStories, pillarJourney] = await Promise.all([
     getTopicsWithCount(cat.id),
     getLatestArticles(cat.id),
+    getPillarResources(cat.pillarId),
+    getPillarCommunityPosts(cat.pillarId),
+    getPillarStories(cat.pillarId),
+    getPillarJourney(cat.pillarId),
   ]);
 
   const totalArticles = topicsData.reduce((sum, t) => sum + (t.articleCount ?? 0), 0);
-  const s = STYLE[cat.color ?? "blue"] ?? DEFAULT_STYLE;
+  const tint = CATEGORY_TINTS[cat.color ?? "blue"] ?? DEFAULT_TINT;
+  const Icon = CAT_ICONS[cat.color ?? "blue"] ?? CAT_ICONS.blue!;
+  const isEmpty =
+    topicsData.length === 0 && latestArticles.length === 0 &&
+    pillarResources.length === 0 && communitySnippets.length === 0 && pillarStories.length === 0;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -143,68 +155,110 @@ export default async function CategoryPage({ params }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-[#060810] text-white py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="max-w-5xl mx-auto">
+      <div className="mx-auto max-w-6xl">
 
+        {/* No longer nested under "Useful Reads" (/intel) — this page now
+            aggregates Toolkit, Challenges, and Community too, so it sits
+            as its own top-level hub rather than being filed under Intel. */}
         <Breadcrumb crumbs={[
           { label: "Home", href: "/" },
-          { label: "Useful Reads", href: "/intel" },
           { label: cat.name },
         ]} />
 
-        {/* Category hero */}
-        <div className={`rounded-2xl border p-8 sm:p-12 mb-12 ${s.bg} ${s.border}`}>
-          <span className={`text-[10px] font-black uppercase tracking-[0.35em] ${s.accent} mb-4 block`}>
-            Category
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter text-white mb-4 leading-tight">
+        {/* Hero */}
+        <div className="animate-fade-up rounded-2xl border border-border/70 bg-card/70 p-8 sm:p-12 mb-14">
+          <div className={`mb-4 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] ${tint.text}`}>
+            <Icon className="h-4 w-4" />
+            {cat.pillarName ?? "Category"}
+          </div>
+          <h1 className="font-display text-[2.4rem] font-medium leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {cat.name}
           </h1>
           {cat.description && (
-            <p className="text-zinc-400 text-base sm:text-lg max-w-2xl leading-relaxed mb-6">
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
               {cat.description}
             </p>
           )}
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${s.badge}`}>
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
               {topicsData.length} topic{topicsData.length !== 1 ? "s" : ""}
             </span>
-            <span className="px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-400 text-xs font-bold">
+            <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
               {totalArticles} article{totalArticles !== 1 ? "s" : ""}
             </span>
+            {pillarResources.length > 0 && (
+              <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
+                {pillarResources.length} toolkit resource{pillarResources.length !== 1 ? "s" : ""}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Topics grid */}
+        {/* Career Hub + Small Wins — pillar-exclusive, per the original
+            brief ("Career Hub belongs ONLY inside Work & Financial
+            Stability"). Not a generic pillar-page section like Toolkit/
+            Challenges/Stories/Community below, so it's gated on the
+            pillar name directly rather than being part of the shared
+            pattern every category page gets. */}
+        {cat.pillarName === "Work & Financial Stability" && (
+          <section className="mb-14 grid gap-4 sm:grid-cols-2">
+            <Link
+              href="/career-hub"
+              className="group flex items-center gap-4 rounded-2xl border border-border/70 bg-card/70 p-6 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Briefcase className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-base font-medium text-foreground">Career Hub</h3>
+                <p className="mt-0.5 text-sm text-muted-foreground">Guides, job resources, and career Intel in one place.</p>
+              </div>
+            </Link>
+            <Link
+              href="/small-wins"
+              className="group flex items-center gap-4 rounded-2xl border border-border/70 bg-card/70 p-6 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-base font-medium text-foreground">Small Wins</h3>
+                <p className="mt-0.5 text-sm text-muted-foreground">Vetted ways to earn quickly while you rebuild.</p>
+              </div>
+            </Link>
+          </section>
+        )}
+
+        {/* Topics */}
         {topicsData.length > 0 && (
           <section className="mb-14">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-6">
-              Topics
-            </h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Explore</p>
+            <h2 className="mb-6 font-display text-[1.6rem] font-semibold text-foreground sm:text-2xl">Topics</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {topicsData.map((topic) => (
                 <Link
                   key={topic.id}
                   href={`/topic/${topic.slug}`}
-                  className={`p-5 rounded-xl bg-zinc-900/60 border border-zinc-800 ${s.hoverBorder} hover:bg-zinc-900 transition-all group`}
+                  className="group rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
                 >
-                  <h3 className={`font-bold text-white ${s.hoverAccent} transition-colors mb-2 leading-tight`}>
+                  <h3 className="mb-2 font-display font-medium leading-tight text-foreground transition-colors group-hover:text-primary">
                     {topic.name}
                   </h3>
                   {topic.description && (
-                    <p className="text-zinc-500 text-sm leading-relaxed mb-3 line-clamp-2">
+                    <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                       {topic.description}
                     </p>
                   )}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-600 font-medium">
+                    <span className="text-xs font-medium text-muted-foreground">
                       {topic.articleCount} article{topic.articleCount !== 1 ? "s" : ""}
                     </span>
-                    <ArrowRight className={`w-3.5 h-3.5 text-zinc-700 group-hover:translate-x-0.5 group-hover:${s.accent} transition-all`} />
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
                   </div>
                 </Link>
               ))}
@@ -212,32 +266,30 @@ export default async function CategoryPage({ params }: Props) {
           </section>
         )}
 
-        {/* Latest articles */}
+        {/* Latest Intel articles */}
         {latestArticles.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
-                Latest Articles
-              </h2>
-              <Link
-                href="/intel"
-                className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                All articles →
+          <section className="mb-14">
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <div>
+                <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Read</p>
+                <h2 className="font-display text-[1.6rem] font-semibold text-foreground sm:text-2xl">Latest Intel</h2>
+              </div>
+              <Link href="/intel" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+                All articles <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               {latestArticles.map((article) => (
                 <Link
                   key={article.id}
                   href={`/intel/${article.slug}`}
-                  className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800 hover:border-blue-500/40 hover:bg-zinc-900 transition-all group"
+                  className="group rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
                 >
-                  <h3 className="font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2 mb-2 leading-snug">
+                  <h3 className="mb-2 line-clamp-2 font-display font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
                     {article.title}
                   </h3>
                   {article.excerpt && (
-                    <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed">
+                    <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                       {article.excerpt}
                     </p>
                   )}
@@ -247,9 +299,114 @@ export default async function CategoryPage({ params }: Props) {
           </section>
         )}
 
-        {latestArticles.length === 0 && topicsData.length === 0 && (
-          <p className="text-zinc-600 text-center py-16 italic">
-            Articles are coming soon. Check back shortly.
+        {/* NEW — Toolkit: practical resources for this pillar */}
+        {pillarResources.length > 0 && (
+          <section className="mb-14">
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <div>
+                <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Apply it</p>
+                <h2 className="font-display text-[1.6rem] font-semibold text-foreground sm:text-2xl">From the Toolkit</h2>
+              </div>
+              <Link href="/guides" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+                Full toolkit <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {pillarResources.map((resource) => {
+                const ResIcon = RESOURCE_ICONS[resource.type] ?? Link2;
+                return (
+                  <a
+                    key={resource.id}
+                    href={resource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-4 rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <ResIcon className="h-4 w-4" />
+                    </div>
+                    <span className="font-display font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                      {resource.name}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        <section className="mb-14">
+          <ChallengesTeaser journey={pillarJourney} />
+        </section>
+
+        {/* NEW — Stories: real experiences from men in this pillar. Real
+            pillarId query, but expect this to be empty on most pillars
+            for a while — unlike resources, there was no existing signal
+            to backfill stories from, so it only fills in as new
+            submissions tag themselves or editorial review catches up. */}
+        {pillarStories.length > 0 && (
+          <section className="mb-14">
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <div>
+                <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Hear from others</p>
+                <h2 className="font-display text-[1.6rem] font-semibold text-foreground sm:text-2xl">Stories</h2>
+              </div>
+              <Link href="/stories" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+                All stories <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {pillarStories.map((story) => (
+                <Link
+                  key={story.id}
+                  href={`/stories/${story.id}`}
+                  className="group rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
+                >
+                  <h3 className="mb-2 line-clamp-2 font-display font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                    {story.title}
+                  </h3>
+                  {story.excerpt && (
+                    <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                      {story.excerpt}
+                    </p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* NEW — Community: contextual discussions for this pillar */}
+        {communitySnippets.length > 0 && (
+          <section className="mb-14">
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <div>
+                <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">Connect</p>
+                <h2 className="font-display text-[1.6rem] font-semibold text-foreground sm:text-2xl">From the Community</h2>
+              </div>
+              <Link href="/community" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+                All discussions <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {communitySnippets.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/community/${post.id}`}
+                  className="group rounded-xl border border-border/70 bg-card/70 p-5 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
+                >
+                  <p className="line-clamp-3 font-display font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                    {post.title}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {isEmpty && (
+          <p className="py-16 text-center italic text-muted-foreground">
+            Content for this pillar is coming soon. Check back shortly.
           </p>
         )}
       </div>

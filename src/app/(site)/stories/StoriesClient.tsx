@@ -17,16 +17,20 @@ export type StoryItem = {
   createdAt: string; // ISO string — serializable from server
 };
 
+export type PillarOption = { id: number; name: string };
+
 interface Props {
   initialStories: StoryItem[];
+  pillars: PillarOption[];
 }
 
-export default function StoriesClient({ initialStories }: Props) {
+export default function StoriesClient({ initialStories, pillars }: Props) {
   const [activeTab, setActiveTab] = useState<"read" | "write">("read");
 
   const [title, setTitle] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [content, setContent] = useState("");
+  const [pillarId, setPillarId] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const submitMutation = trpc.stories.submitStory.useMutation({
@@ -35,13 +39,19 @@ export default function StoriesClient({ initialStories }: Props) {
       setTitle("");
       setAuthorName("");
       setContent("");
+      setPillarId("");
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title.length < 3 || content.length < 20) return;
-    submitMutation.mutate({ title, content, authorName });
+    submitMutation.mutate({
+      title,
+      content,
+      authorName,
+      pillarId: pillarId ? Number(pillarId) : undefined,
+    });
   };
 
   return (
@@ -56,7 +66,7 @@ export default function StoriesClient({ initialStories }: Props) {
           </div>
           <h1 className="text-5xl font-black italic uppercase tracking-tighter">Stories</h1>
           <p className="text-zinc-400 font-medium mt-3 max-w-xl">
-            Real men, real situations. Read how others came through hard times — or share your own so the next man knows he's not alone.
+            Real men, real situations. Read how others came through hard times — or share your own so the next man knows he&apos;s not alone.
           </p>
         </div>
 
@@ -193,6 +203,24 @@ export default function StoriesClient({ initialStories }: Props) {
                       onChange={(e) => setAuthorName(e.target.value)}
                     />
                   </div>
+
+                  {pillars.length > 0 && (
+                    <div>
+                      <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">
+                        Which area does this relate to? (optional)
+                      </label>
+                      <select
+                        className="w-full h-12 bg-black/50 border border-zinc-800 rounded-xl px-4 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
+                        value={pillarId}
+                        onChange={(e) => setPillarId(e.target.value)}
+                      >
+                        <option value="">Not sure / prefer not to say</option>
+                        {pillars.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">

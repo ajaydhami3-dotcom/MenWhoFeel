@@ -2,6 +2,8 @@ import { authRouter } from "./auth-router";
 import { storiesRouter } from "./stories-router";
 import { challengesRouter } from "./challenges-router";
 import { forgeRouter } from "./forge-router";
+import { journeysRouter } from "./journeys-router";
+import { resumeRouter } from "./resume-router";
 import { chatRouter } from "./chat-router";
 import { assessmentRouter } from "./assessment-router";
 import { guidesRouter } from "./guides-router";
@@ -20,6 +22,8 @@ export const appRouter = createRouter({
   stories: storiesRouter,
   challenges: challengesRouter,
   forge: forgeRouter,
+  journeys: journeysRouter,
+  resume: resumeRouter,
   chat: chatRouter,
   assessment: assessmentRouter,
   guides: guidesRouter,

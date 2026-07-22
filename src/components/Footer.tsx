@@ -49,7 +49,7 @@ export default async function Footer() {
   const popularTopics = await getPopularTopics();
 
   return (
-    <footer className="mt-auto w-full border-t border-border bg-background">
+    <footer className="mt-auto w-full border-t border-border bg-background print:hidden">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-6">
           {/* Brand */}

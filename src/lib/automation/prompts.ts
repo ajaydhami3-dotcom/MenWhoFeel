@@ -67,6 +67,30 @@ Respond with JSON matching this exact shape:
   "canonicalUrl": "https://www.menwhofeel.online/intel/{{slug}}"
 }`;
 
+// NEW (Phase 8). Matches the generated article against real
+// categories/topics instead of the pipeline always using
+// automationSettings.defaultCategoryId regardless of content. Picking a
+// topic rather than a category directly means categoryId comes along for
+// free (every topic already belongs to exactly one category) instead of
+// risking the two being picked independently and disagreeing with each
+// other.
+export const DEFAULT_CATEGORIZE_PROMPT = `You are a content taxonomist for MenWhoFeel, a men's emotional wellbeing platform.
+
+Given this article and a list of available topics (each belonging to one category), pick the SINGLE topic that best matches what this article is actually about. If genuinely nothing fits well, say so rather than forcing a weak match.
+
+Title: {{title}}
+Excerpt: {{excerpt}}
+Angle: {{angle}}
+
+Available topics (format is "category > topic — description"):
+{{topicOptions}}
+
+Respond with JSON matching this exact shape:
+{
+  "matchedTopicSlug": "the-topic-slug-from-the-list-above, or null if nothing fits",
+  "reasoning": "One sentence on why this topic fits (or why nothing did)"
+}`;
+
 export const DEFAULT_SOCIAL_PROMPT = `You are the social media manager for MenWhoFeel, a men's emotional wellbeing platform.
 
 Given this article, generate social content for each platform.

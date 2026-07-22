@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Newspaper,
   FolderTree,
-  Tags,
   Users,
   MessageSquare,
   Trophy,
@@ -56,6 +55,23 @@ const MODULES: NavItem[] = [
     ],
   },
   {
+    label: "Toolkit",
+    href: "/admin/toolkit/pillars",
+    icon: FolderTree,
+    children: [
+      { label: "Pillars", href: "/admin/toolkit/pillars" },
+    ],
+  },
+  {
+    label: "Career Hub",
+    href: "/admin/career-hub/job-resources",
+    icon: Briefcase,
+    children: [
+      { label: "Job Resources", href: "/admin/career-hub/job-resources" },
+      { label: "Small Wins", href: "/admin/career-hub/small-wins" },
+    ],
+  },
+  {
     label: "Automation",
     href: "/admin/automation",
     icon: Zap,
@@ -69,13 +85,16 @@ const MODULES: NavItem[] = [
   },
 ];
 
+// Toolkit's only real page so far is Pillars — Guides (the selfHelpGuides
+// authoring UI) is the natural next addition here, not part of this
+// phase (see MIGRATION_PLAN.md 4.3). Career Hub above covers Job
+// Resources and Small Wins only — Resume Builder, Application Tracker,
+// and Courses are real product surfaces still being scoped, not started.
 const FUTURE_MODULES: { label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { label: "Toolkit", icon: FolderTree },
   { label: "Stories", icon: BookOpen },
   { label: "Community", icon: MessageSquare },
   { label: "Challenges", icon: Trophy },
-  { label: "Resources", icon: Briefcase },
-  { label: "Jobs", icon: Briefcase },
+  { label: "Resources", icon: FolderTree },
   { label: "Users", icon: Users },
   { label: "Analytics", icon: BarChart3 },
 ];

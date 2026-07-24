@@ -31,3 +31,18 @@ export const CATEGORY_TINTS: Record<string, { text: string }> = {
 };
 
 export const DEFAULT_TINT = CATEGORY_TINTS.blue!;
+
+// Pillar icons — keyed by the literal `icon` string stored on each pillar
+// row (see supabase_migration_pillars.sql: brain / briefcase / heart-pulse
+// / dumbbell), not by color like CAT_ICONS above. A pillar's icon is a
+// deliberate 1:1 choice — Physical Wellbeing should read as a dumbbell,
+// not amber's default Flame — so it gets its own small map instead of
+// reusing CAT_ICONS by color. Pillar *color* (for text tinting) still
+// reuses CATEGORY_TINTS below, since pillar colors were chosen to match
+// the category taxonomy exactly.
+export const PILLAR_ICONS: Record<string, ElementType> = {
+  brain: Brain,
+  briefcase: Briefcase,
+  "heart-pulse": HeartPulse,
+  dumbbell: Dumbbell,
+};

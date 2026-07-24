@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MenWhoFeel — Helping men build stronger minds, careers, relationships, and lives.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #151520;
+            --bg-card-hover: #1e1e2e;
+            --text-primary: #f5f5f7;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b7b;
+            --accent: #e8d5b7;
+            --accent-hover: #f0e0c8;
+            --accent-glow: rgba(232, 213, 183, 0.15);
+            --border: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.12);
+            --pillar-mental: #c49a6c;
+            --pillar-work: #7eb8a2;
+            --pillar-relationships: #c97b7b;
+            --pillar-physical: #7a9cc6;
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection {
+            background: rgba(232, 213, 183, 0.3);
+            color: var(--text-primary);
+        }
+
+        /* ─── Navbar ─── */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 0 32px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid transparent;
+            transition: all 0.4s var(--ease-out-expo);
+        }
+
+        .navbar.scrolled {
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px) saturate(1.8);
+            -webkit-backdrop-filter: blur(20px) saturate(1.8);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-brand {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.35rem;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-brand-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--bg-primary);
+            font-weight: 800;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 6px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: all 0.25s var(--ease-out-quart);
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .nav-cta {
+            background: var(--text-primary);
+            color: var(--bg-primary) !important;
+            font-weight: 600 !important;
+            padding: 8px 18px !important;
+        }
+
+        .nav-cta:hover {
+            background: var(--accent) !important;
+            transform: translateY(-1px);
+        }
+
+        .nav-mobile-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .nav-mobile-toggle span {
+            width: 22px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        /* ─── Hero ─── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .hero-bg-gradient {
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1200px;
+            height: 1200px;
+            background: radial-gradient(circle, rgba(232, 213, 183, 0.08) 0%, transparent 60%);
+            animation: heroPulse 8s ease-in-out infinite;
+        }
+
+        @keyframes heroPulse {
+            0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+            50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+        }
+
+        .hero-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 80px 80px;
+            mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+            animation: fadeInUp 1s var(--ease-out-expo) forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(232, 213, 183, 0.08);
+            border: 1px solid rgba(232, 213, 183, 0.15);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--accent);
+            margin-bottom: 40px;
+            letter-spacing: 0.02em;
+        }
+
+        .hero-badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hero-headline {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+
+        .hero-subheadline {
+            font-size: clamp(1.1rem, 2vw, 1.5rem);
+            font-weight: 400;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin: 0 auto 48px;
+            line-height: 1.5;
+            letter-spacing: -0.01em;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s var(--ease-out-expo);
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+            box-shadow: 0 4px 24px rgba(232, 213, 183, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(232, 213, 183, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-hover);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-icon {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .btn:hover .btn-icon {
+            transform: translateX(3px);
+        }
+
+        /* ─── Trust Bar ─── */
+        .trust-bar {
+            padding: 24px 32px;
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+            position: relative;
+            z-index: 2;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .trust-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        /* ─── Section Base ─── */
+        .section {
+            padding: 120px 32px;
+            position: relative;
+        }
+
+        .section-header {
+            max-width: 720px;
+            margin: 0 auto 64px;
+            text-align: center;
+        }
+
+        .section-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+
+        .section-desc {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ─── Four Pillars ─── */
+        .pillars-section {
+            background: var(--bg-secondary);
+        }
+
+        .pillars-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .pillar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            cursor: pointer;
+            transition: all 0.4s var(--ease-out-expo);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: block;
+        }
+
+        .pillar-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .pillar-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--border-hover);
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+        }
+
+        .pillar-card:hover::before {
+            opacity: 1;
+        }
+
+        .pillar-card-mental::before { background: radial-gradient(circle at 30% 30%, rgba(196, 154, 108, 0.08), transparent 70%); }
+        .pillar-card-work::before { background: radial-gradient(circle at 30% 30%, rgba(126, 184, 162, 0.08), transparent 70%); }
+        .pillar-card-relationships::before { background: radial-gradient(circle at 30% 30%, rgba(201, 123, 123, 0.08), transparent 70%); }
+        .pillar-card-physical::before { background: radial-gradient(circle at 30% 30%, rgba(122, 156, 198, 0.08), transparent 70%); }
+
+        .pillar-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 22px;
+        }
+
+        .pillar-icon-mental { background: rgba(196, 154, 108, 0.12); color: var(--pillar-mental); }
+        .pillar-icon-work { background: rgba(126, 184, 162, 0.12); color: var(--pillar-work); }
+        .pillar-icon-relationships { background: rgba(201, 123, 123, 0.12); color: var(--pillar-relationships); }
+        .pillar-icon-physical { background: rgba(122, 156, 198, 0.12); color: var(--pillar-physical); }
+
+        .pillar-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+
+        .pillar-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .pillar-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: gap 0.3s ease;
+        }
+
+        .pillar-card:hover .pillar-cta {
+            gap: 12px;
+        }
+
+        .pillar-cta-mental { color: var(--pillar-mental); }
+        .pillar-cta-work { color: var(--pillar-work); }
+        .pillar-cta-relationships { color: var(--pillar-relationships); }
+        .pillar-cta-physical { color: var(--pillar-physical); }
+
+        /* ─── Featured Tools ─── */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .tool-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.4s var(--ease-out-expo);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-hover);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+        }
+
+        .tool-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .tool-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+
+        .tool-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ─── Latest Intel ─── */
+        .intel-section {
+            background: var(--bg-secondary);
+        }
+
+        .intel-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .intel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.4s var(--ease-out-expo);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .intel-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-hover);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+        }
+
+        .intel-image {
+            height: 180px;
+            background: var(--bg-tertiary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .intel-image-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+
+        .intel-content {
+            padding: 24px;
+        }
+
+        .intel-category {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .intel-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.125rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+
+        .intel-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ─── Community ─── */
+        .community-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .community-column {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+        }
+
+        .community-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .community-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .community-view-all {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .community-view-all:hover {
+            opacity: 0.8;
+        }
+
+        .community-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .community-item {
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .community-item:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-tertiary);
+        }
+
+        .community-item-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .community-item-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .community-item-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(232, 213, 183, 0.08);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* ─── Founder Mission ─── */
+        .mission-section {
+            background: var(--bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mission-section::before {
+            content: '';
+            position: absolute;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(232, 213, 183, 0.05), transparent 60%);
+            pointer-events: none;
+        }
+
+        .mission-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .mission-quote {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.5rem, 3vw, 2.25rem);
+            font-weight: 500;
+            line-height: 1.4;
+            letter-spacing: -0.02em;
+            margin-bottom: 32px;
+            color: var(--text-primary);
+        }
+
+        .mission-quote-accent {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .mission-author {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .mission-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-hover);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .mission-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .mission-role {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* ─── Footer ─── */
+        .footer {
+            padding: 64px 32px 32px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 48px;
+            max-width: 1200px;
+            margin: 0 auto 64px;
+        }
+
+        .footer-brand {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer-brand-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            max-width: 280px;
+            line-height: 1.6;
+        }
+
+        .footer-column-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .footer-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-copyright {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-social {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: all 0.25s ease;
+        }
+
+        .footer-social:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+
+        /* ─── Scroll Reveal ─── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s var(--ease-out-expo);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 1024px) {
+            .tools-grid { grid-template-columns: repeat(2, 1fr); }
+            .intel-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 0 20px; }
+            .nav-links { display: none; }
+            .nav-mobile-toggle { display: flex; }
+            .section { padding: 80px 20px; }
+            .trust-bar { gap: 24px; padding: 20px; }
+            .pillars-grid { grid-template-columns: 1fr; }
+            .tools-grid { grid-template-columns: 1fr; }
+            .intel-grid { grid-template-columns: 1fr; }
+            .community-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .hero-headline { font-size: 2.25rem; }
+            .hero-cta-group { flex-direction: column; align-items: center; }
+            .btn { width: 100%; max-width: 300px; justify-content: center; }
+        }
+
+        @media (max-width: 480px) {
+            .footer-grid { grid-template-columns: 1fr; }
+            .pillar-card { padding: 28px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── Navbar ─── -->
+    <nav class="navbar" id="navbar">
+        <a href="/" class="nav-brand">
+            <div class="nav-brand-icon">M</div>
+            MenWhoFeel
+        </a>
+        <ul class="nav-links">
+            <li><a href="/intel">Intel</a></li>
+            <li><a href="/stories">Stories</a></li>
+            <li><a href="/community">Community</a></li>
+            <li><a href="/toolkit">Toolkit</a></li>
+            <li><a href="/journeys">Journeys</a></li>
+            <li><a href="/career-hub">Career Hub</a></li>
+            <li><a href="/resume-builder">Resume Builder</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/explore" class="nav-cta">Explore</a></li>
+        </ul>
+        <div class="nav-mobile-toggle" onclick="toggleMobileNav()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <!-- ─── Hero ─── -->
+    <section class="hero">
+        <div class="hero-bg">
+            <div class="hero-bg-gradient"></div>
+            <div class="hero-grid"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                A platform built for modern men
+            </div>
+            <h1 class="hero-headline">
+                Helping men build stronger minds, careers, relationships, and lives.
+            </h1>
+            <p class="hero-subheadline">
+                The one place you don't have to explain yourself. Explore resources, tools, and a community that gets it.
+            </p>
+            <div class="hero-cta-group">
+                <a href="/explore" class="btn btn-primary">
+                    Explore MenWhoFeel
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                <a href="/share" class="btn btn-secondary">
+                    Share Your Story
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Trust Bar ─── -->
+    <div class="trust-bar">
+        <div class="trust-item">
+            <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Free Forever
+        </div>
+        <div class="trust-item">
+            <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Anonymous
+        </div>
+        <div class="trust-item">
+            <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            AI Powered
+        </div>
+        <div class="trust-item">
+            <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+                <line x1="3" y1="21" x2="21" y2="21"/>
+            </svg>
+            No Account Required
+        </div>
+    </div>
+
+    <!-- ─── Four Pillars ─── -->
+    <section class="section pillars-section" id="pillars">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-label">The Foundation</div>
+                <h2 class="section-title">Everything on MenWhoFeel is built around four parts of life that shape a man's wellbeing.</h2>
+            </div>
+            <div class="pillars-grid">
+                <a href="/pillars/mental-emotional" class="pillar-card pillar-card-mental reveal reveal-delay-1">
+                    <div class="pillar-icon pillar-icon-mental">🧠</div>
+                    <h3 class="pillar-title">Mental & Emotional Health</h3>
+                    <p class="pillar-desc">Understand your mind, process emotions, and build resilience without judgment or clinical jargon.</p>
+                    <span class="pillar-cta pillar-cta-mental">
+                        Explore
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </span>
+                </a>
+                <a href="/pillars/work-financial" class="pillar-card pillar-card-work reveal reveal-delay-2">
+                    <div class="pillar-icon pillar-icon-work">💼</div>
+                    <h3 class="pillar-title">Work & Financial Stability</h3>
+                    <p class="pillar-desc">Navigate your career, manage money with confidence, and build a life that supports your ambitions.</p>
+                    <span class="pillar-cta pillar-cta-work">
+                        Explore
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </span>
+                </a>
+                <a href="/pillars/relationships-stress" class="pillar-card pillar-card-relationships reveal reveal-delay-3">
+                    <div class="pillar-icon pillar-icon-relationships">❤️</div>
+                    <h3 class="pillar-title">Relationships & Stress</h3>
+                    <p class="pillar-desc">Strengthen connections, communicate better, and handle life's pressure without losing yourself.</p>
+                    <span class="pillar-cta pillar-cta-relationships">
+                        Explore
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </span>
+                </a>
+                <a href="/pillars/physical-wellbeing" class="pillar-card pillar-card-physical reveal reveal-delay-4">
+                    <div class="pillar-icon pillar-icon-physical">💪</div>
+                    <h3 class="pillar-title">Physical Wellbeing</h3>
+                    <p class="pillar-desc">Take care of your body, build sustainable habits, and feel good in your own skin.</p>
+                    <span class="pillar-cta pillar-cta-physical">
+                        Explore
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Featured Tools ─── -->
+    <section class="section" id="tools">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-label">Practical Tools</div>
+                <h2 class="section-title">Real tools that move the needle.</h2>
+                <p class="section-desc">Not just reading — doing. Use these tools to make tangible progress in your life.</p>
+            </div>
+            <div class="tools-grid">
+                <a href="/resume-builder" class="tool-card reveal reveal-delay-1">
+                    <div class="tool-icon">📄</div>
+                    <h3 class="tool-title">Resume Builder</h3>
+                    <p class="tool-desc">Build a professional resume that gets callbacks. AI-powered suggestions tailored to your experience.</p>
+                </a>
+                <a href="/career-hub" class="tool-card reveal reveal-delay-2">
+                    <div class="tool-icon">🚀</div>
+                    <h3 class="tool-title">Career Hub</h3>
+                    <p class="tool-desc">Job search strategy, interview prep, salary negotiation — everything to level up your career.</p>
+                </a>
+                <a href="/toolkit" class="tool-card reveal reveal-delay-3">
+                    <div class="tool-icon">🧰</div>
+                    <h3 class="tool-title">Toolkit</h3>
+                    <p class="tool-desc">Mental models, habit trackers, reflection prompts, and frameworks you can use today.</p>
+                </a>
+                <a href="/journeys" class="tool-card reveal reveal-delay-4">
+                    <div class="tool-icon">🗺️</div>
+                    <h3 class="tool-title">Journeys</h3>
+                    <p class="tool-desc">Guided step-by-step programs for specific goals — from getting unstuck to rebuilding confidence.</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Latest Intel ─── -->
+    <section class="section intel-section" id="intel">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-label">Latest Intel</div>
+                <h2 class="section-title">Fresh perspectives, clear thinking.</h2>
+                <p class="section-desc">Articles and insights published weekly by our team and community.</p>
+            </div>
+            <div class="intel-grid">
+                <a href="/intel/article-1" class="intel-card reveal reveal-delay-1">
+                    <div class="intel-image">
+                        <div class="intel-image-placeholder">🧠</div>
+                    </div>
+                    <div class="intel-content">
+                        <div class="intel-category">Mental Health</div>
+                        <h3 class="intel-title">The Art of Sitting With Discomfort</h3>
+                        <div class="intel-meta">
+                            <span>8 min read</span>
+                            <span>3 days ago</span>
+                        </div>
+                    </div>
+                </a>
+                <a href="/intel/article-2" class="intel-card reveal reveal-delay-2">
+                    <div class="intel-image">
+                        <div class="intel-image-placeholder">💼</div>
+                    </div>
+                    <div class="intel-content">
+                        <div class="intel-category">Career</div>
+                        <h3 class="intel-title">How to Ask for a Raise Without Burning Bridges</h3>
+                        <div class="intel-meta">
+                            <span>6 min read</span>
+                            <span>5 days ago</span>
+                        </div>
+                    </div>
+                </a>
+                <a href="/intel/article-3" class="intel-card reveal reveal-delay-3">
+                    <div class="intel-image">
+                        <div class="intel-image-placeholder">❤️</div>
+                    </div>
+                    <div class="intel-content">
+                        <div class="intel-category">Relationships</div>
+                        <h3 class="intel-title">Why Vulnerability Is a Leadership Skill</h3>
+                        <div class="intel-meta">
+                            <span>7 min read</span>
+                            <span>1 week ago</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Community ─── -->
+    <section class="section" id="community">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-label">Community</div>
+                <h2 class="section-title">You're not alone in this.</h2>
+                <p class="section-desc">Real stories. Real conversations. No performance needed.</p>
+            </div>
+            <div class="community-grid">
+                <div class="community-column reveal reveal-delay-1">
+                    <div class="community-header">
+                        <h3 class="community-title">Latest Stories</h3>
+                        <a href="/stories" class="community-view-all">View all →</a>
+                    </div>
+                    <div class="community-list">
+                        <a href="/stories/story-1" class="community-item">
+                            <div class="community-item-title">I lost my job and found myself</div>
+                            <div class="community-item-meta">
+                                <span>Anonymous</span>
+                                <span class="community-item-tag">Career</span>
+                            </div>
+                        </a>
+                        <a href="/stories/story-2" class="community-item">
+                            <div class="community-item-title">What therapy actually taught me</div>
+                            <div class="community-item-meta">
+                                <span>Anonymous</span>
+                                <span class="community-item-tag">Mental Health</span>
+                            </div>
+                        </a>
+                        <a href="/stories/story-3" class="community-item">
+                            <div class="community-item-title">Being a present father while chasing ambition</div>
+                            <div class="community-item-meta">
+                                <span>Anonymous</span>
+                                <span class="community-item-tag">Relationships</span>
+                            </div>
+                        </a>
+                        <a href="/stories/story-4" class="community-item">
+                            <div class="community-item-title">The morning routine that changed everything</div>
+                            <div class="community-item-meta">
+                                <span>Anonymous</span>
+                                <span class="community-item-tag">Physical</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="community-column reveal reveal-delay-2">
+                    <div class="community-header">
+                        <h3 class="community-title">Latest Discussions</h3>
+                        <a href="/community" class="community-view-all">View all →</a>
+                    </div>
+                    <div class="community-list">
+                        <a href="/discussions/disc-1" class="community-item">
+                            <div class="community-item-title">How do you deal with burnout without quitting?</div>
+                            <div class="community-item-meta">
+                                <span>24 replies</span>
+                                <span class="community-item-tag">Work</span>
+                            </div>
+                        </a>
+                        <a href="/discussions/disc-2" class="community-item">
+                            <div class="community-item-title">Books that actually helped your mental health</div>
+                            <div class="community-item-meta">
+                                <span>56 replies</span>
+                                <span class="community-item-tag">Mental Health</span>
+                            </div>
+                        </a>
+                        <a href="/discussions/disc-3" class="community-item">
+                            <div class="community-item-title">Navigating a breakup in your 30s</div>
+                            <div class="community-item-meta">
+                                <span>18 replies</span>
+                                <span class="community-item-tag">Relationships</span>
+                            </div>
+                        </a>
+                        <a href="/discussions/disc-4" class="community-item">
+                            <div class="community-item-title">Affordable fitness routines that stick</div>
+                            <div class="community-item-meta">
+                                <span>31 replies</span>
+                                <span class="community-item-tag">Physical</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Founder Mission ─── -->
+    <section class="section mission-section" id="mission">
+        <div class="mission-container reveal">
+            <p class="mission-quote">
+                "We built MenWhoFeel because <span class="mission-quote-accent">men deserve a space</span> that treats their whole life as interconnected — not just the parts that are easy to talk about."
+            </p>
+            <div class="mission-author">
+                <div class="mission-avatar">👤</div>
+                <div>
+                    <div class="mission-name">Founder, MenWhoFeel</div>
+                    <div class="mission-role">On a mission to help 1 million men build better lives</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Footer ─── -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div>
+                <div class="footer-brand">
+                    <div class="nav-brand-icon" style="width: 28px; height: 28px; font-size: 12px;">M</div>
+                    MenWhoFeel
+                </div>
+                <p class="footer-brand-desc">A platform helping men improve every important area of life — built by men who get it.</p>
+            </div>
+            <div>
+                <div class="footer-column-title">Platform</div>
+                <ul class="footer-links">
+                    <li><a href="/intel">Intel</a></li>
+                    <li><a href="/stories">Stories</a></li>
+                    <li><a href="/community">Community</a></li>
+                    <li><a href="/toolkit">Toolkit</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="footer-column-title">Tools</div>
+                <ul class="footer-links">
+                    <li><a href="/journeys">Journeys</a></li>
+                    <li><a href="/career-hub">Career Hub</a></li>
+                    <li><a href="/resume-builder">Resume Builder</a></li>
+                    <li><a href="/pillars">Four Pillars</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="footer-column-title">Company</div>
+                <ul class="footer-links">
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/privacy">Privacy</a></li>
+                    <li><a href="/terms">Terms</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copyright">© 2025 MenWhoFeel. All rights reserved.</div>
+            <div class="footer-socials">
+                <a href="#" class="footer-social" aria-label="Twitter">𝕏</a>
+                <a href="#" class="footer-social" aria-label="LinkedIn">in</a>
+                <a href="#" class="footer-social" aria-label="YouTube">▶</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 20) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Scroll reveal animation
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Mobile nav toggle (basic)
+        function toggleMobileNav() {
+            // In a real implementation, this would toggle a mobile menu
+            // For now, this is a placeholder for the mobile experience
+            const links = document.querySelector('.nav-links');
+            if (links.style.display === 'flex') {
+                links.style.display = '';
+            } else {
+                links.style.display = 'flex';
+                links.style.flexDirection = 'column';
+                links.style.position = 'absolute';
+                links.style.top = '72px';
+                links.style.left = '0';
+                links.style.right = '0';
+                links.style.background = 'var(--bg-primary)';
+                links.style.padding = '20px';
+                links.style.borderBottom = '1px solid var(--border)';
+                links.style.backdropFilter = 'blur(20px)';
+            }
+        }
+    </script>
+</body>
+</html>

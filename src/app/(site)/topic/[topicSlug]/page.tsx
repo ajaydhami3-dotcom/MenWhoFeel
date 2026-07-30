@@ -7,7 +7,7 @@ import { eq, desc, and, sql } from "drizzle-orm";
 import Breadcrumb from "@/components/Breadcrumb";
 import ChallengesTeaser from "@/components/ChallengesTeaser";
 import CheckInTeaser from "@/components/CheckInTeaser";
-import { CATEGORY_TINTS, DEFAULT_TINT, RESOURCE_ICONS } from "@/lib/category-style";
+import { CATEGORY_TINTS, DEFAULT_TINT, RESOURCE_ICONS, CAT_ICONS, PILLAR_BG_TINTS } from "@/lib/category-style";
 import { getPillarResources, getPillarCommunityPosts, getPillarStories, getPillarJourney } from "@/server/queries/pillar-content";
 import { BookOpen, ChevronRight, FileText, ArrowRight, Link2 } from "lucide-react";
 
@@ -39,6 +39,11 @@ async function getTopicData(slug: string) {
         pillarId: categories.pillarId,
         pillarName: pillars.name,
         pillarSlug: pillars.slug,
+        // Same fix as category/[categorySlug]/page.tsx: pillar color is
+        // its own column, not kept in sync with categories.color
+        // automatically, and the Phase 12 palette update only touches
+        // pillars.color.
+        pillarColor: pillars.color,
       })
       .from(topics)
       .leftJoin(categories, eq(topics.categoryId, categories.id))
@@ -129,7 +134,10 @@ export default async function TopicPage({ params }: Props) {
   ]);
   const featuredArticles = allArticles.filter((a) => a.featured);
   const keyAreas = topic.keyAreas as KeyArea[] | null;
-  const tint = CATEGORY_TINTS[topic.categoryColor ?? "blue"] ?? DEFAULT_TINT;
+  const effectiveColor = topic.pillarColor ?? topic.categoryColor ?? "blue";
+  const tint = CATEGORY_TINTS[effectiveColor] ?? DEFAULT_TINT;
+  const bgTint = PILLAR_BG_TINTS[effectiveColor] ?? PILLAR_BG_TINTS.amber!;
+  const Icon = CAT_ICONS[effectiveColor] ?? CAT_ICONS.blue!;
   const isEmpty =
     allArticles.length === 0 && pillarResources.length === 0 &&
     communitySnippets.length === 0 && pillarStories.length === 0;
@@ -163,12 +171,18 @@ export default async function TopicPage({ params }: Props) {
           { label: topic.name },
         ]} />
 
-        {/* Hero */}
-        <div className="animate-fade-up rounded-2xl border border-border/70 bg-card/70 p-8 sm:p-12 mb-12">
+        {/* Hero — same Phase 12 treatment as the category page (tinted
+            per pillar, icon badge, real stat row). Topics are one level
+            deeper than categories but represent the same pillar, so they
+            get the same visual language rather than a plainer version. */}
+        <div className={`animate-fade-up rounded-2xl border ${bgTint.border} bg-gradient-to-br ${bgTint.bg} to-card/70 p-8 sm:p-12 mb-12`}>
+          <div className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl ${bgTint.bg}`}>
+            <Icon className={`h-5 w-5 ${tint.text}`} />
+          </div>
           {topic.categoryName && (
             <Link
               href={`/category/${topic.categorySlug}`}
-              className={`mb-4 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.18em] ${tint.text} transition-opacity hover:opacity-80`}
+              className={`mb-3 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.18em] ${tint.text} transition-opacity hover:opacity-80`}
             >
               ← {topic.categoryName}
             </Link>
@@ -181,10 +195,26 @@ export default async function TopicPage({ params }: Props) {
               {topic.description}
             </p>
           )}
-          <span className="mt-6 inline-block rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
-            {allArticles.length} article{allArticles.length !== 1 ? "s" : ""}
-          </span>
+          <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4 border-t border-border/50 pt-6">
+            <div>
+              <p className="font-display text-2xl font-semibold text-foreground">{allArticles.length}</p>
+              <p className="text-xs text-muted-foreground">Article{allArticles.length !== 1 ? "s" : ""}</p>
+            </div>
+            {pillarResources.length > 0 && (
+              <div>
+                <p className="font-display text-2xl font-semibold text-foreground">{pillarResources.length}</p>
+                <p className="text-xs text-muted-foreground">Toolkit resource{pillarResources.length !== 1 ? "s" : ""}</p>
+              </div>
+            )}
+            {pillarJourney && (
+              <div>
+                <p className="font-display text-2xl font-semibold text-foreground">{pillarJourney.totalDays}</p>
+                <p className="text-xs text-muted-foreground">Day challenge</p>
+              </div>
+            )}
+          </div>
         </div>
+
 
         {/* Overview */}
         {topic.overview && (

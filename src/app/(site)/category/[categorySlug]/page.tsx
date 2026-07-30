@@ -29,6 +29,15 @@ async function getCategoryData(slug: string) {
         pillarId: categories.pillarId,
         pillarName: pillars.name,
         pillarSlug: pillars.slug,
+        // Phase 12: pillar color is its own column, separate from
+        // categories.color — they started in sync when pillars were
+        // introduced but aren't kept in sync automatically, and the
+        // Phase 12 palette update (supabase_migration_pillar_colors.sql)
+        // only touches pillars.color. A category page's hero represents
+        // the pillar, so it should read the pillar's color when one is
+        // linked, falling back to the category's own color only for
+        // categories with no pillar (self-improvement, emotions).
+        pillarColor: pillars.color,
       })
       .from(categories)
       .leftJoin(pillars, eq(categories.pillarId, pillars.id))
@@ -141,9 +150,10 @@ export default async function CategoryPage({ params }: Props) {
   ]);
 
   const totalArticles = topicsData.reduce((sum, t) => sum + (t.articleCount ?? 0), 0);
-  const tint = CATEGORY_TINTS[cat.color ?? "blue"] ?? DEFAULT_TINT;
-  const bgTint = PILLAR_BG_TINTS[cat.color ?? ""] ?? PILLAR_BG_TINTS.amber!;
-  const Icon = CAT_ICONS[cat.color ?? "blue"] ?? CAT_ICONS.blue!;
+  const effectiveColor = cat.pillarColor ?? cat.color ?? "blue";
+  const tint = CATEGORY_TINTS[effectiveColor] ?? DEFAULT_TINT;
+  const bgTint = PILLAR_BG_TINTS[effectiveColor] ?? PILLAR_BG_TINTS.amber!;
+  const Icon = CAT_ICONS[effectiveColor] ?? CAT_ICONS.blue!;
   const isEmpty =
     topicsData.length === 0 && latestArticles.length === 0 &&
     pillarResources.length === 0 && communitySnippets.length === 0 && pillarStories.length === 0;

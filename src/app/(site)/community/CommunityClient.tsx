@@ -200,13 +200,23 @@ function CreatePostModal({
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("mental_health");
 
+  // Mirrors community-router.ts's createPost input schema exactly
+  // (z.string().min(5)/.min(10)) — these were previously only checked for
+  // non-empty on the client, so a short title like "Hi" would pass here
+  // and then fail server-side with a raw Zod error the user never sees
+  // explained ("communication and community" bug report).
+  const MIN_TITLE = 5;
+  const MIN_CONTENT = 10;
+  const titleTooShort = title.trim().length > 0 && title.trim().length < MIN_TITLE;
+  const contentTooShort = content.trim().length > 0 && content.trim().length < MIN_CONTENT;
+
   const createPost = trpc.community.createPost.useMutation({
     onSuccess: () => {
       toast.success("Post shared anonymously");
       onCreated();
       onClose();
     },
-    onError: () => toast.error("Failed to post. Please try again."),
+    onError: (err) => toast.error(err.message || "Failed to post. Please try again."),
   });
 
   const categoryOptions = CATEGORIES.filter((c) => c.key !== "all");
@@ -269,7 +279,12 @@ function CreatePostModal({
               maxLength={300}
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-600"
             />
-            <p className="text-[10px] text-zinc-600 mt-1 text-right">{title.length}/300</p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-[10px] text-amber-400 min-h-[1em]">
+                {titleTooShort ? `${MIN_TITLE - title.trim().length} more character${MIN_TITLE - title.trim().length === 1 ? "" : "s"} needed` : ""}
+              </p>
+              <p className="text-[10px] text-zinc-600">{title.length}/300</p>
+            </div>
           </div>
 
           {/* Content */}
@@ -285,7 +300,12 @@ function CreatePostModal({
               rows={5}
               className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-600 resize-none"
             />
-            <p className="text-[10px] text-zinc-600 mt-1 text-right">{content.length}/5000</p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-[10px] text-amber-400 min-h-[1em]">
+                {contentTooShort ? `${MIN_CONTENT - content.trim().length} more character${MIN_CONTENT - content.trim().length === 1 ? "" : "s"} needed` : ""}
+              </p>
+              <p className="text-[10px] text-zinc-600">{content.length}/5000</p>
+            </div>
           </div>
         </div>
 
@@ -306,7 +326,7 @@ function CreatePostModal({
               })
             }
             disabled={
-              !title.trim() || !content.trim() || createPost.isPending
+              title.trim().length < MIN_TITLE || content.trim().length < MIN_CONTENT || createPost.isPending
             }
             className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-black uppercase tracking-widest transition-all disabled:opacity-40"
           >

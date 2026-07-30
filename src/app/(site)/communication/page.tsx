@@ -215,6 +215,11 @@ export default function CommunicationPage() {
   const anonId = useAnonId();
   const [messageText, setMessageText] = useState("");
 
+  // Mirrors communication-router.ts's createMessage schema
+  // (z.string().min(5)) — same gap as community's title field.
+  const MIN_MESSAGE = 5;
+  const messageTooShort = messageText.trim().length > 0 && messageText.trim().length < MIN_MESSAGE;
+
   const { data: messages, refetch, isLoading } = trpc.communication.listMessages.useQuery({ limit: 50, offset: 0 });
 
   const createMessage = trpc.communication.createMessage.useMutation({
@@ -223,7 +228,7 @@ export default function CommunicationPage() {
       refetch();
       toast.success("Message sent anonymously");
     },
-    onError: () => toast.error("Failed to send. Please try again."),
+    onError: (err) => toast.error(err.message || "Failed to send. Please try again."),
   });
 
   return (
@@ -264,13 +269,19 @@ export default function CommunicationPage() {
             className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-teal-600 placeholder:text-zinc-600 resize-none"
           />
           <div className="flex items-center justify-between mt-3">
-            <p className="text-[10px] text-zinc-600">{messageText.length}/2000</p>
+            <p className="text-[10px] min-h-[1em]">
+              {messageTooShort ? (
+                <span className="text-amber-400">{MIN_MESSAGE - messageText.trim().length} more character{MIN_MESSAGE - messageText.trim().length === 1 ? "" : "s"} needed</span>
+              ) : (
+                <span className="text-zinc-600">{messageText.length}/2000</span>
+              )}
+            </p>
             <button
               onClick={() => {
-                if (!messageText.trim()) return;
+                if (messageText.trim().length < MIN_MESSAGE) return;
                 createMessage.mutate({ content: messageText, anonymousId: anonId });
               }}
-              disabled={!messageText.trim() || createMessage.isPending}
+              disabled={messageText.trim().length < MIN_MESSAGE || createMessage.isPending}
               className="flex items-center gap-2 px-5 py-2 bg-teal-600 hover:bg-teal-500 text-white text-sm font-black uppercase tracking-widest rounded-lg transition-all disabled:opacity-40"
             >
               <Send className="w-4 h-4" />

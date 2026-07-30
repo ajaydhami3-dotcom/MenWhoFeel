@@ -57,9 +57,15 @@ export default function ResumeBuilderClient() {
 
   if (query.isError) {
     return (
-      <div className="flex flex-col items-center gap-3 py-24 text-center">
+      <div className="flex flex-col items-center gap-3 py-24 text-center px-6">
         <AlertCircle className="w-6 h-6 text-destructive" />
         <p className="text-foreground font-medium">Couldn&apos;t load your resume.</p>
+        {(query.error?.message || query.error?.data?.code) && (
+          <p className="text-xs text-muted-foreground max-w-sm">
+            {query.error?.data?.code ? `${query.error.data.code} — ` : ""}
+            {query.error?.message}
+          </p>
+        )}
         <Button onClick={() => query.refetch()} variant="outline" size="sm" className="rounded-full">
           Try again
         </Button>

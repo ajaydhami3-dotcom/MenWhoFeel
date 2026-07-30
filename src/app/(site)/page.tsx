@@ -28,7 +28,7 @@ import { db } from "@/db";
 import { articles, categories, communityPosts, communityComments, pillars, stories } from "@/db/schema";
 import { eq, desc, sql, and, isNotNull } from "drizzle-orm";
 import { formatDistanceToNowStrict } from "date-fns";
-import { CATEGORY_TINTS, DEFAULT_TINT, PILLAR_ICONS } from "@/lib/category-style";
+import { CATEGORY_TINTS, DEFAULT_TINT, PILLAR_ICONS, PILLAR_BG_TINTS } from "@/lib/category-style";
 
 // Swap this for real photography whenever you have it — a real, warm,
 // unguarded moment (walking, thinking, somewhere quiet). Until then this
@@ -258,7 +258,14 @@ function HeroSection() {
         {HERO_IMAGE_URL ? (
           <img src={HERO_IMAGE_URL} alt="" loading="eager" className="h-full w-full object-cover" />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#241a10] via-[#1c1710] to-[#141008]">
+          // No real photography yet (see HERO_IMAGE_URL comment above) —
+          // this is a richer stand-in for it, not a claim that it's a
+          // photo: a layered dusk gradient plus the horizon motif reads
+          // closer to the mockup's mood (a lone figure against a skyline
+          // at dusk) than the previous flatter two-tone version, while
+          // staying honest that it's still a placeholder.
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a1f14] via-[#1c1710] to-[#0f0c08]">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_30%,rgba(227,164,99,0.16),transparent_60%)]" />
             <HorizonMotif className="h-full w-full text-[#c98a4b] opacity-40" />
           </div>
         )}
@@ -267,6 +274,9 @@ function HeroSection() {
 
       <div className="relative mx-auto w-full max-w-7xl px-4 pb-16 pt-32 sm:px-6 sm:pb-24 lg:px-8">
         <div className="max-w-3xl">
+          <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-white/70">
+            A platform built for modern men
+          </span>
           {/* v2.3: promoted from tagline to mission headline (see
               CHANGES.md). The original headline is demoted below to an
               emotional subheading rather than dropped — a guarded
@@ -274,7 +284,7 @@ function HeroSection() {
               "why here." The trust pill that used to sit here now lives
               in its own strip right below the hero (TrustBar) instead of
               competing with the headline for space. */}
-          <h1 className="font-display text-[2rem] font-medium leading-[1.15] tracking-tight text-[#f6f2ea] sm:text-5xl lg:text-6xl">
+          <h1 className="mt-5 font-display text-[2rem] font-medium leading-[1.15] tracking-tight text-[#f6f2ea] sm:text-5xl lg:text-6xl">
             Helping men build stronger minds, careers, relationships, and lives.
           </h1>
           <p className="mt-4 font-display text-xl italic leading-snug text-[#e3a463] sm:text-2xl">
@@ -283,6 +293,12 @@ function HeroSection() {
           <p className="mt-6 max-w-md text-lg leading-relaxed text-white/70">
             Free, anonymous support for men — no account, ever.
           </p>
+          {/* Check-In stays the one dominant action — it's still first,
+              still the only filled button, still the one with its own
+              reassurance line. "Explore" sits beside it as a genuinely
+              secondary, lower-commitment option for a visitor who wants
+              to look around before deciding anything, not a competing
+              decision of equal weight. */}
           <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
             <div>
               <Button asChild size="lg" className="rounded-full px-7">
@@ -292,13 +308,21 @@ function HeroSection() {
                 2 minutes · No score · No diagnosis
               </p>
             </div>
-            <Link
-              href="/stories"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-white/80 underline underline-offset-4 hover:text-white sm:ml-2"
+            <Button
+              asChild
+              size="lg"
+              variant="ghost"
+              className="rounded-full border border-white/25 px-7 text-white hover:bg-white/10 hover:text-white"
             >
-              Or read what men have shared <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+              <Link href="#pillars">Explore MenWhoFeel</Link>
+            </Button>
           </div>
+          <Link
+            href="/stories"
+            className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 underline underline-offset-4 hover:text-white"
+          >
+            Or read what men have shared <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
       </div>
     </section>
@@ -345,7 +369,7 @@ function TrustBar() {
 function PillarsSection({ pillarsData }: { pillarsData: PillarWithCategory[] }) {
   if (pillarsData.length === 0) return null;
   return (
-    <section className="py-20 sm:py-24">
+    <section id="pillars" className="scroll-mt-20 py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="The four pillars"
@@ -355,14 +379,15 @@ function PillarsSection({ pillarsData }: { pillarsData: PillarWithCategory[] }) 
         <div className="grid gap-5 sm:grid-cols-2">
           {pillarsData.map((pillar) => {
             const tint = CATEGORY_TINTS[pillar.color ?? "blue"] ?? DEFAULT_TINT;
+            const bgTint = PILLAR_BG_TINTS[pillar.color ?? ""] ?? PILLAR_BG_TINTS.amber!;
             const Icon = PILLAR_ICONS[pillar.icon ?? ""] ?? Brain;
             return (
               <Link
                 key={pillar.id}
                 href={`/category/${pillar.categorySlug}`}
-                className="group rounded-2xl bg-card/70 p-8 transition-colors hover:bg-card"
+                className={`group rounded-2xl border ${bgTint.border} bg-card/70 p-8 transition-colors hover:bg-card`}
               >
-                <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-secondary/60">
+                <div className={`mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl ${bgTint.bg}`}>
                   <Icon className={`h-5 w-5 ${tint.text}`} />
                 </div>
                 <h3 className="font-display text-xl font-semibold text-foreground">{pillar.name}</h3>

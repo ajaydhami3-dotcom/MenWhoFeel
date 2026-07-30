@@ -1,5 +1,5 @@
 import type { ElementType } from "react";
-import { Brain, HeartPulse, Dumbbell, Briefcase, Flame, TrendingUp, Video, FileText, BookOpen, Link2 } from "lucide-react";
+import { Brain, HeartPulse, Dumbbell, Briefcase, Flame, TrendingUp, Video, FileText, BookOpen, Link2, Waves } from "lucide-react";
 
 // Toolkit resource-type icon, keyed by the `type` enum on `resources`
 // (video/pdf/book/link). Shared by category and topic pages.
@@ -18,7 +18,7 @@ export const RESOURCE_ICONS: Record<string, ElementType> = {
 // always read as the same color everywhere it appears.
 export const CAT_ICONS: Record<string, ElementType> = {
   blue: Brain, rose: HeartPulse, green: Dumbbell,
-  emerald: Briefcase, amber: Flame, purple: TrendingUp,
+  emerald: Briefcase, amber: Flame, purple: TrendingUp, sky: Waves,
 };
 
 export const CATEGORY_TINTS: Record<string, { text: string }> = {
@@ -28,6 +28,12 @@ export const CATEGORY_TINTS: Record<string, { text: string }> = {
   emerald: { text: "text-emerald-700 dark:text-emerald-300" },
   amber:   { text: "text-primary" },
   purple:  { text: "text-purple-700 dark:text-purple-300" },
+  // NEW: "blue" above is a legacy misnomer (it actually renders slate —
+  // left untouched since other categories may already depend on that
+  // exact look). Physical Wellbeing's Phase 12 redesign needed a color
+  // that reads as genuinely blue, hence a distinctly-named key instead of
+  // redefining what "blue" means everywhere it's already used.
+  sky:     { text: "text-sky-600 dark:text-sky-300" },
 };
 
 export const DEFAULT_TINT = CATEGORY_TINTS.blue!;
@@ -45,4 +51,15 @@ export const PILLAR_ICONS: Record<string, ElementType> = {
   briefcase: Briefcase,
   "heart-pulse": HeartPulse,
   dumbbell: Dumbbell,
+};
+
+// Pillar background tint — a soft, low-opacity wash used behind pillar
+// cards/hero banners (Phase 12 redesign). Separate from CATEGORY_TINTS'
+// text-only colors since this needs a background + border pairing, and
+// only the 4 pillars (not every category) get this richer treatment.
+export const PILLAR_BG_TINTS: Record<string, { bg: string; border: string }> = {
+  green:   { bg: "bg-teal-500/10", border: "border-teal-500/20" },
+  amber:   { bg: "bg-primary/10", border: "border-primary/20" },
+  rose:    { bg: "bg-rose-500/10", border: "border-rose-500/20" },
+  sky:     { bg: "bg-sky-500/10", border: "border-sky-500/20" },
 };

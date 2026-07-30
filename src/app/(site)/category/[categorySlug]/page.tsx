@@ -6,6 +6,7 @@ import { categories, topics, articles, pillars } from "@/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import Breadcrumb from "@/components/Breadcrumb";
 import ChallengesTeaser from "@/components/ChallengesTeaser";
+import CheckInTeaser from "@/components/CheckInTeaser";
 import { CAT_ICONS, CATEGORY_TINTS, DEFAULT_TINT, RESOURCE_ICONS } from "@/lib/category-style";
 import { getPillarResources, getPillarCommunityPosts, getPillarStories, getPillarJourney } from "@/server/queries/pillar-content";
 import { ArrowRight, Link2, Briefcase, TrendingUp } from "lucide-react";
@@ -27,6 +28,7 @@ async function getCategoryData(slug: string) {
         color: categories.color,
         pillarId: categories.pillarId,
         pillarName: pillars.name,
+        pillarSlug: pillars.slug,
       })
       .from(categories)
       .leftJoin(pillars, eq(categories.pillarId, pillars.id))
@@ -335,8 +337,9 @@ export default async function CategoryPage({ params }: Props) {
           </section>
         )}
 
-        <section className="mb-14">
+        <section className="mb-14 grid gap-4 sm:grid-cols-2">
           <ChallengesTeaser journey={pillarJourney} />
+          <CheckInTeaser pillarSlug={cat.pillarSlug} pillarName={cat.pillarName} />
         </section>
 
         {/* NEW — Stories: real experiences from men in this pillar. Real

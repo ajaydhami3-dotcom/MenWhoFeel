@@ -7,186 +7,22 @@ import { Button } from "@/components/ui/button";
 import {
   Activity, Users, BookOpen,
   ArrowRight, Wrench, MessageSquare,
-  CheckSquare, Bot
+  CheckSquare, Bot, DollarSign, Briefcase
 } from "lucide-react";
 import { Suspense } from "react";
+import { getAssessmentResults, ASSESSMENT_LEGACY_MAP, resolveAssessmentPillar } from "@/lib/assessment-content";
 
-const RESULTS: Record<string, any> = {
-  overloaded: {
-    title: "Mentally Overloaded",
-    tagline: "You're carrying more than you should have to.",
-    desc: "Things are piling up faster than you can process them. You're still functioning, but something has to give. That's not weakness — that's information your body is giving you.",
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
-    microcopy: "Some days holding yourself together takes everything.",
-    actionPlan: {
-      title: "Immediate Action Plan: Clear the Load",
-      steps: [
-        { label: "Do a brain dump tonight", detail: "Write every open task, worry, or obligation on paper. Getting it out of your head and onto a page reduces cognitive load within 10 minutes." },
-        { label: "Identify one thing to say no to this week", detail: "Overload is often a boundary problem. Find one commitment that drains more than it gives and push back — even partially." },
-        { label: "15-minute daily decompression window", detail: "Research shows even short recovery periods (walk, stillness, no screens) reset your nervous system. Block it like a meeting." },
-        { label: "Triage vs. tackle", detail: "Separate what needs doing THIS week from everything else. Most of what feels urgent isn't. The list is shorter than it looks." },
-      ],
-    },
-    nextSteps: [
-      { label: "Read stories from men in the same place", action: "Read Stories", href: "/stories", icon: BookOpen },
-      { label: "Find tools for managing mental load", action: "Support & Growth", href: "/guides", icon: Wrench },
-      { label: "Talk to other men anonymously", action: "Join Community", href: "/community", icon: Users },
-    ],
-  },
-  disconnected: {
-    title: "Emotionally Disconnected",
-    tagline: "You're present, but not quite here.",
-    desc: "You may be going through the motions without feeling much. That flatness is its own kind of heaviness — and it's worth paying attention to before it becomes harder to reach.",
-    color: "text-teal-400",
-    bg: "bg-teal-500/10",
-    border: "border-teal-500/20",
-    microcopy: "Feeling numb isn't the same as being okay.",
-    actionPlan: {
-      title: "Immediate Action Plan: Reconnect",
-      steps: [
-        { label: "Do something physical today", detail: "Emotional disconnection often has a physical root. Exercise — even a 20-minute walk — reactivates the nervous system and can break numbness within days." },
-        { label: "Name three things you used to enjoy", detail: "Anhedonia (inability to feel pleasure) is treatable. Identifying what you've drifted from is step one to finding your way back." },
-        { label: "Have one honest conversation this week", detail: "Not a therapy session — just say something real to someone. 'I've been feeling off lately' is enough to start." },
-        { label: "Limit passive screen time before bed", detail: "Doom-scrolling and passive consumption deepen emotional flatness. Replace 30 minutes of it with reading or a real conversation." },
-      ],
-    },
-    nextSteps: [
-      { label: "Stories from men who felt the same way", action: "Read Stories", href: "/stories", icon: BookOpen },
-      { label: "Community check-in — just listen if you like", action: "Join Community", href: "/community", icon: MessageSquare },
-      { label: "Mental health guides and resources", action: "Support & Growth", href: "/guides", icon: Wrench },
-    ],
-  },
-  pressure: {
-    title: "Running on Pressure",
-    tagline: "You're keeping it together — but at a cost.",
-    desc: "You're functional. You show up. But internally, you're running hot. The pressure isn't going away on its own, and ignoring it has a shelf life.",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-    microcopy: "Small improvements matter. You don't have to overhaul everything.",
-    actionPlan: {
-      title: "Immediate Action Plan: Release the Valve",
-      steps: [
-        { label: "Identify your top pressure source", detail: "Is it money, performance, relationships, or identity? Pressure that has no named source can't be addressed. Name it — even vaguely." },
-        { label: "Build one pressure-release habit", detail: "Running, boxing, journaling, cold showers — men who have a physical outlet for pressure show significantly lower anxiety markers." },
-        { label: "Audit what you're absorbing for others", detail: "Men under pressure often carry other people's stress too. Are you the one everyone leans on? That compounds. Know the difference between support and absorption." },
-        { label: "Set a recovery checkpoint", detail: "Pressure-running without checkpoints leads to burnout. Block one hour this week that's entirely yours. No productivity. Just recovery." },
-      ],
-    },
-    nextSteps: [
-      { label: "Read from men who've been here", action: "Read Stories", href: "/stories", icon: BookOpen },
-      { label: "Practical resources to reduce pressure", action: "Support & Growth", href: "/guides", icon: Wrench },
-      { label: "Talk anonymously with other men", action: "Join Community", href: "/community", icon: Users },
-    ],
-  },
-  burnout: {
-    title: "Burned Out",
-    tagline: "You've been running on empty for a while.",
-    desc: "Rest isn't restoring you. That's a signal. Burnout isn't laziness — it's what happens when output has exceeded input for too long. Something needs to change at the root.",
-    color: "text-rose-400",
-    bg: "bg-rose-500/10",
-    border: "border-rose-500/20",
-    microcopy: "You can't pour from an empty cup. That's not a cliché — it's just true.",
-    actionPlan: {
-      title: "Immediate Action Plan: Recover First",
-      steps: [
-        { label: "Stop trying to push through — recovery is the work", detail: "Burnout treated with more effort gets worse. Your first job is to reduce the output, not increase it. Identify what can be paused or delegated this week." },
-        { label: "Sleep is non-negotiable", detail: "Burnout severely disrupts sleep architecture. Prioritising 7–9 hours is the single highest-leverage recovery action — before supplements, therapy, or anything else." },
-        { label: "Find one thing that genuinely restores you", detail: "Not TV, not booze — something that leaves you feeling more full than before. A hobby, being in nature, physical movement, building something. What was it, before all this?" },
-        { label: "Talk to someone — not to solve it, just to say it out loud", detail: "Social withdrawal is a burnout symptom and a burnout amplifier. One honest conversation per week has measurable effects on recovery timelines." },
-      ],
-    },
-    nextSteps: [
-      { label: "Stories from men who burned out and found their way", action: "Read Stories", href: "/stories", icon: BookOpen },
-      { label: "Recovery resources", action: "Support & Growth", href: "/guides", icon: Wrench },
-      { label: "Community — you don't have to talk, just read", action: "Join Community", href: "/community", icon: MessageSquare },
-    ],
-  },
-  directionless: {
-    title: "Directionless",
-    tagline: "You're not sure where you're going right now.",
-    desc: "That uncertainty is unsettling — and real. When purpose is absent, everything feels heavier. You're not broken. You're between things. That's a specific problem with a real path out.",
-    color: "text-indigo-400",
-    bg: "bg-indigo-500/10",
-    border: "border-indigo-500/20",
-    microcopy: "Not knowing where you're going isn't the same as being stuck.",
-    actionPlan: {
-      title: "Immediate Action Plan: Find True North",
-      steps: [
-        { label: "Write down what used to matter to you", detail: "Direction is often lost, not absent. Before finding new purpose, recover what you may have buried. Write three things that genuinely mattered to you 3–5 years ago." },
-        { label: "Separate 'should want' from 'actually want'", detail: "A lot of directionlessness is running on borrowed values. What do you actually want — not what others expect? Even a rough answer reorients everything." },
-        { label: "Take one small action in a new direction", detail: "Not a life plan — just one step. Sign up for one thing, reach out to one person, spend one afternoon doing something different. Motion changes perspective." },
-        { label: "Stop waiting for clarity before moving", detail: "Clarity comes from action, not the other way around. You don't need to know the destination to take the next step." },
-      ],
-    },
-    nextSteps: [
-      { label: "Stories from men finding their footing", action: "Read Stories", href: "/stories", icon: BookOpen },
-      { label: "Guides that help with direction and purpose", action: "Support & Growth", href: "/guides", icon: Wrench },
-      { label: "Talk to other men in the same place", action: "Join Community", href: "/community", icon: Users },
-    ],
-  },
-  isolated: {
-    title: "Isolated but Functional",
-    tagline: "You're doing fine on the outside. Less so on the inside.",
-    desc: "You haven't broken down. You're still showing up. But something is going unsaid, and the silence is building. Connection doesn't have to mean vulnerability — it just means honesty.",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-    microcopy: "You don't have to carry everything silently.",
-    actionPlan: {
-      title: "Immediate Action Plan: Bridge the Gap",
-      steps: [
-        { label: "Identify one person you trust — even barely", detail: "You don't need a best friend or a therapist. You need one person to whom you can say something real. One is enough to start." },
-        { label: "Lower the bar on what 'connection' means", detail: "Isolation often persists because men set the bar at 'deep talk or nothing.' A regular coffee, a gym partner, a shared hobby — all of these rebuild the neural pathways of belonging." },
-        { label: "Read or listen to other men's honest accounts", detail: "The antidote to isolation isn't always talking — sometimes it's hearing. Reading real stories from men who felt what you feel is scientifically proven to reduce the sense of being alone." },
-        { label: "Acknowledge the cost of silence", detail: "Chronic isolation increases cortisol, disrupts sleep, and raises depression risk by over 40%. This isn't about being social — it's about your baseline health." },
-      ],
-    },
-    nextSteps: [
-      { label: "Read stories from men who've been isolated", action: "Read Stories", href: "/stories", icon: BookOpen },
-      { label: "Community — anonymous and low-pressure", action: "Join Community", href: "/community", icon: MessageSquare },
-      { label: "Resources for connection and mental health", action: "Support & Growth", href: "/guides", icon: Wrench },
-    ],
-  },
-  // Legacy fallback
-  functional: {
-    title: "Isolated but Functional",
-    tagline: "You're doing fine on the outside. Less so on the inside.",
-    desc: "You're holding it together. But something is going unsaid, and the silence is building.",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-    microcopy: "You don't have to carry everything silently.",
-    actionPlan: {
-      title: "Immediate Action Plan: Bridge the Gap",
-      steps: [
-        { label: "Find one person to say something real to", detail: "One honest moment with one person is enough to start shifting the pattern." },
-        { label: "Lower the bar for connection", detail: "It doesn't have to be a deep conversation — a shared activity, a brief check-in, something real." },
-        { label: "Read other men's accounts", detail: "Hearing that others feel what you feel is one of the fastest ways to feel less alone." },
-        { label: "Name what's going unsaid", detail: "Even writing it privately helps. The silence itself is part of the weight." },
-      ],
-    },
-    nextSteps: [
-      { label: "Read stories from men who've been there", action: "Read Stories", href: "/stories", icon: BookOpen },
-      { label: "Community — anonymous, low-pressure", action: "Join Community", href: "/community", icon: MessageSquare },
-      { label: "Resources and support", action: "Support & Growth", href: "/guides", icon: Wrench },
-    ],
-  },
-};
-
-const legacyMap: Record<string, string> = {
-  tactician: "pressure",
-  operator: "burnout",
-  vanguard: "isolated",
-  civilian: "overloaded",
-};
+// Content stores icons as string identifiers (it's a plain data module, not
+// a component) — resolve them to the actual lucide components here.
+const ICON_MAP: Record<string, typeof BookOpen> = { BookOpen, MessageSquare, Wrench, Users, Activity, DollarSign, Briefcase };
 
 function ResultsContent() {
   const searchParams = useSearchParams();
+  const pillarParam = searchParams.get("pillar");
+  const resolvedPillar = resolveAssessmentPillar(pillarParam);
+  const RESULTS = getAssessmentResults(pillarParam);
   const rawType = searchParams.get("type") || "overloaded";
-  const type = RESULTS[rawType] ? rawType : (legacyMap[rawType] || "overloaded");
+  const type = RESULTS[rawType] ? rawType : (ASSESSMENT_LEGACY_MAP[rawType] || "overloaded");
   const result = RESULTS[type];
 
   return (
@@ -255,7 +91,7 @@ function ResultsContent() {
         </div>
         <div className="space-y-3">
           {result.nextSteps.map((step: any, i: number) => {
-            const Icon = step.icon;
+            const Icon = ICON_MAP[step.icon] ?? BookOpen;
             return (
               <div key={i} className={`flex items-center justify-between p-4 md:p-5 rounded-xl bg-card/60 border ${result.border} hover:bg-card/80 transition-colors group`}>
                 <div className="flex items-start gap-4">
@@ -277,7 +113,7 @@ function ResultsContent() {
 
       {/* Redo */}
       <div className="pt-4 text-center">
-        <Link href="/assessment">
+        <Link href={`/assessment?pillar=${resolvedPillar}`}>
           <Button variant="ghost" className="text-muted-foreground hover:text-foreground text-sm">
             Take the check-in again
           </Button>

@@ -2,10 +2,11 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { categories, topics, articles } from "@/db/schema";
+import { categories, topics, articles, pillars } from "@/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import Breadcrumb from "@/components/Breadcrumb";
 import ChallengesTeaser from "@/components/ChallengesTeaser";
+import CheckInTeaser from "@/components/CheckInTeaser";
 import { CATEGORY_TINTS, DEFAULT_TINT, RESOURCE_ICONS } from "@/lib/category-style";
 import { getPillarResources, getPillarCommunityPosts, getPillarStories, getPillarJourney } from "@/server/queries/pillar-content";
 import { BookOpen, ChevronRight, FileText, ArrowRight, Link2 } from "lucide-react";
@@ -30,14 +31,18 @@ async function getTopicData(slug: string) {
         // Pillar context, reached through the topic's parent category
         // (topics don't get their own pillarId — they inherit it from
         // categories, which got pillarId in the Phase 0 migration).
-        // Community's real pillarId column shipped in Phase 6, so this no
-        // longer needs a join to `pillars` just to get its slug — plain
-        // pillarId is now enough for every pillar-scoped query this page
-        // calls.
+        // Community's real pillarId column shipped in Phase 6, so plain
+        // pillarId is enough for every pillar-scoped *query* this page
+        // calls — but the Check-In teaser (Phase 12) needs the pillar's
+        // slug/name to build its link and label, so this re-adds a join
+        // to `pillars`, same as the category page.
         pillarId: categories.pillarId,
+        pillarName: pillars.name,
+        pillarSlug: pillars.slug,
       })
       .from(topics)
       .leftJoin(categories, eq(topics.categoryId, categories.id))
+      .leftJoin(pillars, eq(categories.pillarId, pillars.id))
       .where(eq(topics.slug, slug))
       .limit(1);
     return rows[0] ?? null;
@@ -310,10 +315,12 @@ export default async function TopicPage({ params }: Props) {
           </section>
         )}
 
-        {/* NEW — Challenges: same honest, non-pillar-filtered cross-link
-            used on the category pages (see ChallengesTeaser.tsx). */}
-        <section className="mb-12">
+        {/* NEW — Challenges + Check-In: same honest, degrade-gracefully
+            cross-links used on the category pages (see
+            ChallengesTeaser.tsx / CheckInTeaser.tsx). */}
+        <section className="mb-12 grid gap-4 sm:grid-cols-2">
           <ChallengesTeaser journey={pillarJourney} />
+          <CheckInTeaser pillarSlug={topic.pillarSlug} pillarName={topic.pillarName} />
         </section>
 
         {/* NEW — Stories: real experiences from men in this topic's

@@ -7,7 +7,7 @@ import { eq, desc, and, sql } from "drizzle-orm";
 import Breadcrumb from "@/components/Breadcrumb";
 import ChallengesTeaser from "@/components/ChallengesTeaser";
 import CheckInTeaser from "@/components/CheckInTeaser";
-import { CAT_ICONS, CATEGORY_TINTS, DEFAULT_TINT, RESOURCE_ICONS } from "@/lib/category-style";
+import { CAT_ICONS, CATEGORY_TINTS, DEFAULT_TINT, RESOURCE_ICONS, PILLAR_BG_TINTS } from "@/lib/category-style";
 import { getPillarResources, getPillarCommunityPosts, getPillarStories, getPillarJourney } from "@/server/queries/pillar-content";
 import { ArrowRight, Link2, Briefcase, TrendingUp } from "lucide-react";
 
@@ -142,6 +142,7 @@ export default async function CategoryPage({ params }: Props) {
 
   const totalArticles = topicsData.reduce((sum, t) => sum + (t.articleCount ?? 0), 0);
   const tint = CATEGORY_TINTS[cat.color ?? "blue"] ?? DEFAULT_TINT;
+  const bgTint = PILLAR_BG_TINTS[cat.color ?? ""] ?? PILLAR_BG_TINTS.amber!;
   const Icon = CAT_ICONS[cat.color ?? "blue"] ?? CAT_ICONS.blue!;
   const isEmpty =
     topicsData.length === 0 && latestArticles.length === 0 &&
@@ -172,12 +173,19 @@ export default async function CategoryPage({ params }: Props) {
           { label: cat.name },
         ]} />
 
-        {/* Hero */}
-        <div className="animate-fade-up rounded-2xl border border-border/70 bg-card/70 p-8 sm:p-12 mb-14">
-          <div className={`mb-4 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] ${tint.text}`}>
-            <Icon className="h-4 w-4" />
-            {cat.pillarName ?? "Category"}
+        {/* Hero — Phase 12: tinted per pillar (PILLAR_BG_TINTS, same
+            mapping the homepage pillar cards use) instead of the flat
+            neutral card every category used to share, so a given pillar
+            reads as the same color everywhere it shows up. Every stat
+            below is a real, live count — no member/user number, since
+            this site doesn't have accounts to count. */}
+        <div className={`animate-fade-up rounded-2xl border ${bgTint.border} bg-gradient-to-br ${bgTint.bg} to-card/70 p-8 sm:p-12 mb-14`}>
+          <div className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl ${bgTint.bg}`}>
+            <Icon className={`h-5 w-5 ${tint.text}`} />
           </div>
+          <p className={`mb-3 font-mono text-[11px] uppercase tracking-[0.18em] ${tint.text}`}>
+            {cat.pillarName ?? "Category"}
+          </p>
           <h1 className="font-display text-[2.4rem] font-medium leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {cat.name}
           </h1>
@@ -186,20 +194,30 @@ export default async function CategoryPage({ params }: Props) {
               {cat.description}
             </p>
           )}
-          <div className="mt-6 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
-              {topicsData.length} topic{topicsData.length !== 1 ? "s" : ""}
-            </span>
-            <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
-              {totalArticles} article{totalArticles !== 1 ? "s" : ""}
-            </span>
+          <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4 border-t border-border/50 pt-6">
+            <div>
+              <p className="font-display text-2xl font-semibold text-foreground">{totalArticles}</p>
+              <p className="text-xs text-muted-foreground">Article{totalArticles !== 1 ? "s" : ""}</p>
+            </div>
+            <div>
+              <p className="font-display text-2xl font-semibold text-foreground">{topicsData.length}</p>
+              <p className="text-xs text-muted-foreground">Topic{topicsData.length !== 1 ? "s" : ""}</p>
+            </div>
             {pillarResources.length > 0 && (
-              <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground">
-                {pillarResources.length} toolkit resource{pillarResources.length !== 1 ? "s" : ""}
-              </span>
+              <div>
+                <p className="font-display text-2xl font-semibold text-foreground">{pillarResources.length}</p>
+                <p className="text-xs text-muted-foreground">Toolkit resource{pillarResources.length !== 1 ? "s" : ""}</p>
+              </div>
+            )}
+            {pillarJourney && (
+              <div>
+                <p className="font-display text-2xl font-semibold text-foreground">{pillarJourney.totalDays}</p>
+                <p className="text-xs text-muted-foreground">Day challenge</p>
+              </div>
             )}
           </div>
         </div>
+
 
         {/* Career Hub + Small Wins — pillar-exclusive, per the original
             brief ("Career Hub belongs ONLY inside Work & Financial

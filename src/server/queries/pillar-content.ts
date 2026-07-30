@@ -161,7 +161,7 @@ export async function getPillarStories(pillarId: number | null, topicId?: number
   }
 }
 
-export type PillarJourney = { title: string; description: string | null; href: string };
+export type PillarJourney = { title: string; description: string | null; href: string; totalDays: number | null };
 
 // Journeys (Phase 7). Looks up this pillar's journey — either a native
 // one (links to /challenges/[slug]) or The Forge's registry row (links
@@ -175,7 +175,7 @@ export async function getPillarJourney(pillarId: number | null): Promise<PillarJ
   if (!pillarId) return null;
   try {
     const rows = await db
-      .select({ title: journeys.title, description: journeys.description, slug: journeys.slug, externalHref: journeys.externalHref })
+      .select({ title: journeys.title, description: journeys.description, slug: journeys.slug, externalHref: journeys.externalHref, totalDays: journeys.totalDays })
       .from(journeys)
       .where(eq(journeys.pillarId, pillarId))
       .limit(1);
@@ -185,6 +185,7 @@ export async function getPillarJourney(pillarId: number | null): Promise<PillarJ
       title: journey.title,
       description: journey.description,
       href: journey.externalHref ?? `/challenges/${journey.slug}`,
+      totalDays: journey.totalDays,
     };
   } catch (err) {
     console.error(`[pillar-content] getPillarJourney(${pillarId}) failed:`, err);

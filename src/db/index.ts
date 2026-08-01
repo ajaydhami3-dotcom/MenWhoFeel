@@ -2,7 +2,12 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-// Prevent multiple connections during hot-reloads in development
+// Cache the pool on globalThis unconditionally (not just in dev) so it
+// survives both hot-reloads in development AND any module re-evaluation
+// during `next build`'s static generation — NODE_ENV is "production"
+// during a build too, so a dev-only condition here means the build gets
+// none of this caching and can end up creating (and never closing) a
+// fresh pool each time the module is touched.
 const globalForDb = globalThis as unknown as {
   postgres: postgres.Sql | undefined;
 };
@@ -42,7 +47,7 @@ export const sql =
     connect_timeout: 10,
   });
 
-if (process.env.NODE_ENV !== "production") {
+if (!globalForDb.postgres) {
   globalForDb.postgres = sql;
 }
 

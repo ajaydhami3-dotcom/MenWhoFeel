@@ -30,6 +30,13 @@ import { eq, desc, sql, and, isNotNull } from "drizzle-orm";
 import { formatDistanceToNowStrict } from "date-fns";
 import { CATEGORY_TINTS, DEFAULT_TINT, PILLAR_ICONS, PILLAR_BG_TINTS } from "@/lib/category-style";
 
+// Computed once at module evaluation, not inside a component body —
+// Date.now() inside render is flagged as an impure call by React's
+// purity rule (react-hooks/purity). "New" article badges below are a
+// few days off in edge cases (a request that reuses a stale module
+// instance) rather than wrong every render.
+const NOW = Date.now();
+
 // Swap this for real photography whenever you have it — a real, warm,
 // unguarded moment (walking, thinking, somewhere quiet). Until then this
 // section renders a tasteful dark gradient + the brand's horizon motif
@@ -127,12 +134,18 @@ async function getHomepageArticles() {
         createdAt: articles.createdAt,
         publishedAt: articles.publishedAt,
         categoryName: categories.name,
+        // Phase 12: prefer the pillar's color over the category's own
+        // (same reasoning as the category/topic hero fix — the two
+        // columns aren't kept in sync automatically).
+        categoryColor: categories.color,
+        pillarColor: pillars.color,
       })
       .from(articles)
       .leftJoin(categories, eq(articles.categoryId, categories.id))
+      .leftJoin(pillars, eq(categories.pillarId, pillars.id))
       .where(eq(articles.status, "published"))
       .orderBy(desc(articles.createdAt))
-      .limit(2);
+      .limit(3);
   } catch {
     return [];
   }
@@ -221,23 +234,33 @@ function SectionHeading({
 
 function ArticleMeta({ article, className = "" }: { article: ArticleRow; className?: string }) {
   const date = article.publishedAt ?? article.createdAt;
+  const effectiveColor = article.pillarColor ?? article.categoryColor ?? null;
+  const tint = effectiveColor ? (CATEGORY_TINTS[effectiveColor] ?? DEFAULT_TINT) : null;
+  const bgTint = effectiveColor ? (PILLAR_BG_TINTS[effectiveColor] ?? null) : null;
+  const isNew = date ? (NOW - new Date(date).getTime()) / (1000 * 60 * 60 * 24) <= 14 : false;
   return (
-    <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground ${className}`}>
-      {article.categoryName && <span className="text-primary">{article.categoryName}</span>}
-      {article.categoryName && <span className="opacity-50">·</span>}
-      <span>{article.authorName ?? "MenWhoFeel"}</span>
-      {date && (
-        <>
-          <span className="opacity-50">·</span>
-          <span>{new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-        </>
+    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+      {article.categoryName && tint && (
+        <span
+          className={`rounded-full px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] ${tint.text} ${bgTint?.bg ?? "bg-secondary"}`}
+        >
+          {article.categoryName}
+        </span>
       )}
-      {article.readingTime && (
-        <>
-          <span className="opacity-50">·</span>
-          <span>{article.readingTime} min</span>
-        </>
+      {isNew && (
+        <span className="rounded-full bg-primary/15 px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-primary">
+          New
+        </span>
       )}
+      <div className="flex flex-wrap items-center gap-x-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/80">
+        {date && <span>{new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
+        {article.readingTime && (
+          <>
+            {date && <span className="opacity-50">·</span>}
+            <span>{article.readingTime} min</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -415,7 +438,7 @@ function PillarsSection({ pillarsData }: { pillarsData: PillarWithCategory[] }) 
 // /challenges — there's no dedicated overview page for the three new
 // pillar journeys yet, only their individual detail pages.
 
-type FeaturedTool = { icon: ElementType; title: string; description: string; href: string };
+type FeaturedTool = { icon: ElementType; title: string; description: string; href: string; badge?: string };
 
 const FEATURED_TOOLS: FeaturedTool[] = [
   {
@@ -423,6 +446,7 @@ const FEATURED_TOOLS: FeaturedTool[] = [
     title: "Resume Builder",
     description: "Fill it in, get AI help tightening the wording, download a clean PDF. No sign-up required to start.",
     href: "/resume-builder",
+    badge: "AI",
   },
   {
     icon: BookOpen,
@@ -464,9 +488,18 @@ function FeaturedToolsSection() {
             <Link
               key={tool.href}
               href={tool.href}
-              className="group rounded-2xl bg-card/70 p-7 transition-colors hover:bg-card"
+              className="group rounded-2xl border border-border/60 bg-card/70 p-7 transition-colors hover:bg-card"
             >
-              <tool.icon className="h-5 w-5 text-primary" />
+              <div className="flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <tool.icon className="h-5 w-5 text-primary" />
+                </div>
+                {tool.badge && (
+                  <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-primary">
+                    {tool.badge}
+                  </span>
+                )}
+              </div>
               <h3 className="mt-4 font-display text-lg font-semibold text-foreground">{tool.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{tool.description}</p>
               <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
@@ -519,7 +552,7 @@ function TrustSection({ posts, storiesData }: { posts: CommunitySnippet[]; stori
             </p>
             <div className="space-y-4">
               {displayStories.map((s, i) => (
-                <Link key={i} href={s.href} className="group block rounded-2xl bg-card/80 p-5 transition-colors hover:bg-card">
+                <Link key={i} href={s.href} className="group block rounded-2xl border border-border/60 bg-card/80 p-5 transition-colors hover:bg-card">
                   <p className="font-display text-base font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
                     {s.title}
                   </p>
@@ -538,7 +571,7 @@ function TrustSection({ posts, storiesData }: { posts: CommunitySnippet[]; stori
             </p>
             <div className="space-y-4">
               {display.map((s, i) => (
-                <Link key={i} href={s.href} className="group block rounded-2xl bg-card/80 p-5 transition-colors hover:bg-card">
+                <Link key={i} href={s.href} className="group block rounded-2xl border border-border/60 bg-card/80 p-5 transition-colors hover:bg-card">
                   <p className="font-display text-base font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
                     {s.title}
                   </p>
@@ -575,9 +608,9 @@ function ReadingSection({ articlesData }: { articlesData: ArticleRow[] }) {
           href="/intel"
           linkLabel="All reads"
         />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           {articlesData.map((article) => (
-            <Link key={article.id} href={`/intel/${article.slug}`} className="group rounded-2xl bg-card/70 p-6 transition-colors hover:bg-card">
+            <Link key={article.id} href={`/intel/${article.slug}`} className="group rounded-2xl border border-border/60 bg-card/70 p-6 transition-colors hover:bg-card">
               <ArticleMeta article={article} className="mb-3" />
               <h4 className="font-display text-lg font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
                 {article.title}

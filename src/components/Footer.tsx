@@ -16,6 +16,7 @@ import {
 import { db } from "@/db";
 import { topics, articles } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 
 function ColumnHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -27,23 +28,35 @@ function ColumnHeading({ children }: { children: React.ReactNode }) {
 
 // Ranked by published-article count so "popular" means something real,
 // rather than an arbitrary/manually-curated list that drifts out of date.
-async function getPopularTopics() {
-  try {
-    return await db
-      .select({
-        name: topics.name,
-        slug: topics.slug,
-        count: sql<number>`cast(count(${articles.id}) as int)`,
-      })
-      .from(topics)
-      .leftJoin(articles, eq(articles.topicId, topics.id))
-      .groupBy(topics.id)
-      .orderBy(desc(sql`count(${articles.id})`))
-      .limit(5);
-  } catch {
-    return [];
-  }
-}
+//
+// Footer is rendered by the root layout, so this runs on *every* page —
+// during `next build` that's once per static page (87 separate DB round
+// trips for data that's identical every time), and in production it'd be
+// once per request. Wrapped in unstable_cache so it's computed once and
+// reused for an hour instead, tagged "popular-topics" so it can be
+// force-revalidated later if this ever needs to reflect a change sooner
+// than that.
+const getPopularTopics = unstable_cache(
+  async () => {
+    try {
+      return await db
+        .select({
+          name: topics.name,
+          slug: topics.slug,
+          count: sql<number>`cast(count(${articles.id}) as int)`,
+        })
+        .from(topics)
+        .leftJoin(articles, eq(articles.topicId, topics.id))
+        .groupBy(topics.id)
+        .orderBy(desc(sql`count(${articles.id})`))
+        .limit(5);
+    } catch {
+      return [];
+    }
+  },
+  ["footer-popular-topics"],
+  { revalidate: 3600, tags: ["popular-topics"] }
+);
 
 export default async function Footer() {
   const popularTopics = await getPopularTopics();

@@ -14,6 +14,7 @@ import {
   BarChart3,
   Lock,
   Zap,
+  Stethoscope,
 } from "lucide-react";
 
 import {
@@ -70,6 +71,11 @@ const MODULES: NavItem[] = [
       { label: "Job Resources", href: "/admin/career-hub/job-resources" },
       { label: "Small Wins", href: "/admin/career-hub/small-wins" },
     ],
+  },
+  {
+    label: "Provider Directory",
+    href: "/admin/provider-directory",
+    icon: Stethoscope,
   },
   {
     label: "Automation",

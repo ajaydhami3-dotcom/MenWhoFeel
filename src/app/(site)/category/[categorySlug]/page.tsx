@@ -9,7 +9,7 @@ import ChallengesTeaser from "@/components/ChallengesTeaser";
 import CheckInTeaser from "@/components/CheckInTeaser";
 import { CAT_ICONS, CATEGORY_TINTS, DEFAULT_TINT, RESOURCE_ICONS, PILLAR_BG_TINTS } from "@/lib/category-style";
 import { getPillarResources, getPillarCommunityPosts, getPillarStories, getPillarJourney } from "@/server/queries/pillar-content";
-import { ArrowRight, Link2, Briefcase, TrendingUp } from "lucide-react";
+import { ArrowRight, Link2, Briefcase, TrendingUp, Stethoscope } from "lucide-react";
 
 export const revalidate = 300;
 
@@ -259,6 +259,26 @@ export default async function CategoryPage({ params }: Props) {
               <div>
                 <h3 className="font-display text-base font-medium text-foreground">Small Wins</h3>
                 <p className="mt-0.5 text-sm text-muted-foreground">Vetted ways to earn quickly while you rebuild.</p>
+              </div>
+            </Link>
+          </section>
+        )}
+
+        {/* Provider Directory — same pillar-exclusive gating pattern as
+            Career Hub/Small Wins above, but spans two pillars since the
+            feature itself does (see providers table comment in schema.ts). */}
+        {(cat.pillarName === "Mental & Emotional Health" || cat.pillarName === "Physical Wellbeing") && (
+          <section className="mb-14">
+            <Link
+              href="/provider-directory"
+              className="group flex items-center gap-4 rounded-2xl border border-border/70 bg-card/70 p-6 transition-all hover:border-b-2 hover:border-b-primary hover:bg-card"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Stethoscope className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-base font-medium text-foreground">Provider Directory</h3>
+                <p className="mt-0.5 text-sm text-muted-foreground">Vetted therapists, doctors, and recovery resources.</p>
               </div>
             </Link>
           </section>

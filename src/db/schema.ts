@@ -601,6 +601,52 @@ export const smallWins = pgTable(
   })
 );
 
+export const providerTypeEnum = pgEnum("provider_type", [
+  "therapist_counselor",
+  "psychiatrist",
+  "primary_care",
+  "recovery_program",
+  "sliding_scale_clinic",
+]);
+
+// Provider Directory — vetted therapists, doctors, and recovery/clinic
+// resources. Spans two pillars (Mental & Emotional Health, Physical
+// Wellbeing) rather than belonging to one the way jobResources/smallWins
+// belong only to Work & Financial Stability — hence pillarId here, which
+// those two tables don't have. Same review gate (status, reused from
+// jobResources/smallWins/stories) and same public trustNotes field,
+// arguably a *higher* bar than either: a bad listing here means
+// recommending an actual person or practice, not just a link.
+//
+// location is free text on purpose (e.g. "Telehealth — nationwide",
+// "Chicago, IL") rather than a real geo/city table — this directory
+// starts with nationally-available resources, which is what a small,
+// manually-vetted list can realistically cover without local knowledge
+// of every market. A proper location search is a later, bigger feature
+// if this needs to go hyper-local.
+export const providers = pgTable(
+  "providers",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    type: providerTypeEnum("type").notNull(),
+    description: text("description").notNull(),
+    location: varchar("location", { length: 255 }).notNull(),
+    url: varchar("url", { length: 1000 }).notNull(),
+    trustNotes: text("trustNotes"),
+    pillarId: integer("pillarId").references(() => pillars.id),
+    status: statusEnum("status").default("pending").notNull(),
+    featured: boolean("featured").default(false),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index("providers_status_idx").on(table.status),
+    typeIdx: index("providers_type_idx").on(table.type),
+    pillarIdx: index("providers_pillar_idx").on(table.pillarId),
+  })
+);
+
 // ==========================================
 // Resume Builder
 // ==========================================

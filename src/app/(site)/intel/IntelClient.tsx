@@ -6,6 +6,7 @@ import {
   Brain, HeartPulse, Briefcase, Dumbbell, LayoutGrid, X, Flame, TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
@@ -271,6 +272,7 @@ export default function IntelClient({ initialArticles }: Props) {
 // ─── Article card ─────────────────────────────────────────────────────────────
 
 function ArticleCard({ article, teaser }: { article: ArticleItem; teaser?: boolean }) {
+  const router = useRouter();
   const config = CATEGORY_CONFIG[article.category] ?? DEFAULT_CONFIG;
   const CatIcon = config.icon;
 
@@ -284,14 +286,35 @@ function ArticleCard({ article, teaser }: { article: ArticleItem; teaser?: boole
               {new Date(article.createdAt).toLocaleDateString()}
             </div>
             {article.categorySlug ? (
-              <Link
-                href={`/category/${article.categorySlug}`}
-                onClick={(e) => e.stopPropagation()}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${config.bg} ${config.color} hover:opacity-80 transition-opacity`}
+              // Was a nested <Link> (an <a> inside the card's own outer
+              // <a> from the .map() above) — invalid HTML, and the actual
+              // cause of the whole card being unclickable: browsers close
+              // the outer anchor early when they hit a nested one, which
+              // breaks its click target with no JS error to show for it.
+              // stopPropagation() alone never fixed that, since it's a
+              // parsing-level issue, not an event-bubbling one. This is a
+              // real, separately-clickable target without ever rendering
+              // a real nested <a>.
+              <span
+                role="link"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push(`/category/${article.categorySlug}`);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    router.push(`/category/${article.categorySlug}`);
+                  }
+                }}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide cursor-pointer ${config.bg} ${config.color} hover:opacity-80 transition-opacity`}
               >
                 <CatIcon className="w-3 h-3" />
                 {article.category}
-              </Link>
+              </span>
             ) : (
               <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${config.bg} ${config.color}`}>
                 <CatIcon className="w-3 h-3" />

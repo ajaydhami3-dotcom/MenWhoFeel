@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -28,7 +29,11 @@ type Props = {
 
 // ─── Data fetchers ────────────────────────────────────────────────────────────
 
-async function getArticleData(params: Props["params"]) {
+// Wrapped in React's cache() because both generateMetadata and the page
+// body below call this with the same params promise — without it, this
+// full joined query ran twice per request (Next.js dedupes its own
+// fetch() automatically, but not plain async functions like this one).
+const getArticleData = cache(async (params: Props["params"]) => {
   const resolvedParams = await params;
   const rawSlug = resolvedParams.slug;
   if (!rawSlug) return null;
@@ -68,7 +73,7 @@ async function getArticleData(params: Props["params"]) {
     console.error("Database fetch error in Intel slug page:", error);
     return null;
   }
-}
+});
 
 async function getTagsForArticle(articleId: number) {
   try {
@@ -227,15 +232,14 @@ export default async function SingleIntelPage({ params }: Props) {
   const data = await getArticleData(params);
   if (!data) notFound();
 
-const [comments, articleTagsList, nextArticle] = await Promise.all([
-  getComments(data.slug),
-  getTagsForArticle(data.id),
-  getNextArticle(data.id, data.createdAt),
-]);
-
-const pillarResources = [];
-const pillarStories = [];
-const pillarJourney = [];
+  const [comments, articleTagsList, nextArticle, pillarResources, pillarStories, pillarJourney] = await Promise.all([
+    getComments(data.slug),
+    getTagsForArticle(data.id),
+    getNextArticle(data.id, data.createdAt),
+    getPillarResources(data.pillarId, data.topicId),
+    getPillarStories(data.pillarId, data.topicId),
+    getPillarJourney(data.pillarId),
+  ]);
 
   const paragraphs = splitIntoParagraphs(data.content);
   const pullQuote = extractPullQuote(paragraphs);

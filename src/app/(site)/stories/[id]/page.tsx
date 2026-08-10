@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, User, Clock, MessageSquare } from "lucide-react";
@@ -10,7 +11,10 @@ type Props = {
   params: Promise<{ id: string }> | { id: string };
 };
 
-async function getStoryData(params: Props["params"]) {
+// Wrapped in React's cache() — generateMetadata and the page body below
+// both call this with the same params promise, so without it every story
+// view ran this query twice per request.
+const getStoryData = cache(async (params: Props["params"]) => {
   const resolvedParams = await params;
   const rawId = resolvedParams.id;
   if (!rawId) return null;
@@ -25,7 +29,7 @@ async function getStoryData(params: Props["params"]) {
   } catch {
     return null;
   }
-}
+});
 
 async function getStoryComments(storyId: number) {
   try {

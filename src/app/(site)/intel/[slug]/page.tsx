@@ -227,14 +227,15 @@ export default async function SingleIntelPage({ params }: Props) {
   const data = await getArticleData(params);
   if (!data) notFound();
 
-  const [comments, articleTagsList, nextArticle, pillarResources, pillarStories, pillarJourney] = await Promise.all([
-    getComments(data.slug),
-    getTagsForArticle(data.id),
-    getNextArticle(data.id, data.createdAt),
-    getPillarResources(data.pillarId, data.topicId),
-    getPillarStories(data.pillarId, data.topicId),
-    getPillarJourney(data.pillarId),
-  ]);
+const [comments, articleTagsList, nextArticle] = await Promise.all([
+  getComments(data.slug),
+  getTagsForArticle(data.id),
+  getNextArticle(data.id, data.createdAt),
+]);
+
+const pillarResources = [];
+const pillarStories = [];
+const pillarJourney = [];
 
   const paragraphs = splitIntoParagraphs(data.content);
   const pullQuote = extractPullQuote(paragraphs);

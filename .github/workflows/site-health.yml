@@ -1,0 +1,31 @@
+name: MenWhoFeel Site Health
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check repository
+        uses: actions/checkout@v4
+
+      - name: Run site health check
+        run: python3 scripts/site-health-check.py
+        env:
+          SITE_URL: https://www.menwhofeel.online
+          MAX_PAGES: 500
+          TIMEOUT_SECONDS: 15
+
+      - name: Upload health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: menwhofeel-site-health-report
+          path: site-health-report/report.json
+          retention-days: 14

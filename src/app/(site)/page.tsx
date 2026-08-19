@@ -42,7 +42,7 @@ const NOW = Date.now();
 // section renders a tasteful dark gradient + the brand's horizon motif
 // instead of an empty box. A good starting point for free, properly
 // licensed images: https://unsplash.com/s/photos/man-walking-alone-rain
-const HERO_IMAGE_URL = "";
+const HERO_IMAGE_URL = "/hero.jpg";
 
 // ─── Static seed content (shown only if the DB has nothing yet) ───────────────
 

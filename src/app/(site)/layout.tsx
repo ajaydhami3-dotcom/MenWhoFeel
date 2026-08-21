@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import "../globals.css";
 
-import { ThemeProvider } from "next-themes";
 import { Providers } from "@/components/Providers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -132,12 +131,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      // next-themes sets the real `.dark` class on the client once it
-      // resolves the visitor's stored/system preference; suppressing the
-      // hydration warning here is the documented way to avoid a benign
-      // server/client mismatch on that one attribute.
-      suppressHydrationWarning
-      className={`${fraunces.variable} ${manrope.variable} ${plexMono.variable}`}
+      // Dark is the site's only theme now, set statically (same pattern
+      // as admin/layout.tsx) so it's present in the first byte of
+      // server-rendered HTML — no client-side resolution, so nothing can
+      // mismatch or flash.
+      className={`dark ${fraunces.variable} ${manrope.variable} ${plexMono.variable}`}
     >
       <head>
         <Script
@@ -152,15 +150,13 @@ export default function RootLayout({
         />
       </head>
       <body className="relative min-h-screen antialiased">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <Providers>
-            <div className="flex min-h-screen flex-col">
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-          </Providers>
-        </ThemeProvider>
+        <Providers>
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+        </Providers>
       </body>
 
       <Script

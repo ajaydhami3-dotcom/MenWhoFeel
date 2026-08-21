@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import ThemeToggle from "@/components/ThemeToggle";
 import { Menu, X, Phone, Coffee } from "lucide-react";
 import { useState } from "react";
 
@@ -73,9 +72,8 @@ export default function Navbar() {
           </Link>
         </nav>
 
-        {/* Right side: theme toggle + support link + primary CTA */}
+        {/* Right side: support link + primary CTA */}
         <div className="hidden items-center gap-2 lg:flex">
-          <ThemeToggle />
           <a
             href="https://ko-fi.com/menwhofeel"
             target="_blank"
@@ -90,9 +88,8 @@ export default function Navbar() {
           </Button>
         </div>
 
-        {/* Mobile toggle */}
+        {/* Mobile menu toggle */}
         <div className="flex items-center gap-1 lg:hidden">
-          <ThemeToggle />
           <button
             className="rounded-full p-2 text-foreground hover:bg-accent/60"
             onClick={() => setMobileOpen((v) => !v)}

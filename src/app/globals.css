@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
-/* Tailwind v4 + class-based dark mode (driven by next-themes toggling
-   `.dark` on <html>). Without this, every `dark:` utility in the shadcn
-   components would silently fall back to OS-level `prefers-color-scheme`
-   instead of responding to the toggle. */
+/* Tailwind v4 + class-based dark mode. `.dark` is set unconditionally on
+   <html> in (site)/layout.tsx and admin/layout.tsx (the site has one
+   theme). Without this custom variant, every `dark:` utility in the
+   shadcn components would silently fall back to OS-level
+   `prefers-color-scheme` instead of keying off that class. */
 @custom-variant dark (&:is(.dark *));
 
 @theme {
@@ -48,49 +49,22 @@
 }
 
 @layer base {
-  /* ─── Light mode (default) ───────────────────────────────────────────
-     Warm stone paper + deep warm ink, one bronze-amber accent ("ember")
-     kept for CTAs and links, plus two supporting brand hues: a muted pine
-     for growth/community moments and a distinct rust ("signal") reserved
-     for crisis/urgent contexts so it never gets confused with a normal CTA. */
+  /* Only theme-independent token left at :root — everything else lives
+     in .dark below, since dark is now the site's only theme. */
   :root {
-    --background: 45 24% 96%;
-    --foreground: 100 10% 13%;
-    --card: 42 30% 98%;
-    --card-foreground: 100 10% 13%;
-    --popover: 42 30% 98%;
-    --popover-foreground: 100 10% 13%;
-
-    --primary: 28 58% 40%;
-    --primary-foreground: 40 40% 97%;
-
-    --secondary: 45 16% 90%;
-    --secondary-foreground: 100 10% 16%;
-
-    --muted: 46 18% 92%;
-    --muted-foreground: 90 6% 38%;
-
-    --accent: 30 38% 90%;
-    --accent-foreground: 28 55% 26%;
-
-    --destructive: 9 55% 42%;
-    --destructive-foreground: 40 40% 97%;
-
-    --border: 42 16% 85%;
-    --input: 42 16% 85%;
-    --ring: 28 58% 45%;
-
-    --pine: 150 18% 24%;
-    --pine-foreground: 90 20% 95%;
-    --signal: 9 60% 40%;
-    --signal-foreground: 40 40% 97%;
-
     --radius: 0.75rem;
   }
 
-  /* ─── Dark mode ───────────────────────────────────────────────────────
-     Deep warm charcoal (olive-black, not cold navy) — dark mode is a
-     first-class alternative here, not an inverted afterthought. */
+  /* ─── Dark theme (the site's only theme) ───────────────────────────────
+     Deep warm charcoal (olive-black, not cold navy), one bronze-amber
+     accent ("ember") for CTAs and links, plus two supporting brand hues:
+     a muted pine for growth/community moments and a distinct rust
+     ("signal") reserved for crisis/urgent contexts so it never gets
+     confused with a normal CTA. Applied via the `.dark` class, which
+     (site)/layout.tsx and admin/layout.tsx now set unconditionally —
+     see the @custom-variant above, which is what makes `dark:` utilities
+     key off that class instead of falling back to OS-level
+     prefers-color-scheme. */
   .dark {
     --background: 90 12% 8%;
     --foreground: 42 22% 93%;

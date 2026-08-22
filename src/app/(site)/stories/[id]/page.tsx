@@ -73,31 +73,31 @@ export default async function SingleStoryPage({ params }: Props) {
   const comments = await getStoryComments(story.id);
 
   return (
-    <div className="min-h-screen bg-[#060810] py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto w-full">
 
         <Link
           href="/stories"
-          className="inline-flex items-center gap-2 text-zinc-500 hover:text-white text-xs font-black uppercase tracking-widest transition-colors mb-12"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground text-xs font-black uppercase tracking-widest transition-colors mb-12"
         >
           <ArrowLeft className="w-4 h-4" /> Back to the Archives
         </Link>
 
         <article className="w-full">
-          <header className="mb-10 pb-10 border-b border-zinc-800">
+          <header className="mb-10 pb-10 border-b border-border">
             {story.featured && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest rounded mb-4">
                 Featured
               </span>
             )}
-            <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white leading-tight mb-6">
+            <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-foreground leading-tight mb-6">
               {story.title}
             </h1>
             <div className="flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-widest">
                 <User className="w-4 h-4" /> {story.authorName || "Anonymous"}
               </div>
-              <div className="flex items-center gap-2 text-zinc-600 text-xs font-bold uppercase tracking-widest">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-widest">
                 <Clock className="w-4 h-4" />
                 <time dateTime={story.createdAt.toISOString()}>
                   {new Date(story.createdAt).toLocaleDateString()}
@@ -108,7 +108,7 @@ export default async function SingleStoryPage({ params }: Props) {
 
           <div className="w-full mb-16">
             <p
-              className="text-zinc-300 text-lg leading-[1.9] break-words whitespace-pre-line"
+              className="text-foreground text-lg leading-[1.9] break-words whitespace-pre-line"
               style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
             >
               {story.content}
@@ -117,12 +117,12 @@ export default async function SingleStoryPage({ params }: Props) {
         </article>
 
         {/* ── COMMENTS ──────────────────────────────────────────────── */}
-        <section className="mt-16 pt-10 border-t border-zinc-800">
-          <div className="flex items-center gap-2 text-white mb-8">
-            <MessageSquare className="w-5 h-5 text-blue-500" />
+        <section className="mt-16 pt-10 border-t border-border">
+          <div className="flex items-center gap-2 text-foreground mb-8">
+            <MessageSquare className="w-5 h-5 text-primary" />
             <h2 className="text-xl font-black uppercase tracking-tight">Responses</h2>
             {comments.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-bold rounded-full">
+              <span className="ml-2 px-2 py-0.5 bg-primary/20 text-primary text-xs font-bold rounded-full">
                 {comments.length}
               </span>
             )}
@@ -131,19 +131,19 @@ export default async function SingleStoryPage({ params }: Props) {
           {comments.length > 0 && (
             <div className="space-y-4 mb-10">
               {comments.map((comment: any) => (
-                <div key={comment.id} className="p-5 bg-zinc-900/60 border border-zinc-800 rounded-xl">
+                <div key={comment.id} className="p-5 bg-card/60 border border-border rounded-xl">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-7 h-7 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
-                      <User className="w-3.5 h-3.5 text-blue-400" />
+                    <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                      <User className="w-3.5 h-3.5 text-primary" />
                     </div>
-                    <span className="text-xs font-black uppercase tracking-widest text-zinc-400">
+                    <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
                       {comment.authorName || "Anonymous"}
                     </span>
-                    <span className="text-zinc-700 text-xs ml-auto">
+                    <span className="text-muted-foreground text-xs ml-auto">
                       {new Date(comment.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-zinc-300 text-sm leading-relaxed">{comment.content}</p>
+                  <p className="text-foreground text-sm leading-relaxed">{comment.content}</p>
                 </div>
               ))}
             </div>

@@ -94,8 +94,8 @@ function CategoryBadge({ category }: { category: string }) {
     <span
       className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
         isUrgent
-          ? "bg-red-500/20 text-red-400 border border-red-500/40"
-          : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+          ? "bg-signal/20 text-signal border border-signal/40"
+          : "bg-secondary text-muted-foreground border border-border"
       }`}
     >
       {cat?.emoji} {CATEGORY_LABELS[category] ?? category}
@@ -119,15 +119,15 @@ function PostCard({
     <article
       className={`rounded-xl border transition-all cursor-pointer group ${
         isUrgent
-          ? "bg-red-950/20 border-red-500/30 hover:border-red-400/50"
-          : "bg-zinc-900/60 border-zinc-800 hover:border-zinc-600"
+          ? "bg-signal/10 border-signal/30 hover:border-signal/50"
+          : "bg-card/60 border-border hover:border-foreground/30"
       }`}
       onClick={() => router.push(`/community/${post.id}`)}
     >
       {isUrgent && (
         <div className="flex items-center gap-2 px-4 pt-3 pb-0">
-          <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-red-400">
+          <AlertTriangle className="w-3.5 h-3.5 text-signal flex-shrink-0" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-signal">
             Needs support now
           </span>
         </div>
@@ -137,18 +137,18 @@ function PostCard({
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
             <CategoryBadge category={post.category} />
-            <h3 className="mt-2 text-base font-bold text-white leading-snug group-hover:text-blue-300 transition-colors line-clamp-2">
+            <h3 className="mt-2 text-base font-bold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
               {post.title}
             </h3>
           </div>
         </div>
 
-        <p className="text-zinc-400 text-sm leading-relaxed line-clamp-2 mb-3">
+        <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2 mb-3">
           {post.content}
         </p>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span className="font-medium">{getAnonDisplay(post.anonymousId)}</span>
             <span>·</span>
             <span>{formatRelativeTime(post.createdAt)}</span>
@@ -157,25 +157,25 @@ function PostCard({
           <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => onUpvote(post.id)}
-              className="flex items-center gap-1 text-xs text-zinc-500 hover:text-blue-400 transition-colors px-2 py-1 rounded-lg hover:bg-blue-500/10"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
             >
               <ChevronUp className="w-3.5 h-3.5" />
               <span className="font-bold">{post.upvoteCount}</span>
             </button>
 
-            <span className="flex items-center gap-1 text-xs text-zinc-500">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <MessageSquare className="w-3.5 h-3.5" />
               <span>{post.commentCount ?? 0}</span>
             </span>
 
-            <span className="flex items-center gap-1 text-xs text-zinc-600">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Eye className="w-3.5 h-3.5" />
               <span>{post.viewCount}</span>
             </span>
 
             <button
               onClick={() => onReport(post.id)}
-              className="flex items-center gap-1 text-xs text-zinc-600 hover:text-red-400 transition-colors px-1.5 py-1 rounded hover:bg-red-500/10"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors px-1.5 py-1 rounded hover:bg-destructive/10"
               title="Report"
             >
               <Flag className="w-3 h-3" />
@@ -226,17 +226,17 @@ function CreatePostModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-lg bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-zinc-800">
+      <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-border">
           <div>
-            <h2 className="font-black uppercase tracking-widest text-white text-sm">
+            <h2 className="font-black uppercase tracking-widest text-foreground text-sm">
               Share Anonymously
             </h2>
-            <p className="text-[11px] text-zinc-500 mt-0.5">
+            <p className="text-[11px] text-muted-foreground mt-0.5">
               Posting as {getAnonDisplay(anonId)}
             </p>
           </div>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white p-1">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -244,7 +244,7 @@ function CreatePostModal({
         <div className="p-5 space-y-4">
           {/* Category */}
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-2">
+            <label className="block text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-2">
               Category
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -255,9 +255,9 @@ function CreatePostModal({
                   className={`text-[11px] font-bold py-2 px-2 rounded-lg border transition-all text-left ${
                     category === cat.key
                       ? cat.key === "need_support_now"
-                        ? "bg-red-500/20 border-red-400 text-red-300"
-                        : "bg-blue-500/20 border-blue-400 text-blue-300"
-                      : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                        ? "bg-signal/20 border-signal/40 text-signal"
+                        : "bg-primary/20 border-primary/40 text-primary"
+                      : "bg-secondary border-border text-muted-foreground hover:border-foreground/30"
                   }`}
                 >
                   {cat.emoji} {cat.label}
@@ -268,7 +268,7 @@ function CreatePostModal({
 
           {/* Title */}
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-2">
+            <label className="block text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-2">
               Title
             </label>
             <input
@@ -277,19 +277,19 @@ function CreatePostModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={300}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-600"
+              className="w-full bg-secondary border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-ring placeholder:text-muted-foreground"
             />
             <div className="flex items-center justify-between mt-1">
               <p className="text-[10px] text-amber-400 min-h-[1em]">
                 {titleTooShort ? `${MIN_TITLE - title.trim().length} more character${MIN_TITLE - title.trim().length === 1 ? "" : "s"} needed` : ""}
               </p>
-              <p className="text-[10px] text-zinc-600">{title.length}/300</p>
+              <p className="text-[10px] text-muted-foreground">{title.length}/300</p>
             </div>
           </div>
 
           {/* Content */}
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-2">
+            <label className="block text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-2">
               Your post
             </label>
             <textarea
@@ -298,21 +298,21 @@ function CreatePostModal({
               onChange={(e) => setContent(e.target.value)}
               maxLength={5000}
               rows={5}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-600 resize-none"
+              className="w-full bg-secondary border border-border text-foreground rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-ring placeholder:text-muted-foreground resize-none"
             />
             <div className="flex items-center justify-between mt-1">
               <p className="text-[10px] text-amber-400 min-h-[1em]">
                 {contentTooShort ? `${MIN_CONTENT - content.trim().length} more character${MIN_CONTENT - content.trim().length === 1 ? "" : "s"} needed` : ""}
               </p>
-              <p className="text-[10px] text-zinc-600">{content.length}/5000</p>
+              <p className="text-[10px] text-muted-foreground">{content.length}/5000</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 p-5 border-t border-zinc-800">
+        <div className="flex items-center gap-3 p-5 border-t border-border">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-400 text-sm font-bold hover:border-zinc-500 hover:text-white transition-all"
+            className="flex-1 py-2.5 rounded-lg border border-border text-muted-foreground text-sm font-bold hover:border-foreground/30 hover:text-foreground transition-all"
           >
             Cancel
           </button>
@@ -328,7 +328,7 @@ function CreatePostModal({
             disabled={
               title.trim().length < MIN_TITLE || content.trim().length < MIN_CONTENT || createPost.isPending
             }
-            className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-black uppercase tracking-widest transition-all disabled:opacity-40"
+            className="flex-1 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-black uppercase tracking-widest transition-all disabled:opacity-40"
           >
             {createPost.isPending ? "Posting..." : "Post"}
           </button>
@@ -360,14 +360,14 @@ function ReportModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-5">
+      <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-black uppercase tracking-widest text-white text-sm">Report Post</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white">
+          <h2 className="font-black uppercase tracking-widest text-foreground text-sm">Report Post</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-zinc-400 text-xs mb-4">Select a reason for reporting:</p>
+        <p className="text-muted-foreground text-xs mb-4">Select a reason for reporting:</p>
         <div className="space-y-2 mb-4">
           {REPORT_REASONS.map((r) => (
             <button
@@ -375,8 +375,8 @@ function ReportModal({
               onClick={() => setReason(r)}
               className={`w-full text-left text-sm px-4 py-2.5 rounded-lg border transition-all ${
                 reason === r
-                  ? "bg-red-500/20 border-red-400 text-red-300"
-                  : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                  ? "bg-destructive/20 border-destructive/40 text-destructive"
+                  : "bg-secondary border-border text-muted-foreground hover:border-foreground/30"
               }`}
             >
               {r}
@@ -386,7 +386,7 @@ function ReportModal({
         <button
           onClick={() => reportPost.mutate({ id: postId, reason })}
           disabled={!reason || reportPost.isPending}
-          className="w-full py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-black uppercase tracking-widest transition-all disabled:opacity-40"
+          className="w-full py-2.5 rounded-lg bg-destructive hover:bg-destructive/90 text-white text-sm font-black uppercase tracking-widest transition-all disabled:opacity-40"
         >
           {reportPost.isPending ? "Submitting..." : "Submit Report"}
         </button>
@@ -450,27 +450,27 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Commun
   const regularPosts = posts?.filter((p) => p.category !== "need_support_now") ?? [];
 
   return (
-    <div className="min-h-screen bg-[#060810] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* Header */}
         <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-4xl font-black italic uppercase tracking-tighter">Community</h1>
-            <p className="text-zinc-500 text-sm mt-2 max-w-lg">
+            <p className="text-muted-foreground text-sm mt-2 max-w-lg">
               Anonymous, judgment-free space. No usernames. No profiles. Just people being honest.
             </p>
           </div>
           <div className="flex gap-3">
             <button
               onClick={() => router.push("/communication")}
-              className="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-all"
+              className="px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-all"
             >
               Communication Wall
             </button>
             <button
               onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-lg transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-black uppercase tracking-widest rounded-lg transition-all"
             >
               <Plus className="w-4 h-4" />
               New Post
@@ -481,22 +481,22 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Commun
         {/* Search + Sort */}
         <div className="flex gap-3 mb-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search posts..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-zinc-600 placeholder:text-zinc-600"
+              className="w-full bg-card border border-border text-foreground rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-ring placeholder:text-muted-foreground"
             />
           </div>
-          <div className="flex gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+          <div className="flex gap-1 bg-card border border-border rounded-lg p-1">
             <button
               onClick={() => setSort("recent")}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
                 sort === "recent"
-                  ? "bg-blue-600 text-white"
-                  : "text-zinc-500 hover:text-white"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Clock className="w-3 h-3" />
@@ -506,8 +506,8 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Commun
               onClick={() => setSort("trending")}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
                 sort === "trending"
-                  ? "bg-blue-600 text-white"
-                  : "text-zinc-500 hover:text-white"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <TrendingUp className="w-3 h-3" />
@@ -525,9 +525,9 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Commun
               className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${
                 activeCategory === cat.key
                   ? cat.key === "need_support_now"
-                    ? "bg-red-500/20 border-red-400 text-red-300"
-                    : "bg-blue-500/20 border-blue-400 text-blue-300"
-                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+                    ? "bg-signal/20 border-signal/40 text-signal"
+                    : "bg-primary/20 border-primary/40 text-primary"
+                  : "bg-card border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
               }`}
             >
               {cat.emoji} {cat.label}
@@ -539,7 +539,7 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Commun
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-zinc-900/60 border border-zinc-800 rounded-xl animate-pulse" />
+              <div key={i} className="h-32 bg-card/60 border border-border rounded-xl animate-pulse" />
             ))}
           </div>
         ) : (
@@ -573,10 +573,10 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Commun
             ) : (
               !urgentPosts.length && (
                 <div className="py-16 text-center">
-                  <p className="text-zinc-600 font-medium">No posts yet in this category.</p>
+                  <p className="text-muted-foreground font-medium">No posts yet in this category.</p>
                   <button
                     onClick={() => setShowCreate(true)}
-                    className="mt-4 text-blue-400 hover:text-blue-300 text-sm font-bold"
+                    className="mt-4 text-primary hover:text-primary/80 text-sm font-bold"
                   >
                     Be the first to post →
                   </button>

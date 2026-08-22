@@ -81,22 +81,22 @@ function ReportCommentModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-2xl p-5">
+      <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-black uppercase tracking-widest text-white text-sm">Report Comment</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+          <h2 className="font-black uppercase tracking-widest text-foreground text-sm">Report Comment</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
         </div>
         <div className="space-y-2 mb-4">
           {REPORT_REASONS.map((r) => (
             <button key={r} onClick={() => setReason(r)}
-              className={`w-full text-left text-sm px-4 py-2.5 rounded-lg border transition-all ${reason === r ? "bg-red-500/20 border-red-400 text-red-300" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}
+              className={`w-full text-left text-sm px-4 py-2.5 rounded-lg border transition-all ${reason === r ? "bg-destructive/20 border-destructive/40 text-destructive" : "bg-secondary border-border text-muted-foreground hover:border-foreground/30"}`}
             >{r}</button>
           ))}
         </div>
         <button
           onClick={() => reportComment.mutate({ id: commentId, reason })}
           disabled={!reason || reportComment.isPending}
-          className="w-full py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-black uppercase tracking-widest transition-all disabled:opacity-40"
+          className="w-full py-2.5 rounded-lg bg-destructive hover:bg-destructive/90 text-white text-sm font-black uppercase tracking-widest transition-all disabled:opacity-40"
         >
           {reportComment.isPending ? "Submitting..." : "Submit Report"}
         </button>
@@ -137,18 +137,18 @@ function CommentNode({
   });
 
   return (
-    <div className={`${depth > 0 ? "ml-6 border-l-2 border-zinc-800 pl-4" : ""}`}>
+    <div className={`${depth > 0 ? "ml-6 border-l-2 border-border pl-4" : ""}`}>
       <div className="py-3">
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-xs font-bold text-zinc-300">{getAnonDisplay(comment.anonymousId)}</span>
-          <span className="text-[10px] text-zinc-600">{formatRelativeTime(comment.createdAt)}</span>
+          <span className="text-xs font-bold text-foreground">{getAnonDisplay(comment.anonymousId)}</span>
+          <span className="text-[10px] text-muted-foreground">{formatRelativeTime(comment.createdAt)}</span>
         </div>
-        <p className="text-sm text-zinc-300 leading-relaxed">{comment.content}</p>
+        <p className="text-sm text-foreground leading-relaxed">{comment.content}</p>
         <div className="flex items-center gap-3 mt-2">
           {depth < 3 && (
             <button
               onClick={() => setShowReply(!showReply)}
-              className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-blue-400 transition-colors font-bold"
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors font-bold"
             >
               <Reply className="w-3 h-3" />
               Reply
@@ -156,7 +156,7 @@ function CommentNode({
           )}
           <button
             onClick={() => onReport(comment.id)}
-            className="flex items-center gap-1 text-[11px] text-zinc-600 hover:text-red-400 transition-colors"
+            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors"
             title="Report"
           >
             <Flag className="w-3 h-3" />
@@ -181,7 +181,7 @@ function CommentNode({
                   });
                 }
               }}
-              className="flex-1 bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-zinc-600 placeholder:text-zinc-600"
+              className="flex-1 bg-secondary border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-ring placeholder:text-muted-foreground"
             />
             <button
               onClick={() => {
@@ -194,7 +194,7 @@ function CommentNode({
                 });
               }}
               disabled={!replyText.trim() || createComment.isPending}
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all disabled:opacity-40"
+              className="px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-all disabled:opacity-40"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -245,19 +245,19 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
 
   if (postLoading) {
     return (
-      <div className="min-h-screen bg-[#060810] flex items-center justify-center">
-        <div className="text-zinc-500 text-sm animate-pulse">Loading post...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground text-sm animate-pulse">Loading post...</div>
       </div>
     );
   }
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-[#060810] flex flex-col items-center justify-center gap-4">
-        <p className="text-zinc-500">Post not found or has been removed.</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">Post not found or has been removed.</p>
         <button
           onClick={() => router.push("/community")}
-          className="text-blue-400 hover:text-blue-300 font-bold text-sm"
+          className="text-primary hover:text-primary/80 font-bold text-sm"
         >
           ← Back to Community
         </button>
@@ -266,41 +266,41 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
   }
 
   return (
-    <div className="min-h-screen bg-[#060810] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-3xl mx-auto px-4 py-8">
 
         {/* Back */}
         <button
           onClick={() => router.push("/community")}
-          className="flex items-center gap-2 text-zinc-500 hover:text-white text-sm font-bold mb-6 transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm font-bold mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Community
         </button>
 
         {/* Post */}
         <article className={`rounded-2xl border p-6 mb-6 ${
-          isUrgent ? "bg-red-950/20 border-red-500/30" : "bg-zinc-900/60 border-zinc-800"
+          isUrgent ? "bg-signal/10 border-signal/30" : "bg-card/60 border-border"
         }`}>
           {isUrgent && (
             <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4 text-red-400" />
-              <span className="text-xs font-black uppercase tracking-widest text-red-400">
+              <AlertTriangle className="w-4 h-4 text-signal" />
+              <span className="text-xs font-black uppercase tracking-widest text-signal">
                 Needs support now
               </span>
             </div>
           )}
 
           <span className={`inline-block text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full mb-3 ${
-            isUrgent ? "bg-red-500/20 text-red-400 border border-red-500/40" : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+            isUrgent ? "bg-signal/20 text-signal border border-signal/40" : "bg-secondary text-muted-foreground border border-border"
           }`}>
             {CATEGORY_LABELS[post.category] ?? post.category}
           </span>
 
-          <h1 className="text-2xl font-black text-white leading-tight mb-4">{post.title}</h1>
-          <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap mb-5">{post.content}</p>
+          <h1 className="text-2xl font-black text-foreground leading-tight mb-4">{post.title}</h1>
+          <p className="text-foreground leading-relaxed whitespace-pre-wrap mb-5">{post.content}</p>
 
-          <div className="flex items-center justify-between pt-4 border-t border-white/5">
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <div className="flex items-center justify-between pt-4 border-t border-foreground/5">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="font-medium">{getAnonDisplay(post.anonymousId)}</span>
               <span>·</span>
               <span>{formatRelativeTime(post.createdAt)}</span>
@@ -309,18 +309,18 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
             <div className="flex items-center gap-3">
               <button
                 onClick={() => upvotePost.mutate({ id: post.id })}
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-blue-400 transition-colors px-2 py-1 rounded-lg hover:bg-blue-500/10"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
               >
                 <ChevronUp className="w-4 h-4" />
                 <span className="font-bold">{post.upvoteCount}</span>
               </button>
 
-              <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <MessageSquare className="w-4 h-4" />
                 <span>{post.commentCount ?? 0}</span>
               </span>
 
-              <span className="flex items-center gap-1.5 text-xs text-zinc-600">
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Eye className="w-4 h-4" />
                 <span>{post.viewCount}</span>
               </span>
@@ -329,8 +329,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
         </article>
 
         {/* Comment box */}
-        <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 mb-6">
-          <p className="text-[11px] font-black uppercase tracking-widest text-zinc-500 mb-3">
+        <div className="bg-card/60 border border-border rounded-2xl p-5 mb-6">
+          <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-3">
             Replying as {getAnonDisplay(anonId)}
           </p>
           <textarea
@@ -338,7 +338,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             rows={3}
-            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-zinc-600 placeholder:text-zinc-600 resize-none"
+            className="w-full bg-secondary border border-border text-foreground rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-ring placeholder:text-muted-foreground resize-none"
           />
           <div className="flex justify-end mt-3">
             <button
@@ -351,7 +351,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
                 });
               }}
               disabled={!newComment.trim() || createComment.isPending}
-              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black uppercase tracking-widest rounded-lg transition-all disabled:opacity-40"
+              className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-black uppercase tracking-widest rounded-lg transition-all disabled:opacity-40"
             >
               <Send className="w-4 h-4" />
               {createComment.isPending ? "Posting..." : "Post Comment"}
@@ -360,15 +360,15 @@ export default function PostDetailPage({ params }: { params: Promise<{ postId: s
         </div>
 
         {/* Comments */}
-        <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl divide-y divide-zinc-800/60">
+        <div className="bg-card/60 border border-border rounded-2xl divide-y divide-border/60">
           <div className="px-5 py-4">
-            <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-400">
+            <h2 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
               {comments?.length ?? 0} {(comments?.length ?? 0) === 1 ? "Comment" : "Comments"}
             </h2>
           </div>
 
           {topLevelComments.length === 0 ? (
-            <div className="px-5 py-8 text-center text-zinc-600 text-sm">
+            <div className="px-5 py-8 text-center text-muted-foreground text-sm">
               No comments yet. Be the first to respond.
             </div>
           ) : (

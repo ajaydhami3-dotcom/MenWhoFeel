@@ -29,56 +29,16 @@ interface Props {
 // ─── Category config (covers all 6 DB categories) ────────────────────────────
 // All class names are stored as complete strings so Tailwind v4 doesn't purge them.
 
-const CATEGORY_CONFIG: Record<string, {
-  icon: React.ElementType;
-  color: string;
-  bg: string;
-  border: string;
-}> = {
-  "Mental Health": {
-    icon: Brain,
-    color: "text-blue-400",
-    bg: "bg-blue-400/10",
-    border: "border-blue-400/30",
-  },
-  "Relationships": {
-    icon: HeartPulse,
-    color: "text-rose-400",
-    bg: "bg-rose-400/10",
-    border: "border-rose-400/30",
-  },
-  "Physical Wellbeing": {
-    icon: Dumbbell,
-    color: "text-green-400",
-    bg: "bg-green-400/10",
-    border: "border-green-400/30",
-  },
-  "Finances & Career": {
-    icon: Briefcase,
-    color: "text-emerald-400",
-    bg: "bg-emerald-400/10",
-    border: "border-emerald-400/30",
-  },
-  "Emotions": {
-    icon: Flame,
-    color: "text-amber-400",
-    bg: "bg-amber-400/10",
-    border: "border-amber-400/30",
-  },
-  "Self Improvement": {
-    icon: TrendingUp,
-    color: "text-purple-400",
-    bg: "bg-purple-400/10",
-    border: "border-purple-400/30",
-  },
+const CATEGORY_CONFIG: Record<string, { icon: React.ElementType }> = {
+  "Mental Health": { icon: Brain },
+  "Relationships": { icon: HeartPulse },
+  "Physical Wellbeing": { icon: Dumbbell },
+  "Finances & Career": { icon: Briefcase },
+  "Emotions": { icon: Flame },
+  "Self Improvement": { icon: TrendingUp },
 };
 
-const DEFAULT_CONFIG = {
-  icon: LayoutGrid,
-  color: "text-blue-400",
-  bg: "bg-blue-400/10",
-  border: "border-blue-400/30",
-};
+const DEFAULT_CONFIG = { icon: LayoutGrid };
 
 // ─── Main client component ────────────────────────────────────────────────────
 
@@ -122,35 +82,35 @@ export default function IntelClient({ initialArticles }: Props) {
   const hasSearch = searchTerm.trim().length > 1;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 sm:p-8">
+    <div className="min-h-screen bg-background text-foreground p-6 sm:p-8">
       <div className="max-w-4xl mx-auto">
 
         {/* Header */}
         <div className="mb-10">
-          <div className="flex items-center gap-2 text-blue-500 mb-2">
+          <div className="flex items-center gap-2 text-primary mb-2">
             <BookOpen className="w-5 h-5" />
             <span className="text-xs font-black uppercase tracking-[0.3em]">Useful Reads</span>
           </div>
           <h1 className="text-5xl font-black italic uppercase tracking-tighter mb-3">Articles</h1>
-          <p className="text-zinc-500 font-medium max-w-xl">
+          <p className="text-muted-foreground font-medium max-w-xl">
             No fluff. No life-coach filler. Reads worth your time on mental health, stress, money, and getting through hard things.
           </p>
         </div>
 
         {/* Search bar */}
         <div className="relative max-w-xl mb-8">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             type="text"
             placeholder="Search articles..."
-            className="pl-10 h-12 bg-zinc-900/60 border-zinc-800 text-base rounded-xl focus-visible:ring-blue-500/50 text-white placeholder:text-zinc-600"
+            className="pl-10 h-12 text-base rounded-xl"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           {hasSearch && (
             <button
               onClick={() => setSearchTerm("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Clear search"
             >
               <X className="h-4 w-4" />
@@ -173,17 +133,15 @@ export default function IntelClient({ initialArticles }: Props) {
                   onClick={() => setActiveCategory(cat)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide transition-all border ${
                     isActive
-                      ? config
-                        ? `${config.bg} ${config.color} ${config.border}`
-                        : "bg-blue-600 text-white border-blue-500"
-                      : "bg-zinc-900/60 text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:bg-zinc-800/80"
+                      ? "bg-primary/20 text-primary border-primary/40"
+                      : "bg-card text-muted-foreground border-border hover:text-foreground hover:bg-secondary"
                   }`}
                 >
                   <CatIcon className="w-3.5 h-3.5" />
                   {cat}
                   <span
                     className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                      isActive ? "bg-white/20 text-inherit" : "bg-zinc-800 text-zinc-500"
+                      isActive ? "bg-primary/30 text-primary" : "bg-secondary text-muted-foreground"
                     }`}
                   >
                     {count}
@@ -197,13 +155,13 @@ export default function IntelClient({ initialArticles }: Props) {
         {/* Search result header */}
         {hasSearch && (
           <div className="flex items-center gap-3 mb-6">
-            <p className="text-zinc-400 text-sm">
+            <p className="text-muted-foreground text-sm">
               {filtered.length} result{filtered.length !== 1 ? "s" : ""} for{" "}
-              <span className="text-white font-semibold">&quot;{searchTerm}&quot;</span>
+              <span className="text-foreground font-semibold">&quot;{searchTerm}&quot;</span>
             </p>
             <button
               onClick={() => setSearchTerm("")}
-              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors underline"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
             >
               Clear
             </button>
@@ -215,16 +173,16 @@ export default function IntelClient({ initialArticles }: Props) {
           const config = CATEGORY_CONFIG[activeCategory] ?? DEFAULT_CONFIG;
           const Icon = config.icon;
           return (
-            <div className={`flex items-center gap-3 p-4 rounded-xl border mb-6 ${config.bg} ${config.border}`}>
-              <Icon className={`w-5 h-5 ${config.color}`} />
-              <span className={`text-sm font-bold ${config.color}`}>{activeCategory}</span>
-              <span className="text-zinc-600 text-xs ml-auto">
+            <div className="flex items-center gap-3 p-4 rounded-xl border mb-6 bg-primary/10 border-primary/30">
+              <Icon className="w-5 h-5 text-primary" />
+              <span className="text-sm font-bold text-primary">{activeCategory}</span>
+              <span className="text-muted-foreground text-xs ml-auto">
                 {filtered.length} article{filtered.length !== 1 ? "s" : ""}
               </span>
               {/* Link to full category page */}
               <Link
                 href={`/category/${initialArticles.find(a => a.category === activeCategory)?.categorySlug ?? ""}`}
-                className={`text-[10px] font-black uppercase tracking-widest ${config.color} hover:opacity-80 transition-opacity`}
+                className="text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-80 transition-opacity"
               >
                 View category →
               </Link>
@@ -234,8 +192,8 @@ export default function IntelClient({ initialArticles }: Props) {
 
         {/* Article grid */}
         {filtered.length === 0 ? (
-          <div className="py-16 text-center border border-dashed border-zinc-800 rounded-xl">
-            <p className="text-zinc-600 italic">
+          <div className="py-16 text-center border border-dashed border-border rounded-xl">
+            <p className="text-muted-foreground italic">
               {hasSearch
                 ? `No articles found for "${searchTerm}".`
                 : "No articles in this category yet."}
@@ -243,7 +201,7 @@ export default function IntelClient({ initialArticles }: Props) {
             {(hasSearch || activeCategory !== "All") && (
               <button
                 onClick={() => { setSearchTerm(""); setActiveCategory("All"); }}
-                className="mt-3 text-xs text-blue-500 hover:text-blue-400 transition-colors"
+                className="mt-3 text-xs text-primary hover:text-primary/80 transition-colors"
               >
                 Show all articles
               </button>
@@ -277,11 +235,11 @@ function ArticleCard({ article, teaser }: { article: ArticleItem; teaser?: boole
   const CatIcon = config.icon;
 
   return (
-    <Card className="h-full bg-zinc-900/60 border-zinc-800 backdrop-blur-md transition-all duration-300 group-hover:border-blue-500/50 group-hover:bg-zinc-900">
+    <Card className="h-full bg-card/60 border-border backdrop-blur-md transition-all duration-300 group-hover:border-primary/50 group-hover:bg-card">
       <CardContent className="p-7 flex flex-col h-full">
         <div className="mb-auto">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-black uppercase tracking-widest">
+            <div className="flex items-center gap-2 text-muted-foreground text-[10px] font-black uppercase tracking-widest">
               <FileText className="w-3 h-3" />
               {new Date(article.createdAt).toLocaleDateString()}
             </div>
@@ -310,29 +268,29 @@ function ArticleCard({ article, teaser }: { article: ArticleItem; teaser?: boole
                     router.push(`/category/${article.categorySlug}`);
                   }
                 }}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide cursor-pointer ${config.bg} ${config.color} hover:opacity-80 transition-opacity`}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide cursor-pointer bg-secondary text-muted-foreground hover:opacity-80 transition-opacity"
               >
                 <CatIcon className="w-3 h-3" />
                 {article.category}
               </span>
             ) : (
-              <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${config.bg} ${config.color}`}>
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-secondary text-muted-foreground">
                 <CatIcon className="w-3 h-3" />
                 {article.category}
               </span>
             )}
             {teaser && (
-              <span className="text-blue-500/60 text-[10px] font-bold uppercase">Coming soon</span>
+              <span className="text-primary/60 text-[10px] font-bold uppercase">Coming soon</span>
             )}
           </div>
-          <h2 className="text-xl font-bold text-white leading-tight mb-3 group-hover:text-blue-400 transition-colors">
+          <h2 className="text-xl font-bold text-foreground leading-tight mb-3 group-hover:text-primary transition-colors">
             {article.title}
           </h2>
-          <p className="text-zinc-400 text-sm leading-relaxed">{article.excerpt}</p>
+          <p className="text-muted-foreground text-sm leading-relaxed">{article.excerpt}</p>
         </div>
 
         {!teaser && (
-          <div className="mt-7 flex items-center gap-2 text-blue-500 font-black uppercase text-xs tracking-widest">
+          <div className="mt-7 flex items-center gap-2 text-primary font-black uppercase text-xs tracking-widest">
             Read article{" "}
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>

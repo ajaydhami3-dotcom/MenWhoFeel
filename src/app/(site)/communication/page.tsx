@@ -57,22 +57,22 @@ function ReportModal({ id, type, onClose }: { id: number; type: "message" | "rep
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-2xl p-5">
+      <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-black uppercase tracking-widest text-white text-sm">Report</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+          <h2 className="font-black uppercase tracking-widest text-foreground text-sm">Report</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
         </div>
         <div className="space-y-2 mb-4">
           {REPORT_REASONS.map((r) => (
             <button key={r} onClick={() => setReason(r)}
-              className={`w-full text-left text-sm px-4 py-2.5 rounded-lg border transition-all ${reason === r ? "bg-red-500/20 border-red-400 text-red-300" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}
+              className={`w-full text-left text-sm px-4 py-2.5 rounded-lg border transition-all ${reason === r ? "bg-destructive/20 border-destructive/40 text-destructive" : "bg-secondary border-border text-muted-foreground hover:border-foreground/30"}`}
             >{r}</button>
           ))}
         </div>
         <button
           onClick={() => type === "message" ? reportMsg.mutate({ id, reason }) : reportReply.mutate({ id, reason })}
           disabled={!reason}
-          className="w-full py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-black uppercase tracking-widest transition-all disabled:opacity-40"
+          className="w-full py-2.5 rounded-lg bg-destructive hover:bg-destructive/90 text-white text-sm font-black uppercase tracking-widest transition-all disabled:opacity-40"
         >
           Submit Report
         </button>
@@ -105,12 +105,12 @@ function MessageCard({ message, anonId }: { message: any; anonId: string }) {
   });
 
   return (
-    <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5 transition-all hover:border-zinc-700">
+    <div className="bg-card/60 border border-border rounded-xl p-5 transition-all hover:border-foreground/30">
       {/* Message content */}
-      <p className="text-zinc-200 text-sm leading-relaxed mb-4">{message.content}</p>
+      <p className="text-foreground text-sm leading-relaxed mb-4">{message.content}</p>
 
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <span>{getAnonDisplay(message.anonymousId)}</span>
           <span>·</span>
           <span>{formatRelativeTime(message.createdAt)}</span>
@@ -119,7 +119,7 @@ function MessageCard({ message, anonId }: { message: any; anonId: string }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => { setShowReplies(!showReplies); }}
-            className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-teal-400 transition-colors font-bold"
+            className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-pine transition-colors font-bold"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             {message.replyCount > 0 ? `${message.replyCount} ${message.replyCount === 1 ? "reply" : "replies"}` : "Reply"}
@@ -128,7 +128,7 @@ function MessageCard({ message, anonId }: { message: any; anonId: string }) {
 
           <button
             onClick={() => setShowReplyBox(!showReplyBox)}
-            className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-blue-400 transition-colors font-bold px-2 py-1 rounded hover:bg-blue-500/10"
+            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors font-bold px-2 py-1 rounded hover:bg-primary/10"
           >
             <Heart className="w-3 h-3" />
             Support
@@ -136,7 +136,7 @@ function MessageCard({ message, anonId }: { message: any; anonId: string }) {
 
           <button
             onClick={() => setReportTarget({ id: message.id, type: "message" })}
-            className="text-zinc-600 hover:text-red-400 transition-colors"
+            className="text-muted-foreground hover:text-destructive transition-colors"
             title="Report"
           >
             <Flag className="w-3.5 h-3.5" />
@@ -158,7 +158,7 @@ function MessageCard({ message, anonId }: { message: any; anonId: string }) {
                 createReply.mutate({ messageId: message.id, content: replyText, anonymousId: anonId });
               }
             }}
-            className="flex-1 bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-600 placeholder:text-zinc-600"
+            className="flex-1 bg-secondary border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-pine placeholder:text-muted-foreground"
           />
           <button
             onClick={() => {
@@ -166,7 +166,7 @@ function MessageCard({ message, anonId }: { message: any; anonId: string }) {
               createReply.mutate({ messageId: message.id, content: replyText, anonymousId: anonId });
             }}
             disabled={!replyText.trim() || createReply.isPending}
-            className="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-all disabled:opacity-40"
+            className="px-3 py-2 bg-pine hover:bg-pine/90 text-pine-foreground rounded-lg transition-all disabled:opacity-40"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -175,22 +175,22 @@ function MessageCard({ message, anonId }: { message: any; anonId: string }) {
 
       {/* Replies */}
       {showReplies && (
-        <div className="mt-4 space-y-3 border-t border-zinc-800 pt-4">
+        <div className="mt-4 space-y-3 border-t border-border pt-4">
           {!replies || replies.length === 0 ? (
-            <p className="text-zinc-600 text-xs text-center">No replies yet. Be the first to respond.</p>
+            <p className="text-muted-foreground text-xs text-center">No replies yet. Be the first to respond.</p>
           ) : (
             replies.map((reply) => (
               <div key={reply.id} className="flex gap-3">
-                <div className="flex-1 bg-zinc-800/60 rounded-xl px-4 py-3">
+                <div className="flex-1 bg-secondary/60 rounded-xl px-4 py-3">
                   <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-[11px] font-bold text-zinc-300">{getAnonDisplay(reply.anonymousId)}</span>
-                    <span className="text-[10px] text-zinc-600">{formatRelativeTime(reply.createdAt)}</span>
+                    <span className="text-[11px] font-bold text-foreground">{getAnonDisplay(reply.anonymousId)}</span>
+                    <span className="text-[10px] text-muted-foreground">{formatRelativeTime(reply.createdAt)}</span>
                   </div>
-                  <p className="text-sm text-zinc-300">{reply.content}</p>
+                  <p className="text-sm text-foreground">{reply.content}</p>
                 </div>
                 <button
                   onClick={() => setReportTarget({ id: reply.id, type: "reply" })}
-                  className="text-zinc-700 hover:text-red-400 transition-colors flex-shrink-0 mt-2"
+                  className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0 mt-2"
                   title="Report"
                 >
                   <Flag className="w-3 h-3" />
@@ -232,32 +232,32 @@ export default function CommunicationPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#060810] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-3xl mx-auto px-4 py-8">
 
         {/* Header */}
         <button
           onClick={() => router.push("/community")}
-          className="flex items-center gap-2 text-zinc-500 hover:text-white text-sm font-bold mb-6 transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm font-bold mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Community
         </button>
 
         <div className="mb-8">
-          <div className="flex items-center gap-2 text-teal-400 mb-2">
+          <div className="flex items-center gap-2 text-pine mb-2">
             <Heart className="w-5 h-5" />
             <span className="text-xs font-black uppercase tracking-[0.3em]">Support Wall</span>
           </div>
           <h1 className="text-4xl font-black italic uppercase tracking-tighter">Communication</h1>
-          <p className="text-zinc-500 text-sm mt-2 max-w-lg">
+          <p className="text-muted-foreground text-sm mt-2 max-w-lg">
             Sometimes you just need someone to hear you. Send a message — the community can respond.
             No names. No accounts. No judgment.
           </p>
         </div>
 
         {/* Send message */}
-        <div className="bg-zinc-900/60 border border-teal-500/20 rounded-2xl p-5 mb-8">
-          <p className="text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-3">
+        <div className="bg-card/60 border border-pine/20 rounded-2xl p-5 mb-8">
+          <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-3">
             Send an anonymous message · Posting as {getAnonDisplay(anonId)}
           </p>
           <textarea
@@ -266,14 +266,14 @@ export default function CommunicationPage() {
             onChange={(e) => setMessageText(e.target.value)}
             maxLength={2000}
             rows={4}
-            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-teal-600 placeholder:text-zinc-600 resize-none"
+            className="w-full bg-secondary border border-border text-foreground rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-pine placeholder:text-muted-foreground resize-none"
           />
           <div className="flex items-center justify-between mt-3">
             <p className="text-[10px] min-h-[1em]">
               {messageTooShort ? (
                 <span className="text-amber-400">{MIN_MESSAGE - messageText.trim().length} more character{MIN_MESSAGE - messageText.trim().length === 1 ? "" : "s"} needed</span>
               ) : (
-                <span className="text-zinc-600">{messageText.length}/2000</span>
+                <span className="text-muted-foreground">{messageText.length}/2000</span>
               )}
             </p>
             <button
@@ -282,7 +282,7 @@ export default function CommunicationPage() {
                 createMessage.mutate({ content: messageText, anonymousId: anonId });
               }}
               disabled={messageText.trim().length < MIN_MESSAGE || createMessage.isPending}
-              className="flex items-center gap-2 px-5 py-2 bg-teal-600 hover:bg-teal-500 text-white text-sm font-black uppercase tracking-widest rounded-lg transition-all disabled:opacity-40"
+              className="flex items-center gap-2 px-5 py-2 bg-pine hover:bg-pine/90 text-pine-foreground text-sm font-black uppercase tracking-widest rounded-lg transition-all disabled:opacity-40"
             >
               <Send className="w-4 h-4" />
               {createMessage.isPending ? "Sending..." : "Send"}
@@ -292,18 +292,18 @@ export default function CommunicationPage() {
 
         {/* Messages feed */}
         <div>
-          <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-500 mb-4">
+          <h2 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-4">
             Recent Messages
           </h2>
 
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-28 bg-zinc-900/60 border border-zinc-800 rounded-xl animate-pulse" />
+                <div key={i} className="h-28 bg-card/60 border border-border rounded-xl animate-pulse" />
               ))}
             </div>
           ) : !messages || messages.length === 0 ? (
-            <div className="py-12 text-center text-zinc-600 text-sm">
+            <div className="py-12 text-center text-muted-foreground text-sm">
               No messages yet. Be the first to reach out.
             </div>
           ) : (

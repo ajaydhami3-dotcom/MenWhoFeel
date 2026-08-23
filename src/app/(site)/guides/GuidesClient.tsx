@@ -317,7 +317,7 @@ export default function GuidesClient({ initialResources, pillars }: Props) {
 
         {/* Header */}
         <div className="mb-12">
-          <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
             Free resources
           </p>
           <h1 className="text-4xl font-bold tracking-tight mb-4 text-gradient">Support & Growth</h1>

@@ -219,8 +219,8 @@ function SectionHeading({
   return (
     <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        {eyebrow && <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">{eyebrow}</p>}
-        <h2 className="font-display text-[1.9rem] font-semibold text-foreground sm:text-3xl">{title}</h2>
+        {eyebrow && <p className="mb-2 font-mono text-xs uppercase tracking-[0.18em] text-primary">{eyebrow}</p>}
+        <h2 className="font-display text-3xl font-semibold text-foreground">{title}</h2>
         {subtitle && <p className="mt-1.5 text-[15px] text-muted-foreground">{subtitle}</p>}
       </div>
       {href && linkLabel && (
@@ -242,17 +242,17 @@ function ArticleMeta({ article, className = "" }: { article: ArticleRow; classNa
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
       {article.categoryName && tint && (
         <span
-          className={`rounded-full px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] ${tint.text} ${bgTint?.bg ?? "bg-secondary"}`}
+          className={`rounded-full px-2.5 py-0.5 font-mono text-xs font-medium uppercase tracking-[0.1em] ${tint.text} ${bgTint?.bg ?? "bg-secondary"}`}
         >
           {article.categoryName}
         </span>
       )}
       {isNew && (
-        <span className="rounded-full bg-primary/15 px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-primary">
+        <span className="rounded-full bg-primary/15 px-2.5 py-0.5 font-mono text-xs font-medium uppercase tracking-[0.1em] text-primary">
           New
         </span>
       )}
-      <div className="flex flex-wrap items-center gap-x-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/80">
+      <div className="flex flex-wrap items-center gap-x-1.5 font-mono text-xs uppercase tracking-[0.1em] text-muted-foreground/80">
         {date && <span>{new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
         {article.readingTime && (
           <>
@@ -297,7 +297,7 @@ function HeroSection() {
 
       <div className="relative mx-auto w-full max-w-7xl px-4 pb-16 pt-32 sm:px-6 sm:pb-24 lg:px-8">
         <div className="max-w-3xl">
-          <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-white/70">
+          <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3.5 py-1 font-mono text-xs uppercase tracking-[0.16em] text-white/70">
             A platform built for modern men
           </span>
           {/* v2.3: promoted from tagline to mission headline (see
@@ -322,12 +322,12 @@ function HeroSection() {
               secondary, lower-commitment option for a visitor who wants
               to look around before deciding anything, not a competing
               decision of equal weight. */}
-          <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-start">
             <div>
               <Button asChild size="lg" className="rounded-full px-7">
                 <Link href="/assessment">Check In</Link>
               </Button>
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-white/40">
+              <p className="mt-2 font-mono text-xs uppercase tracking-[0.14em] text-white/40">
                 2 minutes · No score · No diagnosis
               </p>
             </div>
@@ -342,7 +342,7 @@ function HeroSection() {
           </div>
           <Link
             href="/stories"
-            className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 underline underline-offset-4 hover:text-white"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 underline underline-offset-4 hover:text-white"
           >
             Or read what men have shared <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -371,7 +371,7 @@ function TrustBar() {
         {TRUST_ITEMS.map(({ icon: Icon, label }) => (
           <div key={label} className="flex items-center gap-2 text-muted-foreground">
             <Icon className="h-4 w-4 text-primary" />
-            <span className="font-mono text-[11px] uppercase tracking-[0.14em]">{label}</span>
+            <span className="font-mono text-xs uppercase tracking-[0.14em]">{label}</span>
           </div>
         ))}
       </div>
@@ -415,7 +415,7 @@ function PillarsSection({ pillarsData }: { pillarsData: PillarWithCategory[] }) 
                 </div>
                 <h3 className="font-display text-xl font-semibold text-foreground">{pillar.name}</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{pillar.description}</p>
-                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
                   Explore <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </Link>
@@ -483,7 +483,7 @@ function FeaturedToolsSection() {
           title="The tools, not just the talk"
           subtitle="Everything below is live right now — no waitlist, nothing gated."
         />
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2">
           {FEATURED_TOOLS.map((tool) => (
             <Link
               key={tool.href}
@@ -495,14 +495,14 @@ function FeaturedToolsSection() {
                   <tool.icon className="h-5 w-5 text-primary" />
                 </div>
                 {tool.badge && (
-                  <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-primary">
+                  <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] text-primary">
                     {tool.badge}
                   </span>
                 )}
               </div>
               <h3 className="mt-4 font-display text-lg font-semibold text-foreground">{tool.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{tool.description}</p>
-              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
                 Explore <ArrowRight className="h-3.5 w-3.5" />
               </span>
             </Link>
@@ -531,7 +531,7 @@ function TrustSection({ posts, storiesData }: { posts: CommunitySnippet[]; stori
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading eyebrow="Why trust this" title="Built by someone who needed it. Used by men who need it now." />
         <div className="grid gap-12 lg:grid-cols-3">
-          <div>
+          <div className="flex flex-col">
             <p className="font-display text-xl italic leading-snug text-foreground">
               &ldquo;I built this because I needed it, and it didn&apos;t exist.&rdquo;
             </p>
@@ -539,15 +539,15 @@ function TrustSection({ posts, storiesData }: { posts: CommunitySnippet[]; stori
               One man carrying too much with nowhere to put it. No investors, no
               clinical jargon — just a space built around how men actually talk.
             </p>
-            <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="mt-6 font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
               Anonymous · Free forever · No account · Evidence-informed
             </p>
-            <Link href="/founders-story" className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+            <Link href="/founders-story" className="mt-auto pt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
               Read the full story <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          <div>
-            <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          <div className="flex flex-col">
+            <p className="mb-4 font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
               Recent stories
             </p>
             <div className="space-y-4">
@@ -557,16 +557,16 @@ function TrustSection({ posts, storiesData }: { posts: CommunitySnippet[]; stori
                     {s.title}
                   </p>
                   <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{s.excerpt}</p>
-                  <div className="mt-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground/70">{s.time}</div>
+                  <div className="mt-2 font-mono text-xs uppercase tracking-wider text-muted-foreground/70">{s.time}</div>
                 </Link>
               ))}
             </div>
-            <Link href="/stories" className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+            <Link href="/stories" className="mt-auto pt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
               Read more stories <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          <div>
-            <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          <div className="flex flex-col">
+            <p className="mb-4 font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
               Men are actually here
             </p>
             <div className="space-y-4">
@@ -575,13 +575,13 @@ function TrustSection({ posts, storiesData }: { posts: CommunitySnippet[]; stori
                   <p className="font-display text-base font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
                     {s.title}
                   </p>
-                  <div className="mt-2 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground/70">
+                  <div className="mt-2 flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-muted-foreground/70">
                     <MessageSquare className="h-3 w-3" /> {s.replyCount} replies · {s.time}
                   </div>
                 </Link>
               ))}
             </div>
-            <Link href="/community" className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
+            <Link href="/community" className="mt-auto pt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">
               Read more from the community <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -612,9 +612,9 @@ function ReadingSection({ articlesData }: { articlesData: ArticleRow[] }) {
           {articlesData.map((article) => (
             <Link key={article.id} href={`/intel/${article.slug}`} className="group rounded-2xl border border-border/60 bg-card/70 p-6 transition-colors hover:bg-card">
               <ArticleMeta article={article} className="mb-3" />
-              <h4 className="font-display text-lg font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+              <h3 className="font-display text-lg font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
                 {article.title}
-              </h4>
+              </h3>
               <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{article.excerpt}</p>
             </Link>
           ))}

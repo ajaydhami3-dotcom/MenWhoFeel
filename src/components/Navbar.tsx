@@ -13,7 +13,6 @@ const NAV_LINKS = [
   { href: "/communication", label: "Communication" },
   { href: "/challenges", label: "Challenges" },
   { href: "/guides", label: "Support & Growth" },
-  { href: "/about", label: "About" },
 ];
 
 // Kept as its own constant, styled apart from NAV_LINKS everywhere it's

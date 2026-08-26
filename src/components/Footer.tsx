@@ -12,6 +12,8 @@ import {
   Phone,
   Coffee,
   Users,
+  Tag,
+  XIcon,
 } from "lucide-react";
 import { db } from "@/db";
 import { topics, articles } from "@/db/schema";
@@ -19,9 +21,9 @@ import { eq, desc, sql } from "drizzle-orm";
 
 function ColumnHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+    <h3 className="mb-4 font-mono text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
       {children}
-    </h4>
+    </h3>
   );
 }
 
@@ -80,25 +82,24 @@ export default async function Footer() {
 
             <p className="border-l-2 border-primary/30 pl-3.5 font-display text-[15px] italic leading-snug text-muted-foreground">
               &ldquo;I built this because I needed it, and it didn&apos;t exist.&rdquo;
-              <span className="mt-1 block font-mono text-[10px] not-italic uppercase tracking-[0.14em] text-muted-foreground/60">
+              <span className="mt-1 block font-mono text-xs not-italic uppercase tracking-[0.14em] text-muted-foreground/60">
                 — Founder, MenWhoFeel
               </span>
             </p>
 
-            <div className="rounded-xl border border-signal/25 bg-signal/[0.06] p-3.5">
-              <p className="mb-1 text-xs font-semibold text-signal">In crisis right now?</p>
+            <div className="rounded-xl border border-signal/40 bg-signal/10 p-3.5">
+              <p className="mb-1 text-sm font-semibold text-signal">In crisis right now?</p>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 Free helplines are available 24/7 in most countries.
               </p>
+              <Link
+                href="/crisis-helpline"
+                className="mt-2.5 inline-flex items-center gap-2 text-xs font-medium text-signal hover:opacity-80"
+              >
+                <Phone className="h-3 w-3" />
+                Find a helpline near you →
+              </Link>
             </div>
-
-            <Link
-              href="/crisis-helpline"
-              className="inline-flex items-center gap-2 text-xs font-medium text-signal hover:opacity-80"
-            >
-              <Phone className="h-3 w-3" />
-              Find a helpline near you →
-            </Link>
           </div>
 
           {/* Navigate */}
@@ -140,8 +141,8 @@ export default async function Footer() {
               <ul className="space-y-2.5">
                 {popularTopics.map((topic) => (
                   <li key={topic.slug}>
-                    <Link href={`/topic/${topic.slug}`} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                      {topic.name}
+                    <Link href={`/topic/${topic.slug}`} className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                      <Tag className="h-3.5 w-3.5" /> {topic.name}
                     </Link>
                   </li>
                 ))}
@@ -203,9 +204,9 @@ export default async function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="X"
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                className="rounded-full border border-border p-2 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
               >
-                X
+                <XIcon className="h-4 w-4" />
               </a>
             </div>
 

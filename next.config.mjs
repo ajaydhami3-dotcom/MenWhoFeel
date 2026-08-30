@@ -13,12 +13,19 @@ const nextConfig = {
   // (and Next.js 16.2.6 logs an "unrecognized key" warning on every build
   // for having it). Run `npx eslint .` directly/in CI instead.
   typescript: { ignoreBuildErrors: true },
-  // reactCompiler was promoted from `experimental.reactCompiler` to a
-  // stable, top-level option in Next.js 16. Leaving it nested under
-  // `experimental` (as it was here, and in the now-removed next.config.ts)
-  // means it's silently never actually applied — Next 16.2.6 logs an
-  // "unrecognized key" warning and falls back to no compiler optimization.
-  reactCompiler: true,
+  // reactCompiler must be a top-level key (Next.js 16 promoted it from
+  // `experimental.reactCompiler`) or Next 16.2.6 logs an "unrecognized
+  // key" warning and silently skips it. Explicitly set to false: it's
+  // still "use with caution" experimental per Vercel's own build output,
+  // and a known category of bug for exactly this symptom — components
+  // render fine (server HTML is visible) but interactivity silently
+  // breaks with no console error. A past session correctly diagnosed it
+  // as a likely cause of a sitewide unclickable-links bug and tried to
+  // disable it, but wrote the change into next.config.ts, which Next.js
+  // never actually loads alongside this file — so it stayed silently
+  // enabled in production the whole time. Fixed here for real.
+  // next.config.ts has been deleted; this is the only config file now.
+  reactCompiler: false,
   experimental: {
     serverActions: {
       // Next.js caps every Server Action POST body at 1 MB by default —

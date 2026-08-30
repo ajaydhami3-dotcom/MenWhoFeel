@@ -23,7 +23,8 @@ Respond with JSON matching this exact shape:
   "commonMisconceptions": ["misconception 1", "misconception 2"],
   "practicalTakeaways": ["takeaway 1", "takeaway 2", "takeaway 3"],
   "relatedTopics": ["topic 1", "topic 2", "topic 3"],
-  "searchIntent": "What someone searching this topic actually wants to know"
+  "searchIntent": "What someone searching this topic actually wants to know",
+  "supportingEvidence": "A specific real statistic, study finding, or named researcher/theory genuinely relevant to this topic, with enough detail (source, rough year) to reference accurately -- or null if you don't have one you're confident is real. Never invent a plausible-sounding statistic or misattribute a study just to fill this field."
 }`;
 
 export const DEFAULT_WRITING_PROMPT = `You are the lead writer for MenWhoFeel, a men's emotional wellbeing platform.
@@ -36,6 +37,7 @@ Research brief:
 {{research}}
 
 Write a complete Intel article based on this research. Target 800–1200 words.
+If the brief's supportingEvidence is present, work it in naturally where it earns its place — don't force a citation into a paragraph that doesn't need one. If it's null, don't invent a statistic or study to replace it; make the point in plain terms instead.
 
 Respond with JSON matching this exact shape:
 {

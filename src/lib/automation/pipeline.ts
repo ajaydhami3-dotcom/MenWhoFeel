@@ -37,6 +37,7 @@ interface ResearchOutput {
   practicalTakeaways: string[];
   relatedTopics: string[];
   searchIntent: string;
+  supportingEvidence: string | null;
 }
 
 interface WritingOutput {

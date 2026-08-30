@@ -1,0 +1,21 @@
+# Men Who Feel
+
+> Anonymous, free mental wellbeing platform for men, organized around four pillars: Mental & Emotional Health, Work & Financial Stability, Relationships & Stress, and Physical Wellbeing. No account required for most of the site.
+
+## Core sections
+
+- [Intel](https://www.menwhofeel.online/intel): Articles answering "what should I know" — practical, research-grounded explainers across all four pillars.
+- [Toolkit](https://www.menwhofeel.online/guides): Curated tools and resources answering "what can I use."
+- [Challenges](https://www.menwhofeel.online/challenges): Structured, day-by-day journeys (Career Reset, Relationship Reset, Physical Reset) answering "what should I do today."
+- [Community](https://www.menwhofeel.online/community): Anonymous peer discussion, answering "who understands me."
+- [Career Hub](https://www.menwhofeel.online/career-hub): Job search and career-transition resources, answering "how do I move forward."
+- [Small Wins](https://www.menwhofeel.online/small-wins): Ways to earn or make immediate financial progress, answering "how do I earn now."
+- [Check-In](https://www.menwhofeel.online/assessment): A short self-assessment across the four pillars, with a personalized starting point.
+- [Provider Directory](https://www.menwhofeel.online/provider-directory): Vetted therapists, doctors, and recovery resources — every listing reviewed by a person before it goes live, not scraped.
+- [Crisis Helpline](https://www.menwhofeel.online/crisis-helpline): Free crisis resources for anyone in immediate distress.
+
+## Optional
+
+- [Founder's Story](https://www.menwhofeel.online/founders-story): Why the platform exists.
+- [About](https://www.menwhofeel.online/about): Platform overview.
+- [Stories](https://www.menwhofeel.online/stories): First-person accounts from users.

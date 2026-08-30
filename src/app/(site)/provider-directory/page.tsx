@@ -34,6 +34,23 @@ export default async function ProviderDirectoryPage() {
     name: "Provider Directory",
     description: "Vetted therapists, doctors, and recovery resources for men.",
     url: `${BASE_URL}/provider-directory`,
+    // ProfessionalService, not a medical-specific schema.org type — this
+    // directory vets listings for legitimacy, it doesn't credential
+    // providers, so the markup shouldn't imply more than that.
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: allProviders.map((p, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "ProfessionalService",
+          name: p.name,
+          description: p.description ?? undefined,
+          url: p.url ?? undefined,
+          areaServed: p.location ?? undefined,
+        },
+      })),
+    },
   };
 
   const grouped = TYPE_ORDER.map((type) => ({

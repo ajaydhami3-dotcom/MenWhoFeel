@@ -247,13 +247,22 @@ export default async function SingleIntelPage({ params }: Props) {
   const readingTime = data.readingTime ?? estimateReadingTime(wordCount);
   const dateForDisplay = data.publishedAt ?? data.createdAt;
 
+  // A real byline (a named practitioner, once one's attached — see the
+  // audit's #5) should read as a Person in structured data, not the
+  // Organization fallback: that's the whole point of an E-E-A-T byline,
+  // and schema.org has no way to tell "MenWhoFeel Core" apart from a real
+  // name unless something here does. No new field needed — this makes
+  // the existing authorName do double duty.
+  const hasNamedAuthor = Boolean(data.authorName) && data.authorName !== "MenWhoFeel Core";
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: data.title,
     description: data.excerpt,
     image: data.featuredImage ?? undefined,
-    author: { "@type": "Organization", name: data.authorName ?? "MenWhoFeel Core", url: BASE_URL },
+    author: hasNamedAuthor
+      ? { "@type": "Person", name: data.authorName }
+      : { "@type": "Organization", name: "MenWhoFeel Core", url: BASE_URL },
     publisher: { "@type": "Organization", name: "Men Who Feel", url: BASE_URL },
     datePublished: dateForDisplay ? new Date(dateForDisplay).toISOString() : undefined,
     url: `${BASE_URL}/intel/${data.slug}`,
